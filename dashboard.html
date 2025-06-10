@@ -80,6 +80,21 @@
             font-weight: bold;
         }
 
+        .user-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-name {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .user-role {
+            font-size: 0.8em;
+            color: #666;
+        }
+
         .logout-btn {
             background: #ff6b6b;
             color: white;
@@ -215,6 +230,112 @@
             color: #155724;
         }
 
+        .stat-change.negative {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .chart-section {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .chart-title {
+            font-size: 1.3em;
+            color: #1e3c72;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chart-container {
+            height: 300px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .chart-placeholder {
+            color: #666;
+            font-style: italic;
+            text-align: center;
+        }
+
+        .recent-activities {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .activity-item {
+            display: flex;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-size: 1.2em;
+            color: white;
+        }
+
+        .activity-icon.patent {
+            background: #ff6b6b;
+        }
+
+        .activity-icon.trademark {
+            background: #4ecdc4;
+        }
+
+        .activity-icon.copyright {
+            background: #45b7d1;
+        }
+
+        .activity-icon.design {
+            background: #96ceb4;
+        }
+
+        .activity-content {
+            flex: 1;
+        }
+
+        .activity-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .activity-time {
+            font-size: 0.9em;
+            color: #666;
+        }
+
         .quick-actions {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -242,18 +363,40 @@
             box-shadow: 0 10px 25px rgba(30, 60, 114, 0.3);
         }
 
-        .error-message {
-            background: #f8d7da;
-            color: #721c24;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            border-left: 4px solid #dc3545;
-            display: none;
+        .loading-animation {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #1e3c72;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .firebase-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 600;
+            z-index: 1000;
+            background: #d4edda;
+            color: #155724;
         }
 
         /* Responsive */
         @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            
             .nav-menu {
                 display: none;
             }
@@ -266,11 +409,11 @@
     </style>
 </head>
 <body>
-    <div id="errorMessage" class="error-message"></div>
+    <div id="firebaseStatus" class="firebase-status" style="display: none;">🔥 Firebase veriler yüklendi</div>
 
     <header class="header">
         <div class="header-content">
-            <div class="logo">IP Manager</div>
+            <div class="logo">🔥 IP Manager</div>
             <nav class="nav-menu">
                 <a href="#" class="nav-item active">Dashboard</a>
                 <a href="portfolio.html" class="nav-item">Portföy</a>
@@ -279,7 +422,11 @@
                 <a href="#" class="nav-item">Ayarlar</a>
             </nav>
             <div class="user-section">
-                <div class="user-avatar" id="userAvatar">D</div>
+                <div class="user-avatar" id="userAvatar">?</div>
+                <div class="user-info">
+                    <div class="user-name" id="userName">Yükleniyor...</div>
+                    <div class="user-role" id="userRole">Kullanıcı</div>
+                </div>
                 <button class="logout-btn" id="logoutBtn">Çıkış</button>
             </div>
         </div>
@@ -287,7 +434,7 @@
 
     <main class="main-container">
         <section class="welcome-section">
-            <h1 class="welcome-title">Hoş Geldiniz!</h1>
+            <h1 class="welcome-title">Hoş Geldiniz! 👋</h1>
             <p class="welcome-subtitle">Fikri mülkiyet haklarınızın güncel durumunu görüntüleyin ve yönetin.</p>
         </section>
 
@@ -295,37 +442,62 @@
             <div class="stat-card patents">
                 <div class="stat-header">
                     <div class="stat-icon patents">📋</div>
-                    <div class="stat-change positive" id="patentChange">+3</div>
+                    <div class="stat-change positive" id="patentChange">+0</div>
                 </div>
-                <div class="stat-value" id="patentCount">12</div>
+                <div class="stat-value" id="patentCount">0</div>
                 <div class="stat-label">Patent</div>
             </div>
 
             <div class="stat-card trademarks">
                 <div class="stat-header">
                     <div class="stat-icon trademarks">🏷️</div>
-                    <div class="stat-change positive" id="trademarkChange">+5</div>
+                    <div class="stat-change positive" id="trademarkChange">+0</div>
                 </div>
-                <div class="stat-value" id="trademarkCount">8</div>
+                <div class="stat-value" id="trademarkCount">0</div>
                 <div class="stat-label">Marka</div>
             </div>
 
             <div class="stat-card copyrights">
                 <div class="stat-header">
                     <div class="stat-icon copyrights">©</div>
-                    <div class="stat-change positive" id="copyrightChange">+2</div>
+                    <div class="stat-change positive" id="copyrightChange">+0</div>
                 </div>
-                <div class="stat-value" id="copyrightCount">15</div>
+                <div class="stat-value" id="copyrightCount">0</div>
                 <div class="stat-label">Telif Hakkı</div>
             </div>
 
             <div class="stat-card designs">
                 <div class="stat-header">
                     <div class="stat-icon designs">🎨</div>
-                    <div class="stat-change positive" id="designChange">+1</div>
+                    <div class="stat-change positive" id="designChange">+0</div>
                 </div>
-                <div class="stat-value" id="designCount">6</div>
+                <div class="stat-value" id="designCount">0</div>
                 <div class="stat-label">Tasarım</div>
+            </div>
+        </section>
+
+        <section class="dashboard-grid">
+            <div class="chart-section">
+                <div class="chart-title">
+                    Aylık Başvuru Trendi
+                </div>
+                <div class="chart-container" id="trendChart">
+                    <div class="chart-placeholder">
+                        <div style="font-size: 3em; margin-bottom: 10px;">📈</div>
+                        <div>Gerçek zamanlı veriler yükleniyor...</div>
+                        <div class="loading-animation"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="recent-activities">
+                <h2 class="chart-title">Son Aktiviteler</h2>
+                <div id="activitiesList">
+                    <div style="text-align: center; padding: 40px; color: #666;">
+                        <div class="loading-animation"></div>
+                        <div style="margin-top: 10px;">Firebase'den veriler yükleniyor...</div>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -337,148 +509,281 @@
         </section>
     </main>
 
-    <script>
-        // Basit Dashboard Modülü - Hata Güvenli
-        class SimpleDashboard {
+    <!-- Firebase Import -->
+    <script type="module">
+        import { 
+            authService, 
+            ipRecordsService, 
+            auth,
+            createDemoData
+        } from './firebase-config.js';
+
+        // Dashboard Controller Class
+        class DashboardController {
             constructor() {
+                this.currentUser = null;
                 this.stats = {
-                    patents: { count: 12, change: 3 },
-                    trademarks: { count: 8, change: 5 },
-                    copyrights: { count: 15, change: 2 },
-                    designs: { count: 6, change: 1 }
+                    patent: 0,
+                    trademark: 0,
+                    copyright: 0,
+                    design: 0
                 };
                 this.init();
             }
 
             init() {
-                try {
-                    this.loadUserData();
-                    this.initializeEventListeners();
-                    this.loadRealStats();
-                    console.log('✅ Dashboard başarıyla yüklendi');
-                } catch (error) {
-                    console.error('❌ Dashboard yükleme hatası:', error);
-                    this.showError('Dashboard yüklenirken bir hata oluştu: ' + error.message);
-                }
+                this.checkAuthentication();
+                this.setupEventListeners();
+                this.setupAuthStateListener();
+                console.log('📊 Firebase Dashboard başlatıldı');
             }
 
-            loadUserData() {
-                try {
-                    const sessionData = localStorage.getItem('ipManagerSession');
-                    if (sessionData) {
-                        const session = JSON.parse(sessionData);
-                        const userName = session.user.name || 'Demo Kullanıcı';
-                        document.getElementById('userAvatar').textContent = userName.charAt(0).toUpperCase();
+            checkAuthentication() {
+                // Redirect to login if not authenticated
+                if (!auth.currentUser) {
+                    const currentUser = authService.getCurrentUser();
+                    if (!currentUser) {
+                        console.log('❌ User not authenticated, redirecting to login');
+                        window.location.href = 'index.html';
+                        return;
                     }
-                } catch (e) {
-                    console.warn('Session verisi yüklenemedi, varsayılan kullanıcı kullanılıyor');
-                    document.getElementById('userAvatar').textContent = 'D';
                 }
             }
 
-            initializeEventListeners() {
+            setupAuthStateListener() {
+                auth.onAuthStateChanged((user) => {
+                    if (user) {
+                        this.currentUser = user;
+                        this.updateUserInfo(user);
+                        this.loadUserData();
+                    } else {
+                        // User signed out, redirect to login
+                        window.location.href = 'index.html';
+                    }
+                });
+            }
+
+            setupEventListeners() {
                 // Logout button
-                const logoutBtn = document.getElementById('logoutBtn');
-                if (logoutBtn) {
-                    logoutBtn.addEventListener('click', () => {
-                        if (confirm('Çıkış yapmak istediğinizden emin misiniz?')) {
-                            try {
-                                localStorage.removeItem('ipManagerSession');
-                            } catch (e) {
-                                console.warn('Session temizlenemedi');
-                            }
+                document.getElementById('logoutBtn').addEventListener('click', async () => {
+                    if (confirm('Çıkış yapmak istediğinizden emin misiniz?')) {
+                        try {
+                            await authService.signOut();
                             window.location.href = 'index.html';
+                        } catch (error) {
+                            console.error('Logout error:', error);
                         }
-                    });
+                    }
+                });
+            }
+
+            updateUserInfo(user) {
+                const userName = user.displayName || user.email.split('@')[0] || 'Kullanıcı';
+                const userAvatar = userName.charAt(0).toUpperCase();
+
+                document.getElementById('userName').textContent = userName;
+                document.getElementById('userAvatar').textContent = userAvatar;
+                document.getElementById('userRole').textContent = 'Kullanıcı';
+            }
+
+            async loadUserData() {
+                try {
+                    // Show Firebase status
+                    const statusDiv = document.getElementById('firebaseStatus');
+                    statusDiv.style.display = 'block';
+                    setTimeout(() => {
+                        statusDiv.style.display = 'none';
+                    }, 3000);
+
+                    // Load user's IP records
+                    const result = await ipRecordsService.getUserRecords();
+                    
+                    if (result.success) {
+                        this.processRecords(result.data);
+                        this.updateStats();
+                        this.updateActivities(result.data);
+                        this.updateChart();
+                    } else {
+                        console.error('Error loading records:', result.error);
+                        this.handleNoData();
+                    }
+                } catch (error) {
+                    console.error('Error in loadUserData:', error);
+                    this.handleNoData();
                 }
             }
 
-            loadRealStats() {
-                try {
-                    // localStorage'dan gerçek verileri yükle
-                    const records = JSON.parse(localStorage.getItem('ipRecords') || '[]');
-                    
-                    if (records.length > 0) {
-                        // Gerçek istatistikleri hesapla
-                        const realStats = records.reduce((acc, record) => {
-                            acc[record.type + 's'] = (acc[record.type + 's'] || 0) + 1;
-                            return acc;
-                        }, { patents: 0, trademarks: 0, copyrights: 0, designs: 0 });
+            processRecords(records) {
+                // Reset stats
+                this.stats = {
+                    patent: 0,
+                    trademark: 0,
+                    copyright: 0,
+                    design: 0
+                };
 
-                        // İstatistikleri güncelle
-                        this.stats = {
-                            patents: { count: realStats.patents, change: Math.floor(Math.random() * 5) + 1 },
-                            trademarks: { count: realStats.trademarks, change: Math.floor(Math.random() * 3) + 1 },
-                            copyrights: { count: realStats.copyrights, change: Math.floor(Math.random() * 2) + 1 },
-                            designs: { count: realStats.designs, change: Math.floor(Math.random() * 2) + 1 }
-                        };
+                // Count records by type
+                records.forEach(record => {
+                    if (this.stats.hasOwnProperty(record.type)) {
+                        this.stats[record.type]++;
                     }
-                } catch (e) {
-                    console.warn('Gerçek veriler yüklenemedi, varsayılan veriler kullanılıyor');
-                }
+                });
 
-                this.updateStats();
+                console.log('📊 Stats processed:', this.stats);
             }
 
             updateStats() {
-                try {
-                    document.getElementById('patentCount').textContent = this.stats.patents.count;
-                    document.getElementById('trademarkCount').textContent = this.stats.trademarks.count;
-                    document.getElementById('copyrightCount').textContent = this.stats.copyrights.count;
-                    document.getElementById('designCount').textContent = this.stats.designs.count;
+                // Update stat values
+                document.getElementById('patentCount').textContent = this.stats.patent;
+                document.getElementById('trademarkCount').textContent = this.stats.trademark;
+                document.getElementById('copyrightCount').textContent = this.stats.copyright;
+                document.getElementById('designCount').textContent = this.stats.design;
 
-                    document.getElementById('patentChange').textContent = '+' + this.stats.patents.change;
-                    document.getElementById('trademarkChange').textContent = '+' + this.stats.trademarks.change;
-                    document.getElementById('copyrightChange').textContent = '+' + this.stats.copyrights.change;
-                    document.getElementById('designChange').textContent = '+' + this.stats.designs.change;
-                } catch (e) {
-                    console.error('İstatistik güncelleme hatası:', e);
-                }
+                // Update change indicators (random for demo)
+                document.getElementById('patentChange').textContent = `+${this.stats.patent}`;
+                document.getElementById('trademarkChange').textContent = `+${this.stats.trademark}`;
+                document.getElementById('copyrightChange').textContent = `+${this.stats.copyright}`;
+                document.getElementById('designChange').textContent = `+${this.stats.design}`;
             }
 
-            showError(message) {
-                const errorDiv = document.getElementById('errorMessage');
-                if (errorDiv) {
-                    errorDiv.textContent = message;
-                    errorDiv.style.display = 'block';
+            updateActivities(records) {
+                const activitiesList = document.getElementById('activitiesList');
+                
+                if (records.length === 0) {
+                    activitiesList.innerHTML = `
+                        <div style="text-align: center; padding: 40px; color: #666;">
+                            <div style="font-size: 2em; margin-bottom: 15px;">📋</div>
+                            <div>Henüz kayıt bulunmuyor</div>
+                            <div style="margin-top: 10px;">
+                                <a href="data-entry.html" style="color: #1e3c72; text-decoration: none;">İlk kaydınızı oluşturun →</a>
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                // Show recent activities (last 5)
+                const recentRecords = records.slice(0, 5);
+                activitiesList.innerHTML = '';
+
+                recentRecords.forEach(record => {
+                    const activityItem = document.createElement('div');
+                    activityItem.className = 'activity-item';
                     
-                    setTimeout(() => {
-                        errorDiv.style.display = 'none';
-                    }, 5000);
-                }
+                    const iconMap = {
+                        patent: '📋',
+                        trademark: '🏷️',
+                        copyright: '©',
+                        design: '🎨'
+                    };
+
+                    const typeNames = {
+                        patent: 'Patent',
+                        trademark: 'Marka',
+                        copyright: 'Telif Hakkı',
+                        design: 'Tasarım'
+                    };
+
+                    const timeAgo = this.getTimeAgo(record.createdAt);
+
+                    activityItem.innerHTML = `
+                        <div class="activity-icon ${record.type}">${iconMap[record.type]}</div>
+                        <div class="activity-content">
+                            <div class="activity-title">${typeNames[record.type]} kaydı: ${record.title}</div>
+                            <div class="activity-time">${timeAgo}</div>
+                        </div>
+                    `;
+
+                    activitiesList.appendChild(activityItem);
+                });
             }
 
-            // Test fonksiyonları
-            refreshStats() {
-                this.loadRealStats();
-                console.log('İstatistikler yenilendi');
+            updateChart() {
+                const chartContainer = document.getElementById('trendChart');
+                const total = Object.values(this.stats).reduce((sum, val) => sum + val, 0);
+                
+                chartContainer.innerHTML = `
+                    <div style="text-align: center;">
+                        <div style="font-size: 3em; margin-bottom: 10px;">📈</div>
+                        <div style="color: #333; font-size: 1.1em; margin-bottom: 5px;">Toplam Kayıt</div>
+                        <div style="color: #1e3c72; font-size: 2em; font-weight: bold;">${total}</div>
+                        <div style="color: #666; font-size: 0.9em; margin-top: 10px;">
+                            ${total > 0 ? 'Veriler Firebase\'den yüklendi' : 'Henüz kayıt yok'}
+                        </div>
+                    </div>
+                `;
             }
 
-            getCurrentUser() {
-                try {
-                    return JSON.parse(localStorage.getItem('ipManagerSession') || 'null');
-                } catch (e) {
-                    return null;
-                }
+            handleNoData() {
+                // Show empty state
+                this.updateStats();
+                
+                document.getElementById('activitiesList').innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #666;">
+                        <div style="font-size: 2em; margin-bottom: 15px;">🚀</div>
+                        <div>İlk IP kaydınızı oluşturun!</div>
+                        <div style="margin-top: 15px;">
+                            <a href="data-entry.html" class="action-btn" style="display: inline-block; padding: 10px 20px; font-size: 0.9em;">
+                                + Yeni Kayıt Oluştur
+                            </a>
+                        </div>
+                    </div>
+                `;
+
+                this.updateChart();
+            }
+
+            getTimeAgo(date) {
+                if (!date) return 'Bilinmiyor';
+                
+                const now = new Date();
+                const recordDate = date instanceof Date ? date : new Date(date);
+                const diffMs = now - recordDate;
+                const diffMins = Math.floor(diffMs / 60000);
+                const diffHours = Math.floor(diffMs / 3600000);
+                const diffDays = Math.floor(diffMs / 86400000);
+
+                if (diffMins < 1) return 'Az önce';
+                if (diffMins < 60) return `${diffMins} dakika önce`;
+                if (diffHours < 24) return `${diffHours} saat önce`;
+                if (diffDays < 30) return `${diffDays} gün önce`;
+                
+                return recordDate.toLocaleDateString('tr-TR');
+            }
+
+            // Test methods
+            async refreshData() {
+                await this.loadUserData();
+                console.log('🔄 Dashboard verileri yenilendi');
+            }
+
+            async createTestData() {
+                await createDemoData();
+                await this.loadUserData();
+                console.log('🧪 Test verileri oluşturuldu');
             }
         }
 
-        // Dashboard'ı başlat
+        // Initialize Dashboard
         let dashboard;
-        try {
-            dashboard = new SimpleDashboard();
-        } catch (error) {
-            console.error('Dashboard başlatılamadı:', error);
-            alert('Dashboard yüklenirken hata oluştu. Lütfen sayfayı yenileyin.');
-        }
+        
+        // Wait for auth state to be determined
+        auth.onAuthStateChanged((user) => {
+            if (user && !dashboard) {
+                dashboard = new DashboardController();
+            }
+        });
 
-        // Test fonksiyonları
+        // Test functions
         window.testDashboard = {
-            refreshStats: () => dashboard ? dashboard.refreshStats() : console.error('Dashboard yüklenmedi'),
-            getCurrentUser: () => dashboard ? dashboard.getCurrentUser() : null
+            refreshData: () => dashboard?.refreshData(),
+            createTestData: () => dashboard?.createTestData(),
+            getCurrentUser: () => authService.getCurrentUser(),
+            getStats: () => dashboard?.stats
         };
 
-        console.log('🚀 Dashboard modülü hazır!');
+        console.log('🚀 Firebase Dashboard modülü hazır!');
+        console.log('Test: testDashboard.createTestData() - Demo veri oluştur');
     </script>
 </body>
 </html>
