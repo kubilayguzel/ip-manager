@@ -13,34 +13,56 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f5f7fa;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
             min-height: 100vh;
+            color: #333;
         }
 
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 1rem 2rem;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px 0;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
             position: sticky;
             top: 0;
             z-index: 100;
         }
 
         .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            max-width: 1200px;
-            margin: 0 auto;
+            padding: 0 20px;
         }
 
         .logo {
-            font-size: 1.8rem;
+            font-size: 1.8em;
             font-weight: bold;
+            color: #1e3c72;
         }
 
-        .user-info {
+        .nav-menu {
+            display: flex;
+            gap: 30px;
+        }
+
+        .nav-item {
+            color: #666;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background: #1e3c72;
+            color: white;
+        }
+
+        .user-section {
             display: flex;
             align-items: center;
             gap: 15px;
@@ -49,183 +71,414 @@
         .user-avatar {
             width: 40px;
             height: 40px;
+            background: linear-gradient(45deg, #1e3c72, #2a5298);
             border-radius: 50%;
-            background: rgba(255, 255, 255, 0.2);
             display: flex;
             align-items: center;
             justify-content: center;
+            color: white;
             font-weight: bold;
         }
 
         .logout-btn {
-            background: rgba(255, 255, 255, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: #ff6b6b;
             color: white;
+            border: none;
             padding: 8px 16px;
-            border-radius: 20px;
+            border-radius: 8px;
             cursor: pointer;
+            font-size: 0.9em;
             transition: all 0.3s ease;
         }
 
         .logout-btn:hover {
-            background: rgba(255, 255, 255, 0.3);
+            background: #ff5252;
+            transform: translateY(-1px);
         }
 
-        .main-content {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 2rem;
+        .main-container {
+            max-width: 1400px;
+            margin: 30px auto;
+            padding: 0 20px;
         }
 
         .welcome-section {
-            background: white;
-            padding: 2rem;
-            border-radius: 15px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
-            margin-bottom: 2rem;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
         }
 
-        .welcome-section h1 {
-            color: #333;
+        .welcome-title {
+            font-size: 2em;
+            color: #1e3c72;
             margin-bottom: 10px;
         }
 
-        .welcome-section p {
+        .welcome-subtitle {
             color: #666;
-            font-size: 1.1rem;
+            font-size: 1.1em;
         }
 
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
+            gap: 25px;
+            margin-bottom: 40px;
         }
 
         .stat-card {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 15px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
             transition: transform 0.3s ease;
-            position: relative;
-            overflow: hidden;
+            border-left: 5px solid;
         }
 
         .stat-card:hover {
             transform: translateY(-5px);
         }
 
-        .stat-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: var(--card-color);
+        .stat-card.patents {
+            border-left-color: #ff6b6b;
         }
 
-        .stat-card.patent::before { background: #667eea; }
-        .stat-card.trademark::before { background: #f093fb; }
-        .stat-card.copyright::before { background: #4facfe; }
-        .stat-card.design::before { background: #43e97b; }
+        .stat-card.trademarks {
+            border-left-color: #4ecdc4;
+        }
+
+        .stat-card.copyrights {
+            border-left-color: #45b7d1;
+        }
+
+        .stat-card.designs {
+            border-left-color: #96ceb4;
+        }
 
         .stat-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 1rem;
+            margin-bottom: 15px;
         }
 
         .stat-icon {
-            font-size: 2rem;
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            color: white;
+        }
+
+        .stat-icon.patents {
+            background: #ff6b6b;
+        }
+
+        .stat-icon.trademarks {
+            background: #4ecdc4;
+        }
+
+        .stat-icon.copyrights {
+            background: #45b7d1;
+        }
+
+        .stat-icon.designs {
+            background: #96ceb4;
         }
 
         .stat-value {
-            font-size: 2.5rem;
+            font-size: 2.5em;
             font-weight: bold;
-            color: #333;
+            color: #1e3c72;
         }
 
         .stat-label {
             color: #666;
-            font-size: 0.9rem;
-            margin-top: 5px;
+            font-size: 1.1em;
+            margin-bottom: 10px;
         }
 
         .stat-change {
-            font-size: 0.8rem;
+            font-size: 0.9em;
             padding: 4px 8px;
-            border-radius: 12px;
-            background: #e8f5e8;
-            color: #2d5a2d;
+            border-radius: 6px;
+            font-weight: 500;
         }
 
-        .dashboard-grid {
+        .stat-change.positive {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .quick-actions {
             display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 2rem;
-            margin-bottom: 2rem;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
         }
 
-        .card {
-            background: white;
+        .action-btn {
+            background: linear-gradient(45deg, #1e3c72, #2a5298);
+            color: white;
+            padding: 20px;
+            border: none;
             border-radius: 15px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
-            overflow: hidden;
-        }
-
-        .card-header {
-            padding: 1.5rem;
-            border-bottom: 1px solid #eee;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .card-title {
-            font-size: 1.2rem;
+            cursor: pointer;
+            font-size: 1em;
             font-weight: 600;
-            color: #333;
+            transition: all 0.3s ease;
+            text-align: center;
+            text-decoration: none;
+            display: block;
         }
 
-        .card-content {
-            padding: 1.5rem;
+        .action-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(30, 60, 114, 0.3);
         }
 
-        .recent-activities {
-            list-style: none;
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 4px solid #dc3545;
+            display: none;
         }
 
-        .activity-item {
-            display: flex;
-            align-items: center;
-            padding: 1rem 0;
-            border-bottom: 1px solid #f0f0f0;
-            transition: background 0.3s ease;
+        /* Responsive */
+        @media (max-width: 768px) {
+            .nav-menu {
+                display: none;
+            }
+            
+            .user-section {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="errorMessage" class="error-message"></div>
+
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">IP Manager</div>
+            <nav class="nav-menu">
+                <a href="#" class="nav-item active">Dashboard</a>
+                <a href="portfolio.html" class="nav-item">Portföy</a>
+                <a href="data-entry.html" class="nav-item">Yeni Kayıt</a>
+                <a href="#" class="nav-item">Raporlar</a>
+                <a href="#" class="nav-item">Ayarlar</a>
+            </nav>
+            <div class="user-section">
+                <div class="user-avatar" id="userAvatar">D</div>
+                <button class="logout-btn" id="logoutBtn">Çıkış</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <section class="welcome-section">
+            <h1 class="welcome-title">Hoş Geldiniz!</h1>
+            <p class="welcome-subtitle">Fikri mülkiyet haklarınızın güncel durumunu görüntüleyin ve yönetin.</p>
+        </section>
+
+        <section class="stats-grid">
+            <div class="stat-card patents">
+                <div class="stat-header">
+                    <div class="stat-icon patents">📋</div>
+                    <div class="stat-change positive" id="patentChange">+3</div>
+                </div>
+                <div class="stat-value" id="patentCount">12</div>
+                <div class="stat-label">Patent</div>
+            </div>
+
+            <div class="stat-card trademarks">
+                <div class="stat-header">
+                    <div class="stat-icon trademarks">🏷️</div>
+                    <div class="stat-change positive" id="trademarkChange">+5</div>
+                </div>
+                <div class="stat-value" id="trademarkCount">8</div>
+                <div class="stat-label">Marka</div>
+            </div>
+
+            <div class="stat-card copyrights">
+                <div class="stat-header">
+                    <div class="stat-icon copyrights">©</div>
+                    <div class="stat-change positive" id="copyrightChange">+2</div>
+                </div>
+                <div class="stat-value" id="copyrightCount">15</div>
+                <div class="stat-label">Telif Hakkı</div>
+            </div>
+
+            <div class="stat-card designs">
+                <div class="stat-header">
+                    <div class="stat-icon designs">🎨</div>
+                    <div class="stat-change positive" id="designChange">+1</div>
+                </div>
+                <div class="stat-value" id="designCount">6</div>
+                <div class="stat-label">Tasarım</div>
+            </div>
+        </section>
+
+        <section class="quick-actions">
+            <a href="data-entry.html" class="action-btn">📋 Yeni Patent Başvurusu</a>
+            <a href="data-entry.html" class="action-btn">🏷️ Yeni Marka Başvurusu</a>
+            <a href="portfolio.html" class="action-btn">📊 Portföyü Görüntüle</a>
+            <a href="#" class="action-btn" onclick="alert('Raporlama modülü yakında!')">📈 Rapor Oluştur</a>
+        </section>
+    </main>
+
+    <script>
+        // Basit Dashboard Modülü - Hata Güvenli
+        class SimpleDashboard {
+            constructor() {
+                this.stats = {
+                    patents: { count: 12, change: 3 },
+                    trademarks: { count: 8, change: 5 },
+                    copyrights: { count: 15, change: 2 },
+                    designs: { count: 6, change: 1 }
+                };
+                this.init();
+            }
+
+            init() {
+                try {
+                    this.loadUserData();
+                    this.initializeEventListeners();
+                    this.loadRealStats();
+                    console.log('✅ Dashboard başarıyla yüklendi');
+                } catch (error) {
+                    console.error('❌ Dashboard yükleme hatası:', error);
+                    this.showError('Dashboard yüklenirken bir hata oluştu: ' + error.message);
+                }
+            }
+
+            loadUserData() {
+                try {
+                    const sessionData = localStorage.getItem('ipManagerSession');
+                    if (sessionData) {
+                        const session = JSON.parse(sessionData);
+                        const userName = session.user.name || 'Demo Kullanıcı';
+                        document.getElementById('userAvatar').textContent = userName.charAt(0).toUpperCase();
+                    }
+                } catch (e) {
+                    console.warn('Session verisi yüklenemedi, varsayılan kullanıcı kullanılıyor');
+                    document.getElementById('userAvatar').textContent = 'D';
+                }
+            }
+
+            initializeEventListeners() {
+                // Logout button
+                const logoutBtn = document.getElementById('logoutBtn');
+                if (logoutBtn) {
+                    logoutBtn.addEventListener('click', () => {
+                        if (confirm('Çıkış yapmak istediğinizden emin misiniz?')) {
+                            try {
+                                localStorage.removeItem('ipManagerSession');
+                            } catch (e) {
+                                console.warn('Session temizlenemedi');
+                            }
+                            window.location.href = 'index.html';
+                        }
+                    });
+                }
+            }
+
+            loadRealStats() {
+                try {
+                    // localStorage'dan gerçek verileri yükle
+                    const records = JSON.parse(localStorage.getItem('ipRecords') || '[]');
+                    
+                    if (records.length > 0) {
+                        // Gerçek istatistikleri hesapla
+                        const realStats = records.reduce((acc, record) => {
+                            acc[record.type + 's'] = (acc[record.type + 's'] || 0) + 1;
+                            return acc;
+                        }, { patents: 0, trademarks: 0, copyrights: 0, designs: 0 });
+
+                        // İstatistikleri güncelle
+                        this.stats = {
+                            patents: { count: realStats.patents, change: Math.floor(Math.random() * 5) + 1 },
+                            trademarks: { count: realStats.trademarks, change: Math.floor(Math.random() * 3) + 1 },
+                            copyrights: { count: realStats.copyrights, change: Math.floor(Math.random() * 2) + 1 },
+                            designs: { count: realStats.designs, change: Math.floor(Math.random() * 2) + 1 }
+                        };
+                    }
+                } catch (e) {
+                    console.warn('Gerçek veriler yüklenemedi, varsayılan veriler kullanılıyor');
+                }
+
+                this.updateStats();
+            }
+
+            updateStats() {
+                try {
+                    document.getElementById('patentCount').textContent = this.stats.patents.count;
+                    document.getElementById('trademarkCount').textContent = this.stats.trademarks.count;
+                    document.getElementById('copyrightCount').textContent = this.stats.copyrights.count;
+                    document.getElementById('designCount').textContent = this.stats.designs.count;
+
+                    document.getElementById('patentChange').textContent = '+' + this.stats.patents.change;
+                    document.getElementById('trademarkChange').textContent = '+' + this.stats.trademarks.change;
+                    document.getElementById('copyrightChange').textContent = '+' + this.stats.copyrights.change;
+                    document.getElementById('designChange').textContent = '+' + this.stats.designs.change;
+                } catch (e) {
+                    console.error('İstatistik güncelleme hatası:', e);
+                }
+            }
+
+            showError(message) {
+                const errorDiv = document.getElementById('errorMessage');
+                if (errorDiv) {
+                    errorDiv.textContent = message;
+                    errorDiv.style.display = 'block';
+                    
+                    setTimeout(() => {
+                        errorDiv.style.display = 'none';
+                    }, 5000);
+                }
+            }
+
+            // Test fonksiyonları
+            refreshStats() {
+                this.loadRealStats();
+                console.log('İstatistikler yenilendi');
+            }
+
+            getCurrentUser() {
+                try {
+                    return JSON.parse(localStorage.getItem('ipManagerSession') || 'null');
+                } catch (e) {
+                    return null;
+                }
+            }
         }
 
-        .activity-item:hover {
-            background: #f8f9fa;
-            margin: 0 -1.5rem;
-            padding: 1rem 1.5rem;
-            border-radius: 8px;
+        // Dashboard'ı başlat
+        let dashboard;
+        try {
+            dashboard = new SimpleDashboard();
+        } catch (error) {
+            console.error('Dashboard başlatılamadı:', error);
+            alert('Dashboard yüklenirken hata oluştu. Lütfen sayfayı yenileyin.');
         }
 
-        .activity-item:last-child {
-            border-bottom: none;
-        }
+        // Test fonksiyonları
+        window.testDashboard = {
+            refreshStats: () => dashboard ? dashboard.refreshStats() : console.error('Dashboard yüklenmedi'),
+            getCurrentUser: () => dashboard ? dashboard.getCurrentUser() : null
+        };
 
-        .activity-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 1rem;
-            font-size: 1.2rem;
-        }
-
-        .activity-icon.patent { background: #667eea20; color: #667eea; }
+        console.log('🚀 Dashboard modülü hazır!');
+    </script>
+</body>
+</html>
