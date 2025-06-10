@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IP Manager - Giriş</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .auth-container {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .logo-section {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .logo {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #1e3c72;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e8ed;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #1e3c72;
+            box-shadow: 0 0 0 3px rgba(30, 60, 114, 0.1);
+        }
+
+        .form-input.error {
+            border-color: #ff6b6b;
+        }
+
+        .error-message {
+            color: #ff6b6b;
+            font-size: 0.9em;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(45deg, #1e3c72, #2a5298);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(30, 60, 114, 0.3);
+        }
+
+        .login-btn:active {
+            transform: translateY(0);
+        }
+
+        .login-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .forgot-password {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .forgot-password a {
+            color: #1e3c72;
+            text-decoration: none;
+            font-size: 0.9em;
+        }
+
+        .forgot-password a:hover {
+            text-decoration: underline;
+        }
+
+        .demo-credentials {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 30px;
+            border-left: 4px solid #4ecdc4;
+        }
+
+        .demo-credentials h4 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1em;
+        }
+
+        .demo-credentials p {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+
+        .demo-credentials strong {
+            color: #1e3c72;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 4px solid #28a745;
+            display: none;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #ffffff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .auth-container {
+                margin: 20px;
+                padding: 30px 25px;
+            }
+            
+            .logo {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="logo-section">
+            <div class="logo">IP Manager</div>
+            <div class="subtitle">Fikri Mülkiyet Yönetim Sistemi</div>
+        </div>
+
+        <div class="success-message" id="successMessage">
+            Giriş başarılı! Yönlendiriliyorsunuz...
+        </div>
+
+        <form id="loginForm" onsubmit="return false;">
+            <div class="form-group">
+                <label class="form-label" for="email">E-posta Adresi</label>
+                <input type="email" id="email" class="form-input" required>
+                <div class="error-message" id="emailError">Geçerli bir e-posta adresi giriniz</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="password">Şifre</label>
+                <input type="password" id="password" class="form-input" required>
+                <div class="error-message" id="passwordError">Şifre en az 6 karakter olmalıdır</div>
+            </div>
+
+            <button type="button" class="login-btn" id="loginBtn">
+                <span id="btnText">Giriş Yap</span>
+                <span class="loading hidden" id="loadingSpinner"></span>
+            </button>
+        </form>
+
+        <div class="forgot-password">
+            <a href="#" id="forgotPasswordLink">Şifremi Unuttum?</a>
+        </div>
+
+        <div class="demo-credentials">
+            <h4>Demo Hesap Bilgileri:</h4>
+            <p><strong>E-posta:</strong> demo@ipmanager.com</p>
+            <p><strong>Şifre:</strong> demo123</p>
+            <p style="margin-top: 10px; font-style: italic;">Test için yukarıdaki bilgileri kullanabilirsiniz.</p>
+        </div>
+    </div>
+
+    <script>
+        // Kimlik Doğrulama Modülü
+        class AuthModule {
+            constructor() {
+                this.users = [
+                    { email: 'demo@ipmanager.com', password: 'demo123', name: 'Demo Kullanıcı', role: 'client' },
+                    { email: 'admin@ipmanager.com', password: 'admin123', name: 'Admin Kullanıcı', role: 'admin' },
+                    { email: 'test@example.com', password: 'test123', name: 'Test Kullanıcı', role: 'client' }
+                ];
+                this.currentUser = null;
+                this.initializeEventListeners();
+            }
+
+            initializeEventListeners() {
+                const loginBtn = document.getElementById('loginBtn');
+                const forgotPasswordLink = document.getElementById('forgotPasswordLink');
+
+                if (loginBtn) {
+                    loginBtn.addEventListener('click', () => this.handleLogin());
+                }
+
+                if (forgotPasswordLink) {
+                    forgotPasswordLink.addEventListener('click', (e) => this.handleForgotPassword(e));
+                }
+
+                // Input validation
+                const emailInput = document.getElementById('email');
+                const passwordInput = document.getElementById('password');
+
+                if (emailInput) {
+                    emailInput.addEventListener('blur', () => this.validateEmail());
+                    emailInput.addEventListener('keypress', (e) => {
+                        if (e.key === 'Enter') this.handleLogin();
+                    });
+                }
+
+                if (passwordInput) {
+                    passwordInput.addEventListener('blur', () => this.validatePassword());
+                    passwordInput.addEventListener('keypress', (e) => {
+                        if (e.key === 'Enter') this.handleLogin();
+                    });
+                }
+            }
+
+            validateEmail() {
+                const email = document.getElementById('email');
+                const errorMsg = document.getElementById('emailError');
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+                if (!emailRegex.test(email.value)) {
+                    email.classList.add('error');
+                    errorMsg.style.display = 'block';
+                    return false;
+                } else {
+                    email.classList.remove('error');
+                    errorMsg.style.display = 'none';
+                    return true;
+                }
+            }
+
+            validatePassword() {
+                const password = document.getElementById('password');
+                const errorMsg = document.getElementById('passwordError');
+
+                if (password.value.length < 6) {
+                    password.classList.add('error');
+                    errorMsg.style.display = 'block';
+                    return false;
+                } else {
+                    password.classList.remove('error');
+                    errorMsg.style.display = 'none';
+                    return true;
+                }
+            }
+
+            async handleLogin() {
+                console.log('Login attempt started...');
+                
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                const loginBtn = document.getElementById('loginBtn');
+                const btnText = document.getElementById('btnText');
+                const loadingSpinner = document.getElementById('loadingSpinner');
+                const successMessage = document.getElementById('successMessage');
+
+                // Basic validation
+                if (!email || !password) {
+                    alert('Lütfen e-posta ve şifre alanlarını doldurun.');
+                    return;
+                }
+
+                // Show loading state
+                loginBtn.disabled = true;
+                btnText.classList.add('hidden');
+                loadingSpinner.classList.remove('hidden');
+                console.log('Loading state activated');
+
+                try {
+                    // Simulate API call
+                    await this.simulateLoginDelay();
+
+                    // Check credentials
+                    const user = this.users.find(u => u.email === email && u.password === password);
+                    console.log('User found:', user ? 'Yes' : 'No');
+
+                    if (user) {
+                        this.currentUser = user;
+                        console.log('Login successful for:', user.email);
+                        
+                        // Show success message
+                        successMessage.style.display = 'block';
+                        
+                        // Store user session
+                        this.storeUserSession(user);
+                        
+                        // Redirect after delay
+                        setTimeout(() => {
+                            this.redirectToDashboard();
+                        }, 2000);
+                    } else {
+                        console.log('Login failed - invalid credentials');
+                        this.showLoginError();
+                    }
+                } catch (error) {
+                    console.error('Login error:', error);
+                    alert('Giriş sırasında bir hata oluştu. Lütfen tekrar deneyin.');
+                }
+
+                // Reset button state
+                loginBtn.disabled = false;
+                btnText.classList.remove('hidden');
+                loadingSpinner.classList.add('hidden');
+                console.log('Button state reset');
+            }
+
+            simulateLoginDelay() {
+                return new Promise(resolve => setTimeout(resolve, 1500));
+            }
+
+            showLoginError() {
+                const email = document.getElementById('email');
+                const password = document.getElementById('password');
+                
+                email.classList.add('error');
+                password.classList.add('error');
+                
+                // Show error message with available accounts
+                const availableEmails = this.users.map(u => u.email).join(', ');
+                alert(`Geçersiz e-posta veya şifre!\n\nMevcut demo hesaplar:\n${availableEmails}\n\nŞifre: demo123, admin123, test123`);
+            }
+
+            storeUserSession(user) {
+                const sessionData = {
+                    user: {
+                        email: user.email,
+                        name: user.name,
+                        role: user.role
+                    },
+                    loginTime: new Date().toISOString(),
+                    sessionId: this.generateSessionId()
+                };
+                
+                // Store in localStorage for demo
+                try {
+                    localStorage.setItem('ipManagerSession', JSON.stringify(sessionData));
+                    console.log('User session stored:', sessionData);
+                } catch (e) {
+                    console.warn('Could not store session in localStorage');
+                }
+            }
+
+            generateSessionId() {
+                return 'session_' + Math.random().toString(36).substr(2, 9);
+            }
+
+            handleForgotPassword(e) {
+                e.preventDefault();
+                alert('Şifre sıfırlama özelliği yakında eklenecek.\nDemo için: demo@ipmanager.com / demo123');
+            }
+
+            redirectToDashboard() {
+                console.log('Redirecting to dashboard...');
+                // In a real app: window.location.href = 'dashboard.html';
+                window.location.href = 'dashboard.html';
+            }
+
+            // Test methods
+            getCurrentUser() {
+                return this.currentUser;
+            }
+
+            logout() {
+                this.currentUser = null;
+                try {
+                    localStorage.removeItem('ipManagerSession');
+                } catch (e) {
+                    console.warn('Could not clear session from localStorage');
+                }
+                document.getElementById('loginForm').reset();
+                document.getElementById('successMessage').style.display = 'none';
+                console.log('User logged out');
+            }
+
+            fillDemoCredentials() {
+                document.getElementById('email').value = 'demo@ipmanager.com';
+                document.getElementById('password').value = 'demo123';
+                console.log('Demo credentials filled');
+            }
+        }
+
+        // Initialize the authentication module
+        const authModule = new AuthModule();
+
+        // Test functions for development
+        window.testAuth = {
+            fillDemo: () => authModule.fillDemoCredentials(),
+            getCurrentUser: () => authModule.getCurrentUser(),
+            logout: () => authModule.logout(),
+            users: authModule.users
+        };
+
+        console.log('🔐 Kimlik Doğrulama Modülü hazır!');
+        console.log('Test için: testAuth.fillDemo() çalıştırın');
+
+        // Quick demo fill button
+        document.addEventListener('DOMContentLoaded', function() {
+            const container = document.querySelector('.auth-container');
+            const testButton = document.createElement('button');
+            testButton.textContent = 'Hızlı Demo Giriş';
+            testButton.style.cssText = `
+                width: 100%;
+                padding: 10px;
+                background: #28a745;
+                color: white;
+                border: none;
+                border-radius: 8px;
+                margin-top: 15px;
+                cursor: pointer;
+                font-size: 0.9em;
+            `;
+            testButton.onclick = function() {
+                authModule.fillDemoCredentials();
+                alert('Demo bilgileri dolduruldu! Şimdi "Giriş Yap" butonuna tıklayın.');
+            };
+            
+            container.appendChild(testButton);
+        });
+    </script>
+</body>
+</html>
