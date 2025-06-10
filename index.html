@@ -13,348 +13,594 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 20px;
         }
 
-        .login-container {
-            background: white;
+        .auth-container {
+            background: rgba(255, 255, 255, 0.95);
             padding: 40px;
             border-radius: 20px;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
             width: 100%;
             max-width: 400px;
             position: relative;
-            overflow: hidden;
-            animation: fadeIn 0.6s ease-out;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .login-container::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 5px;
-            background: linear-gradient(90deg, #667eea, #764ba2);
+        .logo-section {
+            text-align: center;
+            margin-bottom: 40px;
         }
 
         .logo {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        .logo h1 {
-            color: #333;
-            font-size: 2.5rem;
-            font-weight: 700;
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #1e3c72;
             margin-bottom: 10px;
         }
 
-        .logo p {
+        .subtitle {
             color: #666;
-            font-size: 1rem;
+            font-size: 1.1em;
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 30px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 5px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .tab.active {
+            background: #1e3c72;
+            color: white;
+        }
+
+        .form-section {
+            display: none;
+        }
+
+        .form-section.active {
+            display: block;
         }
 
         .form-group {
             margin-bottom: 25px;
-            position: relative;
         }
 
-        .form-group label {
+        .form-label {
             display: block;
             margin-bottom: 8px;
             color: #333;
-            font-weight: 600;
-            font-size: 0.9rem;
+            font-weight: 500;
         }
 
-        .form-group input {
+        .form-input {
             width: 100%;
             padding: 15px;
-            border: 2px solid #e1e5e9;
+            border: 2px solid #e1e8ed;
             border-radius: 10px;
-            font-size: 1rem;
+            font-size: 1em;
             transition: all 0.3s ease;
-            background: #f8f9fa;
+            background: white;
         }
 
-        .form-group input:focus {
+        .form-input:focus {
             outline: none;
-            border-color: #667eea;
-            background: white;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
+            border-color: #1e3c72;
+            box-shadow: 0 0 0 3px rgba(30, 60, 114, 0.1);
         }
 
-        .login-btn {
-            width: 100%;
-            padding: 15px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin-bottom: 20px;
-        }
-
-        .login-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
-        }
-
-        .login-btn:active {
-            transform: translateY(0);
-        }
-
-        .demo-accounts {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 10px;
-            margin-top: 20px;
-        }
-
-        .demo-accounts h3 {
-            color: #333;
-            margin-bottom: 15px;
-            font-size: 1rem;
-        }
-
-        .demo-account {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px;
-            background: white;
-            border-radius: 8px;
-            margin-bottom: 10px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            border: 1px solid #e1e5e9;
-        }
-
-        .demo-account:hover {
-            background: #667eea;
-            color: white;
-            transform: translateX(5px);
-        }
-
-        .demo-account:last-child {
-            margin-bottom: 0;
-        }
-
-        .demo-account .email {
-            font-weight: 600;
-            font-size: 0.9rem;
-        }
-
-        .demo-account .role {
-            font-size: 0.8rem;
-            opacity: 0.8;
+        .form-input.error {
+            border-color: #ff6b6b;
         }
 
         .error-message {
-            background: #ff6b6b;
-            color: white;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            text-align: center;
-            font-weight: 600;
+            color: #ff6b6b;
+            font-size: 0.9em;
+            margin-top: 5px;
             display: none;
         }
 
         .success-message {
-            background: #51cf66;
-            color: white;
+            background: #d4edda;
+            color: #155724;
             padding: 15px;
             border-radius: 10px;
             margin-bottom: 20px;
-            text-align: center;
-            font-weight: 600;
+            border-left: 4px solid #28a745;
             display: none;
         }
 
+        .auth-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(45deg, #1e3c72, #2a5298);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .auth-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(30, 60, 114, 0.3);
+        }
+
+        .auth-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            display: none;
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 20px;
+            height: 20px;
+            border: 2px solid #ffffff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: translateY(-50%) rotate(360deg); }
+        }
+
+        .demo-info {
+            background: #e8f4f8;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 30px;
+            border-left: 4px solid #17a2b8;
+        }
+
+        .demo-info h4 {
+            color: #0c5460;
+            margin-bottom: 10px;
+            font-size: 1em;
+        }
+
+        .demo-info p {
+            color: #0c5460;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+
+        .demo-btn {
+            background: #17a2b8;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+            margin-top: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .demo-btn:hover {
+            background: #138496;
+        }
+
+        .firebase-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 600;
+            z-index: 1000;
+        }
+
+        .firebase-status.connected {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .firebase-status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        /* Responsive */
         @media (max-width: 480px) {
-            .login-container {
-                padding: 30px 20px;
+            .auth-container {
+                margin: 20px;
+                padding: 30px 25px;
             }
             
-            .logo h1 {
-                font-size: 2rem;
+            .logo {
+                font-size: 2em;
             }
         }
     </style>
 </head>
 <body>
-    <div class="login-container">
-        <div class="logo">
-            <h1>📋 IP Manager</h1>
-            <p>Fikri Mülkiyet Yönetim Sistemi</p>
+    <div id="firebaseStatus" class="firebase-status">🔄 Firebase bağlanıyor...</div>
+
+    <div class="auth-container">
+        <div class="logo-section">
+            <div class="logo">🔥 IP Manager</div>
+            <div class="subtitle">Fikri Mülkiyet Yönetim Sistemi</div>
         </div>
 
-        <div id="errorMessage" class="error-message"></div>
-        <div id="successMessage" class="success-message"></div>
+        <div class="tabs">
+            <div class="tab active" data-tab="signin">Giriş Yap</div>
+            <div class="tab" data-tab="signup">Kayıt Ol</div>
+        </div>
 
-        <form id="loginForm">
-            <div class="form-group">
-                <label for="email">E-posta Adresi</label>
-                <input type="email" id="email" name="email" required>
-            </div>
+        <div class="success-message" id="successMessage"></div>
 
-            <div class="form-group">
-                <label for="password">Şifre</label>
-                <input type="password" id="password" name="password" required>
-            </div>
-
-            <button type="submit" class="login-btn">
-                Giriş Yap
-            </button>
-        </form>
-
-        <div class="demo-accounts">
-            <h3>🎯 Demo Hesaplar</h3>
-            <div class="demo-account" onclick="fillDemoAccount('demo@ipmanager.com', 'demo123')">
-                <div>
-                    <div class="email">demo@ipmanager.com</div>
-                    <div class="role">Demo Kullanıcı</div>
+        <!-- Sign In Form -->
+        <div class="form-section active" id="signin-section">
+            <form id="signinForm">
+                <div class="form-group">
+                    <label class="form-label" for="signin-email">E-posta Adresi</label>
+                    <input type="email" id="signin-email" class="form-input" required>
+                    <div class="error-message" id="signin-email-error"></div>
                 </div>
-                <div>demo123</div>
-            </div>
-            <div class="demo-account" onclick="fillDemoAccount('admin@ipmanager.com', 'admin123')">
-                <div>
-                    <div class="email">admin@ipmanager.com</div>
-                    <div class="role">Yönetici</div>
+
+                <div class="form-group">
+                    <label class="form-label" for="signin-password">Şifre</label>
+                    <input type="password" id="signin-password" class="form-input" required>
+                    <div class="error-message" id="signin-password-error"></div>
                 </div>
-                <div>admin123</div>
-            </div>
-            <div class="demo-account" onclick="fillDemoAccount('test@example.com', 'test123')">
-                <div>
-                    <div class="email">test@example.com</div>
-                    <div class="role">Test Kullanıcı</div>
+
+                <button type="submit" class="auth-btn" id="signinBtn">
+                    <span id="signinText">Giriş Yap</span>
+                    <span class="loading" id="signinLoading"></span>
+                </button>
+            </form>
+        </div>
+
+        <!-- Sign Up Form -->
+        <div class="form-section" id="signup-section">
+            <form id="signupForm">
+                <div class="form-group">
+                    <label class="form-label" for="signup-name">Ad Soyad</label>
+                    <input type="text" id="signup-name" class="form-input" required>
+                    <div class="error-message" id="signup-name-error"></div>
                 </div>
-                <div>test123</div>
-            </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="signup-email">E-posta Adresi</label>
+                    <input type="email" id="signup-email" class="form-input" required>
+                    <div class="error-message" id="signup-email-error"></div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="signup-password">Şifre (min. 6 karakter)</label>
+                    <input type="password" id="signup-password" class="form-input" required minlength="6">
+                    <div class="error-message" id="signup-password-error"></div>
+                </div>
+
+                <button type="submit" class="auth-btn" id="signupBtn">
+                    <span id="signupText">Kayıt Ol</span>
+                    <span class="loading" id="signupLoading"></span>
+                </button>
+            </form>
+        </div>
+
+        <div class="demo-info">
+            <h4>🧪 Test Hesabı Oluştur</h4>
+            <p>Hızlı test için demo verilerle hesap oluşturabilirsiniz:</p>
+            <button class="demo-btn" id="createDemoBtn">Demo Hesap Oluştur</button>
         </div>
     </div>
 
-    <script>
-        // Demo hesap bilgileri
-        const validAccounts = [
-            { email: 'demo@ipmanager.com', password: 'demo123', role: 'demo' },
-            { email: 'admin@ipmanager.com', password: 'admin123', role: 'admin' },
-            { email: 'test@example.com', password: 'test123', role: 'user' }
-        ];
+    <!-- Firebase Import -->
+    <script type="module">
+        import { 
+            authService, 
+            ipRecordsService, 
+            createDemoData,
+            auth
+        } from './firebase-config.js';
 
-        // Demo hesap doldurma fonksiyonu
-        function fillDemoAccount(email, password) {
-            document.getElementById('email').value = email;
-            document.getElementById('password').value = password;
-        }
+        // UI Controller Class
+        class AuthController {
+            constructor() {
+                this.currentTab = 'signin';
+                this.init();
+            }
 
-        // Mesaj gösterme fonksiyonu
-        function showMessage(type, message) {
-            const errorDiv = document.getElementById('errorMessage');
-            const successDiv = document.getElementById('successMessage');
-            
-            if (type === 'error') {
+            init() {
+                this.setupEventListeners();
+                this.checkFirebaseConnection();
+                this.setupAuthStateListener();
+                console.log('🔐 Auth Controller initialized');
+            }
+
+            setupEventListeners() {
+                // Tab switching
+                document.querySelectorAll('.tab').forEach(tab => {
+                    tab.addEventListener('click', (e) => {
+                        this.switchTab(e.target.dataset.tab);
+                    });
+                });
+
+                // Sign in form
+                document.getElementById('signinForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.handleSignIn();
+                });
+
+                // Sign up form
+                document.getElementById('signupForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.handleSignUp();
+                });
+
+                // Demo account button
+                document.getElementById('createDemoBtn').addEventListener('click', () => {
+                    this.createDemoAccount();
+                });
+            }
+
+            setupAuthStateListener() {
+                authService.auth.onAuthStateChanged((user) => {
+                    if (user) {
+                        console.log('✅ User authenticated, redirecting to dashboard...');
+                        this.showSuccess('Giriş başarılı! Dashboard\'a yönlendiriliyorsunuz...');
+                        setTimeout(() => {
+                            window.location.href = 'dashboard.html';
+                        }, 1500);
+                    }
+                });
+            }
+
+            async checkFirebaseConnection() {
+                try {
+                    // Test Firebase connection
+                    const statusDiv = document.getElementById('firebaseStatus');
+                    statusDiv.textContent = '🔥 Firebase bağlandı';
+                    statusDiv.className = 'firebase-status connected';
+                    
+                    setTimeout(() => {
+                        statusDiv.style.display = 'none';
+                    }, 3000);
+                } catch (error) {
+                    const statusDiv = document.getElementById('firebaseStatus');
+                    statusDiv.textContent = '❌ Firebase bağlantı hatası';
+                    statusDiv.className = 'firebase-status error';
+                }
+            }
+
+            switchTab(tabName) {
+                // Update tabs
+                document.querySelectorAll('.tab').forEach(tab => {
+                    tab.classList.remove('active');
+                });
+                document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+
+                // Update sections
+                document.querySelectorAll('.form-section').forEach(section => {
+                    section.classList.remove('active');
+                });
+                document.getElementById(`${tabName}-section`).classList.add('active');
+
+                this.currentTab = tabName;
+                this.clearErrors();
+            }
+
+            async handleSignIn() {
+                const email = document.getElementById('signin-email').value.trim();
+                const password = document.getElementById('signin-password').value;
+
+                if (!this.validateSignIn(email, password)) return;
+
+                this.setLoading('signin', true);
+
+                try {
+                    const result = await authService.signIn(email, password);
+                    
+                    if (result.success) {
+                        this.showSuccess('Giriş başarılı! Dashboard\'a yönlendiriliyorsunuz...');
+                        // Auth state listener will handle redirect
+                    } else {
+                        this.showError('signin', result.error);
+                    }
+                } catch (error) {
+                    this.showError('signin', 'Giriş sırasında bir hata oluştu');
+                } finally {
+                    this.setLoading('signin', false);
+                }
+            }
+
+            async handleSignUp() {
+                const name = document.getElementById('signup-name').value.trim();
+                const email = document.getElementById('signup-email').value.trim();
+                const password = document.getElementById('signup-password').value;
+
+                if (!this.validateSignUp(name, email, password)) return;
+
+                this.setLoading('signup', true);
+
+                try {
+                    const result = await authService.signUp(email, password, name);
+                    
+                    if (result.success) {
+                        this.showSuccess('Hesap oluşturuldu! Demo veriler yükleniyor...');
+                        
+                        // Create demo data for new user
+                        setTimeout(async () => {
+                            await createDemoData();
+                            // Auth state listener will handle redirect
+                        }, 2000);
+                    } else {
+                        this.showError('signup', result.error);
+                    }
+                } catch (error) {
+                    this.showError('signup', 'Kayıt sırasında bir hata oluştu');
+                } finally {
+                    this.setLoading('signup', false);
+                }
+            }
+
+            async createDemoAccount() {
+                const demoEmail = `demo.${Date.now()}@ipmanager.com`;
+                const demoPassword = 'demo123456';
+                const demoName = 'Demo Kullanıcı';
+
+                try {
+                    this.showSuccess('Demo hesap oluşturuluyor...');
+                    
+                    const result = await authService.signUp(demoEmail, demoPassword, demoName);
+                    
+                    if (result.success) {
+                        this.showSuccess(`Demo hesap oluşturuldu! E-posta: ${demoEmail}`);
+                        
+                        // Create demo data
+                        setTimeout(async () => {
+                            await createDemoData();
+                        }, 2000);
+                    } else {
+                        this.showError('signup', result.error);
+                    }
+                } catch (error) {
+                    this.showError('signup', 'Demo hesap oluşturulamadı');
+                }
+            }
+
+            validateSignIn(email, password) {
+                this.clearErrors();
+                let isValid = true;
+
+                if (!email) {
+                    this.showFieldError('signin-email', 'E-posta adresi gerekli');
+                    isValid = false;
+                }
+
+                if (!password) {
+                    this.showFieldError('signin-password', 'Şifre gerekli');
+                    isValid = false;
+                }
+
+                return isValid;
+            }
+
+            validateSignUp(name, email, password) {
+                this.clearErrors();
+                let isValid = true;
+
+                if (!name || name.length < 2) {
+                    this.showFieldError('signup-name', 'Ad soyad en az 2 karakter olmalı');
+                    isValid = false;
+                }
+
+                if (!email) {
+                    this.showFieldError('signup-email', 'E-posta adresi gerekli');
+                    isValid = false;
+                } else if (!this.isValidEmail(email)) {
+                    this.showFieldError('signup-email', 'Geçerli bir e-posta adresi girin');
+                    isValid = false;
+                }
+
+                if (!password) {
+                    this.showFieldError('signup-password', 'Şifre gerekli');
+                    isValid = false;
+                } else if (password.length < 6) {
+                    this.showFieldError('signup-password', 'Şifre en az 6 karakter olmalı');
+                    isValid = false;
+                }
+
+                return isValid;
+            }
+
+            isValidEmail(email) {
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                return emailRegex.test(email);
+            }
+
+            showFieldError(fieldId, message) {
+                const field = document.getElementById(fieldId);
+                const errorDiv = document.getElementById(`${fieldId}-error`);
+                
+                field.classList.add('error');
                 errorDiv.textContent = message;
                 errorDiv.style.display = 'block';
-                successDiv.style.display = 'none';
-            } else {
+            }
+
+            showError(form, message) {
+                // You could add a general error display here
+                console.error(`${form} error:`, message);
+                alert(message); // Simple alert for now
+            }
+
+            showSuccess(message) {
+                const successDiv = document.getElementById('successMessage');
                 successDiv.textContent = message;
                 successDiv.style.display = 'block';
-                errorDiv.style.display = 'none';
+                
+                setTimeout(() => {
+                    successDiv.style.display = 'none';
+                }, 5000);
             }
-            
-            setTimeout(() => {
-                errorDiv.style.display = 'none';
-                successDiv.style.display = 'none';
-            }, 3000);
+
+            clearErrors() {
+                document.querySelectorAll('.form-input').forEach(input => {
+                    input.classList.remove('error');
+                });
+
+                document.querySelectorAll('.error-message').forEach(error => {
+                    error.style.display = 'none';
+                });
+            }
+
+            setLoading(form, isLoading) {
+                const btn = document.getElementById(`${form}Btn`);
+                const text = document.getElementById(`${form}Text`);
+                const loading = document.getElementById(`${form}Loading`);
+
+                btn.disabled = isLoading;
+                text.style.display = isLoading ? 'none' : 'inline';
+                loading.style.display = isLoading ? 'inline-block' : 'none';
+            }
         }
 
-        // Giriş formu işlemi
-        document.getElementById('loginForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            
-            // Hesap doğrulama
-            const validAccount = validAccounts.find(account => 
-                account.email === email && account.password === password
-            );
-            
-            if (validAccount) {
-                // Başarılı giriş
-                showMessage('success', 'Giriş başarılı! Dashboard\'a yönlendiriliyorsunuz...');
-                
-                // Kullanıcı bilgilerini kaydet
-                const userData = {
-                    email: validAccount.email,
-                    role: validAccount.role,
-                    loginTime: new Date().toISOString()
-                };
-                
-                try {
-                    localStorage.setItem('currentUser', JSON.stringify(userData));
-                    localStorage.setItem('isLoggedIn', 'true');
-                } catch (e) {
-                    console.warn('Could not save to localStorage:', e.message);
-                    // Continue without localStorage
-                }
-                
-                // Dashboard'a yönlendir
-                setTimeout(() => {
-                    window.location.href = 'dashboard.html';
-                }, 1500);
-            } else {
-                // Hatalı giriş
-                showMessage('error', 'Geçersiz e-posta veya şifre!');
-            }
+        // Initialize when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            new AuthController();
         });
 
-        // Test fonksiyonları (console'dan kullanım için)
-        const testAuth = {
-            fillDemo: () => fillDemoAccount('demo@ipmanager.com', 'demo123'),
-            getCurrentUser: () => JSON.parse(localStorage.getItem('currentUser') || 'null'),
-            logout: () => {
-                try {
-                    localStorage.removeItem('currentUser');
-                    localStorage.removeItem('isLoggedIn');
-                } catch (e) {
-                    console.warn('Could not clear localStorage:', e.message);
-                }
-                showMessage('success', 'Çıkış yapıldı!');
-            }
+        // Global test functions for development
+        window.testAuth = {
+            fillDemoSignIn: () => {
+                document.getElementById('signin-email').value = 'demo@ipmanager.com';
+                document.getElementById('signin-password').value = 'demo123456';
+            },
+            getCurrentUser: () => authService.getCurrentUser(),
+            signOut: () => authService.signOut()
         };
 
-        // Global test objesi
-        window.testAuth = testAuth;
-
-        // Sayfa yüklendiğinde giriş durumu kontrolü
-        window.addEventListener('load', function() {
-            try {
-                if (localStorage.getItem('isLoggedIn') === 'true') {
-                    window.location.href = 'dashboard.html';
-                }
-            } catch (e) {
-                console.warn('Could not check login status:', e.message);
-                // Continue with normal login flow
-            }
-        });
+        console.log('🚀 Firebase Auth module loaded!');
+        console.log('Test: testAuth.fillDemoSignIn() - Demo bilgileri doldur');
     </script>
 </body>
 </html>
