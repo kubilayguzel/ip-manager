@@ -13,86 +13,97 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
+            padding: 20px;
         }
 
-        .auth-container {
-            background: rgba(255, 255, 255, 0.95);
+        .login-container {
+            background: white;
             padding: 40px;
             border-radius: 20px;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            backdrop-filter: blur(10px);
             width: 100%;
             max-width: 400px;
+            position: relative;
+            overflow: hidden;
+            animation: fadeIn 0.6s ease-out;
         }
 
-        .logo-section {
-            text-align: center;
-            margin-bottom: 40px;
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .login-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
         }
 
         .logo {
-            font-size: 2.5em;
-            font-weight: bold;
-            color: #1e3c72;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo h1 {
+            color: #333;
+            font-size: 2.5rem;
+            font-weight: 700;
             margin-bottom: 10px;
         }
 
-        .subtitle {
+        .logo p {
             color: #666;
-            font-size: 1.1em;
+            font-size: 1rem;
         }
 
         .form-group {
             margin-bottom: 25px;
+            position: relative;
         }
 
-        .form-label {
+        .form-group label {
             display: block;
             margin-bottom: 8px;
             color: #333;
-            font-weight: 500;
+            font-weight: 600;
+            font-size: 0.9rem;
         }
 
-        .form-input {
+        .form-group input {
             width: 100%;
             padding: 15px;
-            border: 2px solid #e1e8ed;
+            border: 2px solid #e1e5e9;
             border-radius: 10px;
-            font-size: 1em;
+            font-size: 1rem;
             transition: all 0.3s ease;
-            background: white;
+            background: #f8f9fa;
         }
 
-        .form-input:focus {
+        .form-group input:focus {
             outline: none;
-            border-color: #1e3c72;
-            box-shadow: 0 0 0 3px rgba(30, 60, 114, 0.1);
-        }
-
-        .form-input.error {
-            border-color: #ff6b6b;
-        }
-
-        .error-message {
-            color: #ff6b6b;
-            font-size: 0.9em;
-            margin-top: 5px;
-            display: none;
+            border-color: #667eea;
+            background: white;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
         }
 
         .login-btn {
             width: 100%;
             padding: 15px;
-            background: linear-gradient(45deg, #1e3c72, #2a5298);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
             border-radius: 10px;
-            font-size: 1.1em;
+            font-size: 1.1rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
@@ -101,387 +112,248 @@
 
         .login-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(30, 60, 114, 0.3);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
         }
 
         .login-btn:active {
             transform: translateY(0);
         }
 
-        .login-btn:disabled {
-            opacity: 0.7;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .forgot-password {
-            text-align: center;
-            margin-top: 20px;
-        }
-
-        .forgot-password a {
-            color: #1e3c72;
-            text-decoration: none;
-            font-size: 0.9em;
-        }
-
-        .forgot-password a:hover {
-            text-decoration: underline;
-        }
-
-        .demo-credentials {
+        .demo-accounts {
             background: #f8f9fa;
             padding: 20px;
             border-radius: 10px;
-            margin-top: 30px;
-            border-left: 4px solid #4ecdc4;
+            margin-top: 20px;
         }
 
-        .demo-credentials h4 {
+        .demo-accounts h3 {
             color: #333;
+            margin-bottom: 15px;
+            font-size: 1rem;
+        }
+
+        .demo-account {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
             margin-bottom: 10px;
-            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid #e1e5e9;
         }
 
-        .demo-credentials p {
-            color: #666;
-            font-size: 0.9em;
-            margin-bottom: 5px;
+        .demo-account:hover {
+            background: #667eea;
+            color: white;
+            transform: translateX(5px);
         }
 
-        .demo-credentials strong {
-            color: #1e3c72;
+        .demo-account:last-child {
+            margin-bottom: 0;
         }
 
-        .success-message {
-            background: #d4edda;
-            color: #155724;
+        .demo-account .email {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .demo-account .role {
+            font-size: 0.8rem;
+            opacity: 0.8;
+        }
+
+        .error-message {
+            background: #ff6b6b;
+            color: white;
             padding: 15px;
             border-radius: 10px;
             margin-bottom: 20px;
-            border-left: 4px solid #28a745;
+            text-align: center;
+            font-weight: 600;
             display: none;
         }
 
-        .loading {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid #ffffff;
-            border-radius: 50%;
-            border-top-color: transparent;
-            animation: spin 1s ease-in-out infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        .hidden {
+        .success-message {
+            background: #51cf66;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: 600;
             display: none;
         }
 
-        /* Responsive */
         @media (max-width: 480px) {
-            .auth-container {
-                margin: 20px;
-                padding: 30px 25px;
+            .login-container {
+                padding: 30px 20px;
             }
             
-            .logo {
-                font-size: 2em;
+            .logo h1 {
+                font-size: 2rem;
             }
         }
     </style>
 </head>
 <body>
-    <div class="auth-container">
-        <div class="logo-section">
-            <div class="logo">IP Manager</div>
-            <div class="subtitle">Fikri Mülkiyet Yönetim Sistemi</div>
+    <div class="login-container">
+        <div class="logo">
+            <h1>📋 IP Manager</h1>
+            <p>Fikri Mülkiyet Yönetim Sistemi</p>
         </div>
 
-        <div class="success-message" id="successMessage">
-            Giriş başarılı! Yönlendiriliyorsunuz...
-        </div>
+        <div id="errorMessage" class="error-message"></div>
+        <div id="successMessage" class="success-message"></div>
 
-        <form id="loginForm" onsubmit="return false;">
+        <form id="loginForm">
             <div class="form-group">
-                <label class="form-label" for="email">E-posta Adresi</label>
-                <input type="email" id="email" class="form-input" required>
-                <div class="error-message" id="emailError">Geçerli bir e-posta adresi giriniz</div>
+                <label for="email">E-posta Adresi</label>
+                <input type="email" id="email" name="email" required>
             </div>
 
             <div class="form-group">
-                <label class="form-label" for="password">Şifre</label>
-                <input type="password" id="password" class="form-input" required>
-                <div class="error-message" id="passwordError">Şifre en az 6 karakter olmalıdır</div>
+                <label for="password">Şifre</label>
+                <input type="password" id="password" name="password" required>
             </div>
 
-            <button type="button" class="login-btn" id="loginBtn">
-                <span id="btnText">Giriş Yap</span>
-                <span class="loading hidden" id="loadingSpinner"></span>
+            <button type="submit" class="login-btn">
+                Giriş Yap
             </button>
         </form>
 
-        <div class="forgot-password">
-            <a href="#" id="forgotPasswordLink">Şifremi Unuttum?</a>
-        </div>
-
-        <div class="demo-credentials">
-            <h4>Demo Hesap Bilgileri:</h4>
-            <p><strong>E-posta:</strong> demo@ipmanager.com</p>
-            <p><strong>Şifre:</strong> demo123</p>
-            <p style="margin-top: 10px; font-style: italic;">Test için yukarıdaki bilgileri kullanabilirsiniz.</p>
+        <div class="demo-accounts">
+            <h3>🎯 Demo Hesaplar</h3>
+            <div class="demo-account" onclick="fillDemoAccount('demo@ipmanager.com', 'demo123')">
+                <div>
+                    <div class="email">demo@ipmanager.com</div>
+                    <div class="role">Demo Kullanıcı</div>
+                </div>
+                <div>demo123</div>
+            </div>
+            <div class="demo-account" onclick="fillDemoAccount('admin@ipmanager.com', 'admin123')">
+                <div>
+                    <div class="email">admin@ipmanager.com</div>
+                    <div class="role">Yönetici</div>
+                </div>
+                <div>admin123</div>
+            </div>
+            <div class="demo-account" onclick="fillDemoAccount('test@example.com', 'test123')">
+                <div>
+                    <div class="email">test@example.com</div>
+                    <div class="role">Test Kullanıcı</div>
+                </div>
+                <div>test123</div>
+            </div>
         </div>
     </div>
 
     <script>
-        // Kimlik Doğrulama Modülü
-        class AuthModule {
-            constructor() {
-                this.users = [
-                    { email: 'demo@ipmanager.com', password: 'demo123', name: 'Demo Kullanıcı', role: 'client' },
-                    { email: 'admin@ipmanager.com', password: 'admin123', name: 'Admin Kullanıcı', role: 'admin' },
-                    { email: 'test@example.com', password: 'test123', name: 'Test Kullanıcı', role: 'client' }
-                ];
-                this.currentUser = null;
-                this.initializeEventListeners();
-            }
+        // Demo hesap bilgileri
+        const validAccounts = [
+            { email: 'demo@ipmanager.com', password: 'demo123', role: 'demo' },
+            { email: 'admin@ipmanager.com', password: 'admin123', role: 'admin' },
+            { email: 'test@example.com', password: 'test123', role: 'user' }
+        ];
 
-            initializeEventListeners() {
-                const loginBtn = document.getElementById('loginBtn');
-                const forgotPasswordLink = document.getElementById('forgotPasswordLink');
-
-                if (loginBtn) {
-                    loginBtn.addEventListener('click', () => this.handleLogin());
-                }
-
-                if (forgotPasswordLink) {
-                    forgotPasswordLink.addEventListener('click', (e) => this.handleForgotPassword(e));
-                }
-
-                // Input validation
-                const emailInput = document.getElementById('email');
-                const passwordInput = document.getElementById('password');
-
-                if (emailInput) {
-                    emailInput.addEventListener('blur', () => this.validateEmail());
-                    emailInput.addEventListener('keypress', (e) => {
-                        if (e.key === 'Enter') this.handleLogin();
-                    });
-                }
-
-                if (passwordInput) {
-                    passwordInput.addEventListener('blur', () => this.validatePassword());
-                    passwordInput.addEventListener('keypress', (e) => {
-                        if (e.key === 'Enter') this.handleLogin();
-                    });
-                }
-            }
-
-            validateEmail() {
-                const email = document.getElementById('email');
-                const errorMsg = document.getElementById('emailError');
-                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-                if (!emailRegex.test(email.value)) {
-                    email.classList.add('error');
-                    errorMsg.style.display = 'block';
-                    return false;
-                } else {
-                    email.classList.remove('error');
-                    errorMsg.style.display = 'none';
-                    return true;
-                }
-            }
-
-            validatePassword() {
-                const password = document.getElementById('password');
-                const errorMsg = document.getElementById('passwordError');
-
-                if (password.value.length < 6) {
-                    password.classList.add('error');
-                    errorMsg.style.display = 'block';
-                    return false;
-                } else {
-                    password.classList.remove('error');
-                    errorMsg.style.display = 'none';
-                    return true;
-                }
-            }
-
-            async handleLogin() {
-                console.log('Login attempt started...');
-                
-                const email = document.getElementById('email').value;
-                const password = document.getElementById('password').value;
-                const loginBtn = document.getElementById('loginBtn');
-                const btnText = document.getElementById('btnText');
-                const loadingSpinner = document.getElementById('loadingSpinner');
-                const successMessage = document.getElementById('successMessage');
-
-                // Basic validation
-                if (!email || !password) {
-                    alert('Lütfen e-posta ve şifre alanlarını doldurun.');
-                    return;
-                }
-
-                // Show loading state
-                loginBtn.disabled = true;
-                btnText.classList.add('hidden');
-                loadingSpinner.classList.remove('hidden');
-                console.log('Loading state activated');
-
-                try {
-                    // Simulate API call
-                    await this.simulateLoginDelay();
-
-                    // Check credentials
-                    const user = this.users.find(u => u.email === email && u.password === password);
-                    console.log('User found:', user ? 'Yes' : 'No');
-
-                    if (user) {
-                        this.currentUser = user;
-                        console.log('Login successful for:', user.email);
-                        
-                        // Show success message
-                        successMessage.style.display = 'block';
-                        
-                        // Store user session
-                        this.storeUserSession(user);
-                        
-                        // Redirect after delay
-                        setTimeout(() => {
-                            this.redirectToDashboard();
-                        }, 2000);
-                    } else {
-                        console.log('Login failed - invalid credentials');
-                        this.showLoginError();
-                    }
-                } catch (error) {
-                    console.error('Login error:', error);
-                    alert('Giriş sırasında bir hata oluştu. Lütfen tekrar deneyin.');
-                }
-
-                // Reset button state
-                loginBtn.disabled = false;
-                btnText.classList.remove('hidden');
-                loadingSpinner.classList.add('hidden');
-                console.log('Button state reset');
-            }
-
-            simulateLoginDelay() {
-                return new Promise(resolve => setTimeout(resolve, 1500));
-            }
-
-            showLoginError() {
-                const email = document.getElementById('email');
-                const password = document.getElementById('password');
-                
-                email.classList.add('error');
-                password.classList.add('error');
-                
-                // Show error message with available accounts
-                const availableEmails = this.users.map(u => u.email).join(', ');
-                alert(`Geçersiz e-posta veya şifre!\n\nMevcut demo hesaplar:\n${availableEmails}\n\nŞifre: demo123, admin123, test123`);
-            }
-
-            storeUserSession(user) {
-                const sessionData = {
-                    user: {
-                        email: user.email,
-                        name: user.name,
-                        role: user.role
-                    },
-                    loginTime: new Date().toISOString(),
-                    sessionId: this.generateSessionId()
-                };
-                
-                // Store in localStorage for demo
-                try {
-                    localStorage.setItem('ipManagerSession', JSON.stringify(sessionData));
-                    console.log('User session stored:', sessionData);
-                } catch (e) {
-                    console.warn('Could not store session in localStorage');
-                }
-            }
-
-            generateSessionId() {
-                return 'session_' + Math.random().toString(36).substr(2, 9);
-            }
-
-            handleForgotPassword(e) {
-                e.preventDefault();
-                alert('Şifre sıfırlama özelliği yakında eklenecek.\nDemo için: demo@ipmanager.com / demo123');
-            }
-
-            redirectToDashboard() {
-                console.log('Redirecting to dashboard...');
-                // In a real app: window.location.href = 'dashboard.html';
-                window.location.href = 'dashboard.html';
-            }
-
-            // Test methods
-            getCurrentUser() {
-                return this.currentUser;
-            }
-
-            logout() {
-                this.currentUser = null;
-                try {
-                    localStorage.removeItem('ipManagerSession');
-                } catch (e) {
-                    console.warn('Could not clear session from localStorage');
-                }
-                document.getElementById('loginForm').reset();
-                document.getElementById('successMessage').style.display = 'none';
-                console.log('User logged out');
-            }
-
-            fillDemoCredentials() {
-                document.getElementById('email').value = 'demo@ipmanager.com';
-                document.getElementById('password').value = 'demo123';
-                console.log('Demo credentials filled');
-            }
+        // Demo hesap doldurma fonksiyonu
+        function fillDemoAccount(email, password) {
+            document.getElementById('email').value = email;
+            document.getElementById('password').value = password;
         }
 
-        // Initialize the authentication module
-        const authModule = new AuthModule();
+        // Mesaj gösterme fonksiyonu
+        function showMessage(type, message) {
+            const errorDiv = document.getElementById('errorMessage');
+            const successDiv = document.getElementById('successMessage');
+            
+            if (type === 'error') {
+                errorDiv.textContent = message;
+                errorDiv.style.display = 'block';
+                successDiv.style.display = 'none';
+            } else {
+                successDiv.textContent = message;
+                successDiv.style.display = 'block';
+                errorDiv.style.display = 'none';
+            }
+            
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+                successDiv.style.display = 'none';
+            }, 3000);
+        }
 
-        // Test functions for development
-        window.testAuth = {
-            fillDemo: () => authModule.fillDemoCredentials(),
-            getCurrentUser: () => authModule.getCurrentUser(),
-            logout: () => authModule.logout(),
-            users: authModule.users
+        // Giriş formu işlemi
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            // Hesap doğrulama
+            const validAccount = validAccounts.find(account => 
+                account.email === email && account.password === password
+            );
+            
+            if (validAccount) {
+                // Başarılı giriş
+                showMessage('success', 'Giriş başarılı! Dashboard\'a yönlendiriliyorsunuz...');
+                
+                // Kullanıcı bilgilerini kaydet
+                const userData = {
+                    email: validAccount.email,
+                    role: validAccount.role,
+                    loginTime: new Date().toISOString()
+                };
+                
+                try {
+                    localStorage.setItem('currentUser', JSON.stringify(userData));
+                    localStorage.setItem('isLoggedIn', 'true');
+                } catch (e) {
+                    console.warn('Could not save to localStorage:', e.message);
+                    // Continue without localStorage
+                }
+                
+                // Dashboard'a yönlendir
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 1500);
+            } else {
+                // Hatalı giriş
+                showMessage('error', 'Geçersiz e-posta veya şifre!');
+            }
+        });
+
+        // Test fonksiyonları (console'dan kullanım için)
+        const testAuth = {
+            fillDemo: () => fillDemoAccount('demo@ipmanager.com', 'demo123'),
+            getCurrentUser: () => JSON.parse(localStorage.getItem('currentUser') || 'null'),
+            logout: () => {
+                try {
+                    localStorage.removeItem('currentUser');
+                    localStorage.removeItem('isLoggedIn');
+                } catch (e) {
+                    console.warn('Could not clear localStorage:', e.message);
+                }
+                showMessage('success', 'Çıkış yapıldı!');
+            }
         };
 
-        console.log('🔐 Kimlik Doğrulama Modülü hazır!');
-        console.log('Test için: testAuth.fillDemo() çalıştırın');
+        // Global test objesi
+        window.testAuth = testAuth;
 
-        // Quick demo fill button
-        document.addEventListener('DOMContentLoaded', function() {
-            const container = document.querySelector('.auth-container');
-            const testButton = document.createElement('button');
-            testButton.textContent = 'Hızlı Demo Giriş';
-            testButton.style.cssText = `
-                width: 100%;
-                padding: 10px;
-                background: #28a745;
-                color: white;
-                border: none;
-                border-radius: 8px;
-                margin-top: 15px;
-                cursor: pointer;
-                font-size: 0.9em;
-            `;
-            testButton.onclick = function() {
-                authModule.fillDemoCredentials();
-                alert('Demo bilgileri dolduruldu! Şimdi "Giriş Yap" butonuna tıklayın.');
-            };
-            
-            container.appendChild(testButton);
+        // Sayfa yüklendiğinde giriş durumu kontrolü
+        window.addEventListener('load', function() {
+            try {
+                if (localStorage.getItem('isLoggedIn') === 'true') {
+                    window.location.href = 'dashboard.html';
+                }
+            } catch (e) {
+                console.warn('Could not check login status:', e.message);
+                // Continue with normal login flow
+            }
         });
     </script>
 </body>
