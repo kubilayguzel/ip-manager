@@ -1,4 +1,4 @@
-// Firebase Configuration for IP Manager - DEMO MODE
+// Firebase Configuration for IP Manager
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
 import { 
     getAuth, 
@@ -19,45 +19,43 @@ import {
     query,
     orderBy,
     where,
-    onSnapshot
+    onSnapshot // Firestore değişikliklerini dinlemek için
 } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
-// Firebase Config - DEMO MODE: Geçersiz config ile localStorage'u zorla
+// Firebase Config - Gerçek Proje Bilgileri
 const firebaseConfig = {
-    apiKey: "demo-mode-disabled",
-    authDomain: "demo-mode-disabled",
-    projectId: "demo-mode-disabled",
-    storageBucket: "demo-mode-disabled",
-    messagingSenderId: "demo-mode-disabled",
-    appId: "demo-mode-disabled"
+    apiKey: "AIzaSyCbhoIXJT9g5ftW62YUlo44M4BOzM9tJ7M",
+    authDomain: "ip-manager-production.firebaseapp.com",
+    projectId: "ip-manager-production",
+    storageBucket: "ip-manager-production.firebasestorage.app",
+    messagingSenderId: "378017128708",
+    appId: "1:378017128708:web:e2c6fa7b8634022f2ef051",
+    measurementId: "G-TQB1CF18Q8"
 };
 
-// Initialize Firebase - Demo modda hata ile localStorage fallback'i zorla
+// Initialize Firebase
 let app, auth, db;
 let isFirebaseAvailable = false;
 
 try {
-    // Firebase'i zorla devre dışı bırak demo test için
-    throw new Error('Demo mode - using localStorage only');
-    
     app = initializeApp(firebaseConfig);
     auth = getAuth(app);
     db = getFirestore(app);
     isFirebaseAvailable = true;
     console.log('🔥 Firebase initialized successfully');
 } catch (error) {
-    console.warn('⚠️ Firebase disabled - using localStorage demo mode:', error.message);
+    console.error('⚠️ Firebase initialization failed:', error.message);
+    console.warn('⚠️ Falling back to localStorage for data management.');
     isFirebaseAvailable = false;
 }
 
 // Authentication Service
 export const authService = {
-    auth: auth,
-    
+    auth: auth, // Firebase Auth objesini dışa aktar
+
     async signIn(email, password) {
         console.log('🔐 Attempting sign in with:', email);
         
-        // Demo modda direkt localStorage kullan
         if (!isFirebaseAvailable) {
             return this.localSignIn(email, password);
         }
@@ -71,7 +69,7 @@ export const authService = {
             };
         } catch (error) {
             console.error('Firebase sign in error:', error);
-            // Firebase hata verirse localStorage fallback
+            // Firebase hatası durumunda yerel oturum açmayı deneme
             return this.localSignIn(email, password);
         }
     },
@@ -79,7 +77,6 @@ export const authService = {
     async signUp(email, password, displayName) {
         console.log('📝 Attempting sign up with:', email);
         
-        // Demo modda direkt localStorage kullan
         if (!isFirebaseAvailable) {
             return this.localSignUp(email, password, displayName);
         }
@@ -87,7 +84,6 @@ export const authService = {
         try {
             const result = await createUserWithEmailAndPassword(auth, email, password);
             
-            // Update profile
             await updateProfile(result.user, {
                 displayName: displayName
             });
@@ -99,6 +95,7 @@ export const authService = {
             };
         } catch (error) {
             console.error('Firebase sign up error:', error);
+            // Firebase hatası durumunda yerel kayıt olmayı deneme
             return this.localSignUp(email, password, displayName);
         }
     },
@@ -108,11 +105,11 @@ export const authService = {
             if (isFirebaseAvailable && auth) {
                 await signOut(auth);
             }
-            localStorage.removeItem('currentUser');
+            localStorage.removeItem('currentUser'); // Yerel kullanıcıyı temizle
             return { success: true };
         } catch (error) {
             console.error('Sign out error:', error);
-            localStorage.removeItem('currentUser');
+            localStorage.removeItem('currentUser'); // Hata durumunda da temizle
             return { success: true };
         }
     },
@@ -122,14 +119,13 @@ export const authService = {
             return auth.currentUser;
         }
         
-        // Fallback to localStorage
         const localUser = localStorage.getItem('currentUser');
         return localUser ? JSON.parse(localUser) : null;
     },
 
-    // Local authentication fallback - ENHANCED
+    // Local authentication fallback methods (for development/demo)
     localSignIn(email, password) {
-        console.log('🧪 Local sign in attempt:', email, password);
+        console.log('🧪 Local sign in attempt (Firebase not available):', email, password);
         
         const demoAccounts = [
             { email: 'demo@ipmanager.com', password: 'demo123', name: 'Demo Kullanıcı', role: 'demo' },
@@ -137,14 +133,10 @@ export const authService = {
             { email: 'test@example.com', password: 'test123', name: 'Test Kullanıcı', role: 'user' }
         ];
 
-        console.log('Available demo accounts:', demoAccounts.map(acc => `${acc.email}/${acc.password}`));
-
         const account = demoAccounts.find(acc => 
             acc.email.toLowerCase().trim() === email.toLowerCase().trim() && 
             acc.password === password.trim()
         );
-
-        console.log('Found account:', account);
 
         if (account) {
             const userData = {
@@ -168,13 +160,13 @@ export const authService = {
         console.error('❌ Local sign in failed - invalid credentials');
         return {
             success: false,
-            error: 'Geçersiz e-posta veya şifre. Demo hesaplar: demo@ipmanager.com/demo123, admin@ipmanager.com/admin123'
+            error: 'Geçersiz e-posta veya şifre. Demo hesaplar: demo@ipmanager.com/demo123, admin@ipmanager.com/admin123, test@example.com/test123'
         };
     },
 
     localSignUp(email, password, displayName) {
         const userData = {
-            uid: 'local_' + Date.now(),
+            uid: 'local_new_user_' + Date.now(),
             email: email,
             displayName: displayName,
             role: 'user',
@@ -190,24 +182,25 @@ export const authService = {
     }
 };
 
-// IP Records Service
+// IP Records Service (Firestore veya localStorage)
 export const ipRecordsService = {
     async addRecord(record) {
         console.log('💾 Adding record:', record);
         
         try {
-            if (isFirebaseAvailable) {
+            if (isFirebaseAvailable && db) {
                 const user = authService.getCurrentUser();
-                if (!user) throw new Error('Kullanıcı oturumu bulunamadı');
+                if (!user || !user.uid) throw new Error('Kullanıcı oturumu bulunamadı veya UID eksik.');
 
                 const recordData = {
                     ...record,
-                    userId: user.uid,
+                    userId: user.uid, // Kayıtları kullanıcıya bağlamak için
                     createdAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString()
                 };
 
                 const docRef = await addDoc(collection(db, 'ipRecords'), recordData);
+                console.log('✅ Firebase record added with ID:', docRef.id);
                 return {
                     success: true,
                     id: docRef.id,
@@ -218,6 +211,7 @@ export const ipRecordsService = {
             }
         } catch (error) {
             console.error('Add record error:', error);
+            // Firebase hatası durumunda localStorage'a geri dön
             return this.localAddRecord(record);
         }
     },
@@ -226,13 +220,16 @@ export const ipRecordsService = {
         console.log('📋 Getting records...');
         
         try {
-            if (isFirebaseAvailable) {
+            if (isFirebaseAvailable && db) {
                 const user = authService.getCurrentUser();
-                if (!user) throw new Error('Kullanıcı oturumu bulunamadı');
+                if (!user || !user.uid) {
+                    console.warn('Firebase get records: No authenticated user. Returning local records.');
+                    return this.localGetRecords();
+                }
 
                 const q = query(
                     collection(db, 'ipRecords'),
-                    where('userId', '==', user.uid),
+                    where('userId', '==', user.uid), // Sadece mevcut kullanıcının kayıtlarını çek
                     orderBy('createdAt', 'desc')
                 );
 
@@ -245,7 +242,7 @@ export const ipRecordsService = {
                         ...doc.data()
                     });
                 });
-
+                console.log(`✅ Firebase records found: ${records.length}`);
                 return {
                     success: true,
                     data: records
@@ -255,13 +252,15 @@ export const ipRecordsService = {
             }
         } catch (error) {
             console.error('Get records error:', error);
+            // Firebase hatası durumunda localStorage'dan çekme
             return this.localGetRecords();
         }
     },
 
     async updateRecord(recordId, updates) {
+        console.log(`🔄 Updating record ${recordId}:`, updates);
         try {
-            if (isFirebaseAvailable) {
+            if (isFirebaseAvailable && db) {
                 const recordRef = doc(db, 'ipRecords', recordId);
                 const updateData = {
                     ...updates,
@@ -269,6 +268,7 @@ export const ipRecordsService = {
                 };
                 
                 await updateDoc(recordRef, updateData);
+                console.log(`✅ Firebase record ${recordId} updated.`);
                 return { success: true };
             } else {
                 return this.localUpdateRecord(recordId, updates);
@@ -280,9 +280,11 @@ export const ipRecordsService = {
     },
 
     async deleteRecord(recordId) {
+        console.log(`🗑️ Deleting record: ${recordId}`);
         try {
-            if (isFirebaseAvailable) {
+            if (isFirebaseAvailable && db) {
                 await deleteDoc(doc(db, 'ipRecords', recordId));
+                console.log(`✅ Firebase record ${recordId} deleted.`);
                 return { success: true };
             } else {
                 return this.localDeleteRecord(recordId);
@@ -336,9 +338,11 @@ export const ipRecordsService = {
                 updatedAt: new Date().toISOString()
             };
             localStorage.setItem('ipRecords', JSON.stringify(records));
+            console.log(`✅ Local record ${recordId} updated.`);
             return { success: true };
         }
         
+        console.warn(`Local update failed: Record ${recordId} not found.`);
         return { success: false, error: 'Kayıt bulunamadı' };
     },
 
@@ -361,10 +365,28 @@ export const ipRecordsService = {
     }
 };
 
-// Create demo data
+// Create demo data (Firebase is active, so this will attempt to add to Firestore)
 export async function createDemoData() {
     console.log('🎯 Creating demo data...');
     
+    // Firestore'da zaten kayıt varsa tekrar oluşturmayı engelle
+    if (isFirebaseAvailable && db) {
+        // Oturum açan bir kullanıcı yoksa veya demo hesap kullanılmıyorsa
+        // demo verisi oluşturulmayabilir. Bu kısım için login mekanizmanızın
+        // onAuthStateChanged ile tetiklenip kullanıcıyı getirmesi önemli.
+        const user = authService.getCurrentUser();
+        if (user && user.uid && (await ipRecordsService.getRecords()).data.length > 0) {
+            console.log('Skipping demo data creation: Records already exist in Firestore for this user.');
+            return;
+        }
+    } else {
+        // LocalStorage'da zaten kayıt varsa demo data oluşturmayı engelle
+        if (ipRecordsService.getLocalRecords().length > 0) {
+            console.log('Skipping demo data creation: Records already exist in localStorage.');
+            return;
+        }
+    }
+
     const demoRecords = [
         {
             type: 'patent',
@@ -372,8 +394,9 @@ export async function createDemoData() {
             description: 'IoT tabanlı enerji tasarrufu sağlayan sistem',
             status: 'pending',
             applicationDate: '2024-01-15',
-            applicant: 'TechCorp A.Ş.',
-            applicationNumber: 'TR2024/001234'
+            owners: [{ name: 'TechCorp A.Ş.', type: 'company' }], // Updated to match schema
+            applicationNumber: 'TR2024/001234',
+            trademarkImage: null
         },
         {
             type: 'trademark',
@@ -381,54 +404,10 @@ export async function createDemoData() {
             description: 'Çevre dostu teknoloji ürünleri markası',
             status: 'approved',
             applicationDate: '2023-11-20',
-            applicant: 'Green Tech Ltd.',
-            applicationNumber: 'TR2023/987654'
-        },
-        {
-            type: 'copyright',
-            title: 'Dijital Pazarlama Yazılımı',
-            description: 'E-ticaret platformları için analitik yazılım',
-            status: 'approved',
-            applicationDate: '2024-02-10',
-            applicant: 'Software Solutions Inc.',
-            applicationNumber: 'TR2024/555666'
-        },
-        {
-            type: 'design',
-            title: 'Modern Ofis Mobilyası Serisi',
-            description: 'Ergonomik tasarım prensipleriyle geliştirilmiş mobilya',
-            status: 'rejected',
-            applicationDate: '2023-12-05',
-            applicant: 'Design Studio X',
-            applicationNumber: 'TR2023/111222'
-        }
-    ];
-
-    for (const record of demoRecords) {
-        await ipRecordsService.addRecord(record);
-    }
-    
-    console.log('✅ Demo data created successfully');
-}
-
-// Authentication check utility
-export function requireAuth() {
-    const user = authService.getCurrentUser();
-    if (!user) {
-        console.log('❌ Authentication required, redirecting to login');
-        window.location.href = 'index.html';
-        return false;
-    }
-    console.log('✅ User authenticated:', user.email);
-    return user;
-}
-
-// Export auth for direct access
-export { auth };
-
-console.log('🔥 Firebase config loaded - DEMO MODE ACTIVE');
-console.log('📋 Demo hesaplar:');
-console.log('  demo@ipmanager.com / demo123');
-console.log('  admin@ipmanager.com / admin123');
-console.log('  test@example.com / test123');
-console.log('🧪 Available services: authService, ipRecordsService, createDemoData, requireAuth');
+            owners: [{ name: 'Green Tech Ltd.', type: 'company' }], // Updated to match schema
+            applicationNumber: 'TR2023/987654',
+            trademarkImage: { // Example Base64 image
+                name: 'ecosmart_logo.jpeg',
+                type: 'image/jpeg',
+                size: 15000,
+                content: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAIBAQEBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAIBAAISBAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAwLjY2NjY2NiBwYWdlIHNwZWVkcy4gV2lraWJvb2sgSGFhcmxlbSBzYnIgU2VydmljZXMgW2NpdGU6IDVdCi0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0t-
