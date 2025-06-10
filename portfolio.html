@@ -13,164 +13,202 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f8f9fa;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
             min-height: 100vh;
-        }
-
-        /* Header */
-        .header {
-            background: linear-gradient(45deg, #1e3c72, #2a5298);
-            color: white;
-            padding: 1rem 2rem;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-
-        .header-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .logo {
-            font-size: 1.5rem;
-            font-weight: bold;
-        }
-
-        .header-actions {
-            display: flex;
-            gap: 1rem;
-            align-items: center;
-        }
-
-        .btn {
-            padding: 0.5rem 1rem;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            font-weight: 500;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            transition: all 0.3s ease;
-        }
-
-        .btn-primary {
-            background: rgba(255,255,255,0.2);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: rgba(255,255,255,0.3);
-        }
-
-        .btn-secondary {
-            background: #6c757d;
-            color: white;
-        }
-
-        .btn-success {
-            background: #28a745;
-            color: white;
-        }
-
-        .btn-danger {
-            background: #dc3545;
-            color: white;
-        }
-
-        .btn-sm {
-            padding: 0.25rem 0.5rem;
-            font-size: 0.8rem;
-        }
-
-        /* Navigation */
-        .nav {
-            background: white;
-            padding: 1rem 2rem;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        }
-
-        .nav-content {
-            display: flex;
-            gap: 2rem;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .nav-item {
-            padding: 0.5rem 1rem;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-decoration: none;
             color: #333;
         }
 
-        .nav-item:hover, .nav-item.active {
-            background: #e9ecef;
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px 0;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+        }
+
+        .logo {
+            font-size: 1.8em;
+            font-weight: bold;
             color: #1e3c72;
         }
 
-        /* Main Content */
-        .main-content {
-            max-width: 1200px;
-            margin: 2rem auto;
-            padding: 0 2rem;
+        .nav-menu {
+            display: flex;
+            gap: 30px;
         }
 
-        /* Stats Bar */
-        .stats-bar {
-            background: white;
-            padding: 1rem;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            margin-bottom: 2rem;
+        .nav-item {
+            color: #666;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background: #1e3c72;
+            color: white;
+        }
+
+        .user-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(45deg, #1e3c72, #2a5298);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        .logout-btn {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+        }
+
+        .logout-btn:hover {
+            background: #ff5252;
+            transform: translateY(-1px);
+        }
+
+        .main-container {
+            max-width: 1400px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        .page-header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .page-title {
+            font-size: 2em;
+            color: #1e3c72;
+            margin-bottom: 10px;
+        }
+
+        .page-subtitle {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .portfolio-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .portfolio-header {
+            padding: 30px;
+            border-bottom: 1px solid #e1e8ed;
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
-            gap: 1rem;
+            gap: 20px;
+        }
+
+        .portfolio-stats {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
         }
 
         .stat-item {
             text-align: center;
+            padding: 10px 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            min-width: 80px;
         }
 
-        .stat-number {
-            font-size: 1.5rem;
+        .stat-value {
+            font-size: 1.5em;
             font-weight: bold;
             color: #1e3c72;
         }
 
         .stat-label {
-            font-size: 0.8rem;
+            font-size: 0.9em;
             color: #666;
-            margin-top: 0.25rem;
+            margin-top: 5px;
         }
 
-        /* Filters */
-        .filters {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            margin-bottom: 2rem;
+        .portfolio-actions {
+            display: flex;
+            gap: 15px;
+            align-items: center;
         }
 
-        .filters h3 {
-            margin-bottom: 1rem;
-            color: #333;
+        .action-btn {
+            background: #1e3c72;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
-        .filter-grid {
+        .action-btn:hover {
+            background: #2a5298;
+            transform: translateY(-1px);
+        }
+
+        .action-btn.secondary {
+            background: #6c757d;
+        }
+
+        .action-btn.secondary:hover {
+            background: #5a6268;
+        }
+
+        .filters-section {
+            padding: 20px 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e1e8ed;
+        }
+
+        .filters-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-            margin-bottom: 1rem;
+            gap: 15px;
+            align-items: end;
         }
 
         .filter-group {
@@ -179,154 +217,293 @@
         }
 
         .filter-label {
-            font-size: 0.9rem;
+            font-size: 0.9em;
             color: #666;
-            margin-bottom: 0.5rem;
+            margin-bottom: 5px;
+            font-weight: 500;
         }
 
         .filter-input, .filter-select {
-            padding: 0.5rem;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 0.9rem;
+            padding: 8px 12px;
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
         }
 
-        .filter-actions {
+        .filter-input:focus, .filter-select:focus {
+            outline: none;
+            border-color: #1e3c72;
+        }
+
+        .search-input {
+            position: relative;
+        }
+
+        .search-input input {
+            padding-left: 35px;
+        }
+
+        .search-input::before {
+            content: '🔍';
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1em;
+            color: #666;
+        }
+
+        .filter-buttons {
             display: flex;
-            gap: 1rem;
-            justify-content: flex-end;
+            gap: 10px;
         }
 
-        /* Table */
+        .filter-btn {
+            padding: 8px 16px;
+            background: #e9ecef;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+        }
+
+        .filter-btn:hover {
+            background: #dee2e6;
+        }
+
+        .filter-btn.active {
+            background: #1e3c72;
+            color: white;
+        }
+
         .table-container {
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            overflow: hidden;
+            overflow-x: auto;
         }
 
-        .table-header {
-            background: #f8f9fa;
-            padding: 1rem;
-            border-bottom: 1px solid #dee2e6;
-            display: flex;
-            justify-content: between;
-            align-items: center;
-        }
-
-        .table-title {
-            font-weight: 600;
-            color: #333;
-        }
-
-        .table-actions {
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .table {
+        .portfolio-table {
             width: 100%;
             border-collapse: collapse;
+            font-size: 0.9em;
         }
 
-        .table th,
-        .table td {
-            padding: 1rem;
-            text-align: left;
-            border-bottom: 1px solid #dee2e6;
-        }
-
-        .table th {
+        .portfolio-table th {
             background: #f8f9fa;
+            padding: 15px 12px;
+            text-align: left;
             font-weight: 600;
             color: #333;
+            border-bottom: 2px solid #e1e8ed;
             cursor: pointer;
-            user-select: none;
+            transition: all 0.3s ease;
+            position: relative;
         }
 
-        .table th:hover {
+        .portfolio-table th:hover {
             background: #e9ecef;
         }
 
-        .table tbody tr:hover {
-            background: #f8f9fa;
-        }
-
-        .sort-icon {
-            margin-left: 0.5rem;
+        .portfolio-table th.sortable::after {
+            content: '↕️';
+            position: absolute;
+            right: 8px;
+            font-size: 0.8em;
             opacity: 0.5;
         }
 
-        .sort-icon.active {
+        .portfolio-table th.sort-asc::after {
+            content: '↑';
             opacity: 1;
         }
 
-        /* Status badges */
-        .status-badge {
-            padding: 0.25rem 0.75rem;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 500;
+        .portfolio-table th.sort-desc::after {
+            content: '↓';
+            opacity: 1;
         }
 
-        .status-pending {
-            background: #fff3cd;
-            color: #856404;
+        .portfolio-table td {
+            padding: 15px 12px;
+            border-bottom: 1px solid #f0f0f0;
+            vertical-align: middle;
         }
 
-        .status-approved {
-            background: #d4edda;
-            color: #155724;
+        .portfolio-table tr:hover {
+            background: #f8f9fa;
         }
 
-        .status-rejected {
-            background: #f8d7da;
-            color: #721c24;
-        }
-
-        /* Type badges */
-        .type-badge {
-            padding: 0.25rem 0.5rem;
-            border-radius: 5px;
-            font-size: 0.8rem;
-            font-weight: 500;
-        }
-
-        .type-patent {
+        .portfolio-table tr.selected {
             background: #e3f2fd;
-            color: #1976d2;
         }
 
-        .type-trademark {
+        .ip-type {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.8em;
+            font-weight: 500;
+        }
+
+        .ip-type.patent {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .ip-type.trademark {
+            background: #e0f2f1;
+            color: #00695c;
+        }
+
+        .ip-type.copyright {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+
+        .ip-type.design {
             background: #f3e5f5;
             color: #7b1fa2;
         }
 
-        .type-copyright {
-            background: #e8f5e8;
-            color: #388e3c;
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.8em;
+            font-weight: 500;
         }
 
-        .type-design {
-            background: #fff3e0;
-            color: #f57c00;
+        .status-badge.application {
+            background: #fff3cd;
+            color: #856404;
         }
 
-        /* Loading */
+        .status-badge.pending {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .status-badge.approved {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-badge.rejected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status-badge.expired {
+            background: #e2e3e5;
+            color: #383d41;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+        }
+
+        .table-action-btn {
+            padding: 5px 8px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8em;
+            transition: all 0.3s ease;
+        }
+
+        .btn-view {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .btn-view:hover {
+            background: #138496;
+        }
+
+        .btn-edit {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .btn-edit:hover {
+            background: #e0a800;
+        }
+
+        .btn-delete {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: #c82333;
+        }
+
+        .no-records {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+
+        .no-records-icon {
+            font-size: 3em;
+            margin-bottom: 20px;
+        }
+
+        .pagination {
+            padding: 20px 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            border-top: 1px solid #e1e8ed;
+        }
+
+        .page-btn {
+            padding: 8px 12px;
+            border: 1px solid #e1e8ed;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .page-btn:hover {
+            background: #f8f9fa;
+        }
+
+        .page-btn.active {
+            background: #1e3c72;
+            color: white;
+            border-color: #1e3c72;
+        }
+
+        .page-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .page-info {
+            color: #666;
+            font-size: 0.9em;
+            margin: 0 15px;
+        }
+
         .loading {
             text-align: center;
-            padding: 3rem;
+            padding: 40px;
             color: #666;
         }
 
         .loading-spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #1e3c72;
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #1e3c72;
             border-radius: 50%;
             animation: spin 1s linear infinite;
-            margin: 0 auto 1rem;
         }
 
         @keyframes spin {
@@ -334,20 +511,37 @@
             100% { transform: rotate(360deg); }
         }
 
-        /* Empty state */
-        .empty-state {
-            text-align: center;
-            padding: 3rem;
-            color: #666;
+        /* Responsive */
+        @media (max-width: 768px) {
+            .nav-menu {
+                display: none;
+            }
+            
+            .portfolio-header {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 15px;
+            }
+            
+            .portfolio-stats {
+                justify-content: center;
+            }
+            
+            .filters-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .table-container {
+                font-size: 0.8em;
+            }
+            
+            .portfolio-table th,
+            .portfolio-table td {
+                padding: 10px 8px;
+            }
         }
 
-        .empty-state-icon {
-            font-size: 4rem;
-            margin-bottom: 1rem;
-            opacity: 0.5;
-        }
-
-        /* Modal */
+        /* Detail Modal */
         .modal {
             display: none;
             position: fixed;
@@ -355,17 +549,23 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0, 0, 0, 0.5);
             z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.show {
+            display: flex;
         }
 
         .modal-content {
             background: white;
-            margin: 5% auto;
-            padding: 2rem;
-            border-radius: 10px;
+            padding: 30px;
+            border-radius: 20px;
             max-width: 600px;
-            max-height: 80vh;
+            width: 90%;
+            max-height: 90vh;
             overflow-y: auto;
         }
 
@@ -373,242 +573,381 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 1rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid #dee2e6;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e1e8ed;
         }
 
         .modal-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: #333;
+            font-size: 1.3em;
+            color: #1e3c72;
         }
 
         .close-btn {
             background: none;
             border: none;
-            font-size: 1.5rem;
+            font-size: 1.5em;
             cursor: pointer;
             color: #666;
+            padding: 5px;
+            border-radius: 50%;
+            transition: all 0.3s ease;
         }
 
         .close-btn:hover {
-            color: #333;
+            background: #f0f0f0;
         }
 
-        /* Responsive */
-        @media (max-width: 768px) {
-            .main-content {
-                padding: 0 1rem;
-            }
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
 
-            .stats-bar {
-                flex-direction: column;
-                text-align: center;
-            }
+        .detail-item {
+            margin-bottom: 15px;
+        }
 
-            .filter-grid {
-                grid-template-columns: 1fr;
-            }
+        .detail-label {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
 
-            .table-container {
-                overflow-x: auto;
-            }
+        .detail-value {
+            color: #666;
+            word-break: break-word;
+        }
 
-            .table {
-                min-width: 600px;
-            }
-
-            .nav-content {
-                flex-direction: column;
-                gap: 0.5rem;
-            }
+        .trademark-image-thumb { /* Yeni stil: Küçük marka görseli */
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
+            border: 1px solid #e1e8ed;
+            border-radius: 4px;
+            vertical-align: middle;
+            margin-left: 5px;
         }
     </style>
 </head>
 <body>
-    <!-- Header -->
     <header class="header">
         <div class="header-content">
-            <div class="logo">🔥 IP Manager</div>
-            <div class="header-actions">
-                <a href="data-entry.html" class="btn btn-primary">
-                    ➕ Yeni Kayıt
-                </a>
-                <a href="dashboard.html" class="btn btn-primary">
-                    🏠 Dashboard
-                </a>
+            <div class="logo">IP Manager</div>
+            <nav class="nav-menu">
+                <a href="dashboard.html" class="nav-item">Dashboard</a>
+                <a href="#" class="nav-item active">Portföy</a>
+                <a href="data-entry.html" class="nav-item">Yeni Kayıt</a>
+                <a href="#" class="nav-item">Raporlar</a>
+                <a href="#" class="nav-item">Ayarlar</a>
+            </nav>
+            <div class="user-section">
+                <div class="user-avatar" id="userAvatar">D</div>
+                <button class="logout-btn" id="logoutBtn">Çıkış</button>
             </div>
         </div>
     </header>
 
-    <!-- Navigation -->
-    <nav class="nav">
-        <div class="nav-content">
-            <a href="dashboard.html" class="nav-item">🏠 Dashboard</a>
-            <a href="data-entry.html" class="nav-item">➕ Yeni Kayıt</a>
-            <a href="portfolio.html" class="nav-item active">📋 Portföy</a>
-            <a href="#" class="nav-item">📊 Raporlar</a>
-            <a href="#" class="nav-item">⚙️ Ayarlar</a>
-        </div>
-    </nav>
+    <main class="main-container">
+        <section class="page-header">
+            <h1 class="page-title">Fikri Mülkiyet Portföyü</h1>
+            <p class="page-subtitle">Tüm IP kayıtlarınızı görüntüleyin, filtreleyin ve yönetin</p>
+        </section>
 
-    <!-- Main Content -->
-    <main class="main-content">
-        <!-- Stats Bar -->
-        <div class="stats-bar" id="statsBar">
-            <div class="stat-item">
-                <div class="stat-number" id="totalCount">-</div>
-                <div class="stat-label">Toplam Kayıt</div>
+        <div class="portfolio-container">
+            <div class="portfolio-header">
+                <div class="portfolio-stats">
+                    <div class="stat-item">
+                        <div class="stat-value" id="totalRecords">0</div>
+                        <div class="stat-label">Toplam</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="patentCount">0</div>
+                        <div class="stat-label">Patent</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="trademarkCount">0</div>
+                        <div class="stat-label">Marka</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="copyrightCount">0</div>
+                        <div class="stat-label">Telif</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="designCount">0</div>
+                        <div class="stat-label">Tasarım</div>
+                    </div>
+                </div>
+                <div class="portfolio-actions">
+                    <a href="data-entry.html" class="action-btn">
+                        + Yeni Kayıt
+                    </a>
+                    <button class="action-btn secondary" id="exportBtn">
+                        📊 Dışa Aktar
+                    </button>
+                    <button class="action-btn secondary" id="refreshBtn">
+                        🔄 Yenile
+                    </button>
+                </div>
             </div>
-            <div class="stat-item">
-                <div class="stat-number" id="patentCount">-</div>
-                <div class="stat-label">Patent</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-number" id="trademarkCount">-</div>
-                <div class="stat-label">Marka</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-number" id="copyrightCount">-</div>
-                <div class="stat-label">Telif</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-number" id="designCount">-</div>
-                <div class="stat-label">Tasarım</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-number" id="approvedCount">-</div>
-                <div class="stat-label">Onaylı</div>
-            </div>
-        </div>
 
-        <!-- Filters -->
-        <div class="filters">
-            <h3>🔍 Filtreler</h3>
-            <div class="filter-grid">
-                <div class="filter-group">
-                    <label class="filter-label">Arama</label>
-                    <input type="text" id="searchInput" class="filter-input" placeholder="Başlık, açıklama, başvuran...">
-                </div>
-                <div class="filter-group">
-                    <label class="filter-label">Tür</label>
-                    <select id="typeFilter" class="filter-select">
-                        <option value="">Tümü</option>
-                        <option value="patent">Patent</option>
-                        <option value="trademark">Marka</option>
-                        <option value="copyright">Telif Hakkı</option>
-                        <option value="design">Tasarım</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label class="filter-label">Durum</label>
-                    <select id="statusFilter" class="filter-select">
-                        <option value="">Tümü</option>
-                        <option value="pending">Beklemede</option>
-                        <option value="approved">Onaylandı</option>
-                        <option value="rejected">Reddedildi</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label class="filter-label">Tarih (Başlangıç)</label>
-                    <input type="date" id="dateFromFilter" class="filter-input">
-                </div>
-                <div class="filter-group">
-                    <label class="filter-label">Tarih (Bitiş)</label>
-                    <input type="date" id="dateToFilter" class="filter-input">
+            <div class="filters-section">
+                <div class="filters-grid">
+                    <div class="filter-group">
+                        <label class="filter-label">Arama</label>
+                        <div class="search-input">
+                            <input type="text" id="searchInput" class="filter-input" placeholder="Başlık, numara veya açıklama ara...">
+                        </div>
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label">IP Türü</label>
+                        <select id="typeFilter" class="filter-select">
+                            <option value="">Tüm Türler</option>
+                            <option value="patent">Patent</option>
+                            <option value="trademark">Marka</option>
+                            <option value="copyright">Telif Hakkı</option>
+                            <option value="design">Tasarım</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label">Durum</label>
+                        <select id="statusFilter" class="filter-select">
+                            <option value="">Tüm Durumlar</option>
+                            <option value="application">Başvuru</option>
+                            <option value="pending">Beklemede</option>
+                            <option value="approved">Onaylandı</option>
+                            <option value="rejected">Reddedildi</option>
+                            <option value="expired">Süresi Doldu</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label">Tarih Aralığı</label>
+                        <div class="filter-buttons">
+                            <button class="filter-btn active" data-period="all">Hepsi</button>
+                            <button class="filter-btn" data-period="month">Bu Ay</button>
+                            <button class="filter-btn" data-period="year">Bu Yıl</button>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div class="filter-actions">
-                <button class="btn btn-secondary" id="resetFiltersBtn">🔄 Sıfırla</button>
-                <button class="btn btn-success" id="exportBtn">📥 CSV Dışa Aktar</button>
-            </div>
-        </div>
 
-        <!-- Table -->
-        <div class="table-container">
-            <div class="table-header">
-                <div class="table-title">📋 IP Portföyü</div>
-                <div class="table-actions">
-                    <button class="btn btn-sm btn-secondary" id="refreshBtn">🔄 Yenile</button>
-                </div>
-            </div>
-            
-            <div id="tableContent">
-                <div class="loading">
+            <div class="table-container">
+                <div class="loading" id="loadingIndicator">
                     <div class="loading-spinner"></div>
                     <div>Kayıtlar yükleniyor...</div>
                 </div>
+
+                <table class="portfolio-table" id="portfolioTable" style="display: none;">
+                    <thead>
+                        <tr>
+                            <th class="sortable" data-sort="type">Tür</th>
+                            <th class="sortable" data-sort="title">Başlık</th>
+                            <th>Marka Örneği</th>
+                            <th class="sortable" data-sort="applicationNumber">Başvuru No</th>
+                            <th class="sortable" data-sort="status">Durum</th>
+                            <th class="sortable" data-sort="applicationDate">Başvuru Tarihi</th>
+                            <th class="sortable" data-sort="owners">Hak Sahipleri</th>
+                            <th>İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody id="portfolioTableBody">
+                        </tbody>
+                </table>
+
+                <div class="no-records" id="noRecords" style="display: none;">
+                    <div class="no-records-icon">📋</div>
+                    <h3>Henüz kayıt bulunamadı</h3>
+                    <p>Yeni bir fikri mülkiyet kaydı oluşturmak için "Yeni Kayıt" butonunu kullanın.</p>
+                    <a href="data-entry.html" class="action-btn" style="margin-top: 20px; display: inline-flex;">
+                        + İlk Kaydınızı Oluşturun
+                    </a>
+                </div>
+            </div>
+
+            <div class="pagination" id="pagination" style="display: none;">
+                <button class="page-btn" id="prevBtn">‹ Önceki</button>
+                <div class="page-info" id="pageInfo">Sayfa 1 / 1</div>
+                <button class="page-btn" id="nextBtn">Sonraki ›</button>
             </div>
         </div>
     </main>
 
-    <!-- Detail Modal -->
     <div class="modal" id="detailModal">
         <div class="modal-content">
             <div class="modal-header">
-                <div class="modal-title">📄 Kayıt Detayları</div>
-                <button class="close-btn" onclick="closeModal()">&times;</button>
+                <h3 class="modal-title" id="modalTitle">Kayıt Detayları</h3>
+                <button class="close-btn" id="closeModalBtn">&times;</button>
             </div>
             <div id="modalBody">
-                <!-- Content will be populated by JavaScript -->
-            </div>
+                </div>
         </div>
     </div>
 
     <script type="module">
-        import { authService, ipRecordsService, requireAuth } from './firebase-config.js';
+        import { authService, ipRecordsService, auth } from './firebase-config.js';
 
-        class Portfolio {
+        class PortfolioModule {
             constructor() {
                 this.currentUser = null;
-                this.allRecords = [];
+                this.records = [];
                 this.filteredRecords = [];
-                this.sortField = 'createdAt';
+                this.currentPage = 1;
+                this.recordsPerPage = 10;
+                this.sortColumn = 'applicationDate';
                 this.sortDirection = 'desc';
+                this.filters = {
+                    search: '',
+                    type: '',
+                    status: '',
+                    period: 'all'
+                };
                 this.init();
             }
 
             init() {
-                // Check authentication
-                this.currentUser = requireAuth();
-                if (!this.currentUser) return;
-
-                this.setupEventListeners();
-                this.loadData();
-                
-                console.log('📋 Portfolio initialized');
+                // Firebase kimlik doğrulama durumunu dinle
+                auth.onAuthStateChanged(async (user) => {
+                    if (user) {
+                        this.currentUser = user;
+                        console.log('✅ User authenticated:', user.email);
+                        // Kullanıcı oturum açtıysa verileri yükle
+                        this.loadUserData();
+                        this.initializeEventListeners();
+                        this.loadRecords(); // Verileri Firebase'den yükle
+                    } else {
+                        // Kullanıcı oturum açmamışsa veya oturum kapatılmışsa
+                        // localStorage'daki kullanıcıyı kontrol et (fallback)
+                        const localUser = authService.getCurrentUser();
+                        if (localUser && localUser.uid) {
+                            this.currentUser = localUser;
+                            console.log('⚠️ LocalStorage user detected, running in local mode:', localUser.email);
+                            this.loadUserData();
+                            this.initializeEventListeners();
+                            this.loadRecords(); // Verileri localStorage'dan yükle
+                        } else {
+                            // Ne Firebase ne de localStorage'da kullanıcı yoksa giriş sayfasına yönlendir
+                            console.log('❌ User not authenticated, redirecting to login page.');
+                            window.location.href = 'index.html';
+                        }
+                    }
+                });
+                console.log('📊 Portfolio Modülü başlatılıyor...');
             }
 
-            setupEventListeners() {
+            loadUserData() {
+                // Sadece kullanıcı avatarını güncellemek için kullanılıyor
+                if (this.currentUser) {
+                    const userName = this.currentUser.displayName || this.currentUser.email.split('@')[0] || 'Kullanıcı';
+                    document.getElementById('userAvatar').textContent = userName.charAt(0).toUpperCase();
+                } else {
+                    document.getElementById('userAvatar').textContent = 'D'; // Default avatar
+                }
+            }
+
+            initializeEventListeners() {
+                // Logout button
+                document.getElementById('logoutBtn').addEventListener('click', async () => {
+                    if (confirm('Çıkış yapmak istediğinizden emin misiniz?')) {
+                        try {
+                            await authService.signOut();
+                            // signOut metodu zaten index.html'ye yönlendirecek
+                        } catch (error) {
+                            console.error('Logout error:', error);
+                            alert('Çıkış yaparken bir hata oluştu.');
+                        }
+                    }
+                });
+
                 // Search and filters
-                document.getElementById('searchInput').addEventListener('input', () => this.applyFilters());
-                document.getElementById('typeFilter').addEventListener('change', () => this.applyFilters());
-                document.getElementById('statusFilter').addEventListener('change', () => this.applyFilters());
-                document.getElementById('dateFromFilter').addEventListener('change', () => this.applyFilters());
-                document.getElementById('dateToFilter').addEventListener('change', () => this.applyFilters());
+                document.getElementById('searchInput').addEventListener('input', (e) => {
+                    this.filters.search = e.target.value;
+                    this.applyFilters();
+                });
 
-                // Buttons
-                document.getElementById('resetFiltersBtn').addEventListener('click', () => this.resetFilters());
-                document.getElementById('exportBtn').addEventListener('click', () => this.exportToCSV());
-                document.getElementById('refreshBtn').addEventListener('click', () => this.loadData());
+                document.getElementById('typeFilter').addEventListener('change', (e) => {
+                    this.filters.type = e.target.value;
+                    this.applyFilters();
+                });
 
-                // Modal close
-                window.addEventListener('click', (e) => {
-                    const modal = document.getElementById('detailModal');
-                    if (e.target === modal) {
+                document.getElementById('statusFilter').addEventListener('change', (e) => {
+                    this.filters.status = e.target.value;
+                    this.applyFilters();
+                });
+
+                // Period filter buttons
+                document.querySelectorAll('.filter-buttons .filter-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        document.querySelectorAll('.filter-buttons .filter-btn').forEach(b => b.classList.remove('active'));
+                        e.target.classList.add('active');
+                        this.filters.period = e.target.dataset.period;
+                        this.applyFilters();
+                    });
+                });
+
+                // Table sorting
+                document.querySelectorAll('.portfolio-table th.sortable').forEach(th => {
+                    th.addEventListener('click', () => {
+                        this.handleSort(th.dataset.sort);
+                    });
+                });
+
+                // Action buttons
+                document.getElementById('refreshBtn').addEventListener('click', () => {
+                    this.loadRecords();
+                });
+
+                document.getElementById('exportBtn').addEventListener('click', () => {
+                    this.exportData();
+                });
+
+                // Modal
+                document.getElementById('closeModalBtn').addEventListener('click', () => {
+                    this.closeModal();
+                });
+
+                document.getElementById('detailModal').addEventListener('click', (e) => {
+                    if (e.target.id === 'detailModal') {
                         this.closeModal();
+                    }
+                });
+
+                // Pagination
+                document.getElementById('prevBtn').addEventListener('click', () => {
+                    if (this.currentPage > 1) {
+                        this.currentPage--;
+                        this.renderTable();
+                    }
+                });
+
+                document.getElementById('nextBtn').addEventListener('click', () => {
+                    const totalPages = Math.ceil(this.filteredRecords.length / this.recordsPerPage);
+                    if (this.currentPage < totalPages) {
+                        this.currentPage++;
+                        this.renderTable();
                     }
                 });
             }
 
-            async loadData() {
+            async loadRecords() {
+                const loadingIndicator = document.getElementById('loadingIndicator');
+                const portfolioTable = document.getElementById('portfolioTable');
+                const noRecords = document.getElementById('noRecords');
+                const tableBody = document.getElementById('portfolioTableBody'); // Tablo body'sini de al
+
+                // Yükleme durumunu göster
+                loadingIndicator.style.display = 'block';
+                portfolioTable.style.display = 'none';
+                noRecords.style.display = 'none';
+                tableBody.innerHTML = ''; // Önceki kayıtları temizle
+
                 try {
-                    const result = await ipRecordsService.getRecords();
+                    // ipRecordsService'in getRecords metodu Firebase/localStorage ayrımını kendi içinde yapar
+                    const result = await ipRecordsService.getRecords(); 
+                    
                     if (result.success) {
-                        this.allRecords = result.data;
+                        this.records = result.data;
                         this.updateStats();
-                        this.applyFilters();
+                        this.applyFilters(); // Filtreleri ve tabloyu yeniden render et
                     } else {
                         console.error('Failed to load records:', result.error);
                         this.showEmptyState();
@@ -616,20 +955,24 @@
                 } catch (error) {
                     console.error('Error loading data:', error);
                     this.showEmptyState();
+                } finally {
+                    loadingIndicator.style.display = 'none';
                 }
             }
 
+            // saveToStorage ve generateDemoRecords kaldırıldı, artık Firestore'dan yönetiliyor
+
             updateStats() {
                 const stats = {
-                    total: this.allRecords.length,
-                    patent: this.allRecords.filter(r => r.type === 'patent').length,
-                    trademark: this.allRecords.filter(r => r.type === 'trademark').length,
-                    copyright: this.allRecords.filter(r => r.type === 'copyright').length,
-                    design: this.allRecords.filter(r => r.type === 'design').length,
-                    approved: this.allRecords.filter(r => r.status === 'approved').length
+                    total: this.records.length, // this.records'tan al
+                    patent: this.records.filter(r => r.type === 'patent').length,
+                    trademark: this.records.filter(r => r.type === 'trademark').length,
+                    copyright: this.records.filter(r => r.type === 'copyright').length,
+                    design: this.records.filter(r => r.type === 'design').length,
+                    approved: this.records.filter(r => r.status === 'approved').length
                 };
 
-                document.getElementById('totalCount').textContent = stats.total;
+                document.getElementById('totalRecords').textContent = stats.total;
                 document.getElementById('patentCount').textContent = stats.patent;
                 document.getElementById('trademarkCount').textContent = stats.trademark;
                 document.getElementById('copyrightCount').textContent = stats.copyright;
@@ -643,8 +986,10 @@
                 const statusFilter = document.getElementById('statusFilter').value;
                 const dateFrom = document.getElementById('dateFromFilter').value;
                 const dateTo = document.getElementById('dateToFilter').value;
+                const periodFilter = document.querySelector('.filter-buttons .filter-btn.active')?.dataset.period || 'all';
 
-                this.filteredRecords = this.allRecords.filter(record => {
+
+                this.filteredRecords = this.records.filter(record => {
                     // Search filter
                     if (search && !this.matchesSearch(record, search)) {
                         return false;
@@ -660,13 +1005,26 @@
                         return false;
                     }
 
-                    // Date filters
+                    // Date filters (Date range from and to take precedence over period)
                     if (dateFrom && record.applicationDate && record.applicationDate < dateFrom) {
                         return false;
                     }
-
                     if (dateTo && record.applicationDate && record.applicationDate > dateTo) {
                         return false;
+                    }
+
+                    // Period filter (only if no specific dates are set)
+                    if (!dateFrom && !dateTo && periodFilter !== 'all') {
+                        const recordDate = new Date(record.applicationDate);
+                        const now = new Date();
+                        
+                        if (periodFilter === 'month') {
+                            const monthAgo = new Date(now.getFullYear(), now.getMonth(), 1);
+                            if (recordDate < monthAgo) return false;
+                        } else if (periodFilter === 'year') {
+                            const yearAgo = new Date(now.getFullYear(), 0, 1);
+                            if (recordDate < yearAgo) return false;
+                        }
                     }
 
                     return true;
@@ -680,346 +1038,352 @@
                 const searchFields = [
                     record.title,
                     record.description,
-                    record.applicant,
+                    record.applicant, // applicant alanı yok, owners kullanılıyor
                     record.applicationNumber,
                     record.registrationNumber
                 ];
+                // Hak sahipleri alanında arama yap
+                if (record.owners && record.owners.some(owner => owner.name.toLowerCase().includes(search))) {
+                    return true;
+                }
 
                 return searchFields.some(field => 
-                    field && field.toLowerCase().includes(search)
+                    field && String(field).toLowerCase().includes(search)
                 );
+            }
+
+            handleSort(column) {
+                if (this.sortColumn === column) {
+                    this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+                } else {
+                    this.sortColumn = column;
+                    this.sortDirection = 'asc';
+                }
+
+                this.sortRecords();
+                this.updateSortIndicators();
+                this.renderTable();
             }
 
             sortRecords() {
                 this.filteredRecords.sort((a, b) => {
-                    let aVal = a[this.sortField] || '';
-                    let bVal = b[this.sortField] || '';
+                    let aValue = a[this.sortColumn];
+                    let bValue = b[this.sortColumn];
 
-                    // Handle dates
-                    if (this.sortField.includes('Date') || this.sortField.includes('At')) {
-                        aVal = new Date(aVal);
-                        bVal = new Date(bVal);
+                    // Özel durumlar için değerleri normalize et
+                    if (this.sortColumn === 'owners') {
+                        aValue = a.owners ? a.owners.map(o => o.name).join(', ') : '';
+                        bValue = b.owners ? b.owners.map(o => o.name).join(', ') : '';
+                    } else if (this.sortColumn.includes('Date') || this.sortColumn.includes('At')) {
+                        // Geçersiz veya boş tarihleri en başa/sona almak için Date objesine çevir
+                        aValue = aValue ? new Date(aValue) : (this.sortDirection === 'asc' ? new Date(0) : new Date());
+                        bValue = bValue ? new Date(bValue) : (this.sortDirection === 'asc' ? new Date(0) : new Date());
+                    } else if (typeof aValue === 'string') {
+                        aValue = aValue.toLowerCase();
+                        bValue = bValue.toLowerCase();
                     }
 
-                    // Handle strings
-                    if (typeof aVal === 'string') {
-                        aVal = aVal.toLowerCase();
-                        bVal = bVal.toLowerCase();
-                    }
-
-                    if (aVal < bVal) return this.sortDirection === 'asc' ? -1 : 1;
-                    if (aVal > bVal) return this.sortDirection === 'asc' ? 1 : -1;
+                    // Karşılaştırma
+                    if (aValue < bValue) return this.sortDirection === 'asc' ? -1 : 1;
+                    if (aValue > bValue) return this.sortDirection === 'asc' ? 1 : -1;
                     return 0;
                 });
             }
 
+            updateSortIndicators() {
+                document.querySelectorAll('.portfolio-table th.sortable').forEach(th => {
+                    th.classList.remove('sort-asc', 'sort-desc');
+                    const span = th.querySelector('.sort-icon');
+                    if (span) span.textContent = '↕️';
+                });
+
+                const activeTh = document.querySelector(`.portfolio-table th[data-sort="${this.sortColumn}"]`);
+                if (activeTh) {
+                    activeTh.classList.add(`sort-${this.sortDirection}`);
+                    const span = activeTh.querySelector('.sort-icon');
+                    if (span) span.textContent = this.sortDirection === 'asc' ? '↑' : '↓';
+                }
+            }
+
             renderTable() {
-                const tableContent = document.getElementById('tableContent');
+                const tbody = document.getElementById('portfolioTableBody');
+                const pagination = document.getElementById('pagination');
+                const table = document.getElementById('portfolioTable');
+                const noRecords = document.getElementById('noRecords');
                 
-                if (this.filteredRecords.length === 0) {
-                    tableContent.innerHTML = `
-                        <div class="empty-state">
-                            <div class="empty-state-icon">📋</div>
-                            <div>Hiç kayıt bulunamadı</div>
-                            <div style="margin-top: 0.5rem; font-size: 0.9rem;">
-                                Filtreleri değiştirin veya yeni kayıt oluşturun
-                            </div>
-                        </div>
-                    `;
+                const totalPages = Math.ceil(this.filteredRecords.length / this.recordsPerPage);
+                const startIndex = (this.currentPage - 1) * this.recordsPerPage;
+                const endIndex = startIndex + this.recordsPerPage;
+                const pageRecords = this.filteredRecords.slice(startIndex, endIndex);
+
+                tbody.innerHTML = '';
+
+                if (pageRecords.length === 0) {
+                    table.style.display = 'none';
+                    noRecords.style.display = 'block';
+                    pagination.style.display = 'none';
                     return;
-                }
-
-                const tableHTML = `
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th onclick="portfolio.sort('type')">
-                                    Tür <span class="sort-icon ${this.sortField === 'type' ? 'active' : ''}">
-                                        ${this.sortField === 'type' ? (this.sortDirection === 'asc' ? '↑' : '↓') : '↕'}
-                                    </span>
-                                </th>
-                                <th onclick="portfolio.sort('title')">
-                                    Başlık <span class="sort-icon ${this.sortField === 'title' ? 'active' : ''}">
-                                        ${this.sortField === 'title' ? (this.sortDirection === 'asc' ? '↑' : '↓') : '↕'}
-                                    </span>
-                                </th>
-                                <th onclick="portfolio.sort('status')">
-                                    Durum <span class="sort-icon ${this.sortField === 'status' ? 'active' : ''}">
-                                        ${this.sortField === 'status' ? (this.sortDirection === 'asc' ? '↑' : '↓') : '↕'}
-                                    </span>
-                                </th>
-                                <th onclick="portfolio.sort('applicant')">
-                                    Başvuran <span class="sort-icon ${this.sortField === 'applicant' ? 'active' : ''}">
-                                        ${this.sortField === 'applicant' ? (this.sortDirection === 'asc' ? '↑' : '↓') : '↕'}
-                                    </span>
-                                </th>
-                                <th onclick="portfolio.sort('applicationDate')">
-                                    Tarih <span class="sort-icon ${this.sortField === 'applicationDate' ? 'active' : ''}">
-                                        ${this.sortField === 'applicationDate' ? (this.sortDirection === 'asc' ? '↑' : '↓') : '↕'}
-                                    </span>
-                                </th>
-                                <th>İşlemler</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${this.filteredRecords.map(record => this.renderTableRow(record)).join('')}
-                        </tbody>
-                    </table>
-                `;
-
-                tableContent.innerHTML = tableHTML;
-            }
-
-            renderTableRow(record) {
-                const typeIcons = {
-                    'patent': '🔬',
-                    'trademark': '🏷️',
-                    'copyright': '📚',
-                    'design': '🎨'
-                };
-
-                const statusTexts = {
-                    'pending': 'Beklemede',
-                    'approved': 'Onaylandı',
-                    'rejected': 'Reddedildi'
-                };
-
-                return `
-                    <tr onclick="portfolio.showDetail('${record.id}')">
-                        <td>
-                            <span class="type-badge type-${record.type}">
-                                ${typeIcons[record.type]} ${record.type.charAt(0).toUpperCase() + record.type.slice(1)}
-                            </span>
-                        </td>
-                        <td>
-                            <div style="font-weight: 600;">${record.title}</div>
-                            ${record.applicationNumber ? `<div style="font-size: 0.8rem; color: #666;">${record.applicationNumber}</div>` : ''}
-                        </td>
-                        <td>
-                            <span class="status-badge status-${record.status}">
-                                ${statusTexts[record.status]}
-                            </span>
-                        </td>
-                        <td>${record.applicant}</td>
-                        <td>${record.applicationDate ? this.formatDate(record.applicationDate) : '-'}</td>
-                        <td>
-                            <button class="btn btn-sm btn-primary" onclick="event.stopPropagation(); portfolio.showDetail('${record.id}')">
-                                👁️ Görüntüle
-                            </button>
-                            <button class="btn btn-sm btn-danger" onclick="event.stopPropagation(); portfolio.deleteRecord('${record.id}')">
-                                🗑️ Sil
-                            </button>
-                        </td>
-                    </tr>
-                `;
-            }
-
-            sort(field) {
-                if (this.sortField === field) {
-                    this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
                 } else {
-                    this.sortField = field;
-                    this.sortDirection = 'asc';
+                    table.style.display = 'table';
+                    noRecords.style.display = 'none';
                 }
+
+                pageRecords.forEach(record => {
+                    const row = this.createTableRow(record);
+                    tbody.appendChild(row);
+                });
+
+                if (totalPages > 1) {
+                    pagination.style.display = 'flex';
+                    document.getElementById('prevBtn').disabled = this.currentPage === 1;
+                    document.getElementById('nextBtn').disabled = this.currentPage === totalPages;
+                    document.getElementById('pageInfo').textContent = `Sayfa ${this.currentPage} / ${totalPages}`;
+                } else {
+                    pagination.style.display = 'none';
+                }
+            }
+
+            createTableRow(record) {
+                const row = document.createElement('tr');
                 
-                this.sortRecords();
-                this.renderTable();
+                const typeIcons = {
+                    patent: '📋',
+                    trademark: '🏷️',
+                    copyright: '©',
+                    design: '🎨'
+                };
+
+                const typeNames = {
+                    patent: 'Patent',
+                    trademark: 'Marka',
+                    copyright: 'Telif Hakkı',
+                    design: 'Tasarım'
+                };
+
+                const statusNames = {
+                    application: 'Başvuru',
+                    pending: 'Beklemede',
+                    approved: 'Onaylandı',
+                    rejected: 'Reddedildi',
+                    expired: 'Süresi Doldu'
+                };
+
+                const formattedDate = record.applicationDate ? new Date(record.applicationDate).toLocaleDateString('tr-TR') : '-';
+                const ownersText = record.owners && record.owners.length > 0 ? record.owners.map(owner => owner.name).join(', ') : '-';
+
+                // Marka görseli için HTML
+                let trademarkImageCellHtml = '<td>-</td>'; 
+                if (record.type === 'trademark' && record.trademarkImage && record.trademarkImage.content) {
+                    trademarkImageCellHtml = `
+                        <td>
+                            <img src="${record.trademarkImage.content}" alt="Marka Örneği" class="trademark-image-thumb">
+                        </td>
+                    `;
+                }
+
+                row.innerHTML = `
+                    <td>
+                        <div class="ip-type ${record.type}">
+                            ${typeIcons[record.type]} ${typeNames[record.type]}
+                        </div>
+                    </td>
+                    <td>
+                        <strong>${record.title}</strong>
+                        <div style="font-size: 0.8em; color: #666; margin-top: 2px;">
+                            ${record.description ? record.description.substring(0, 50) + (record.description.length > 50 ? '...' : '') : '-'}
+                        </div>
+                    </td>
+                    ${trademarkImageCellHtml}
+                    <td>${record.applicationNumber || '-'}</td>
+                    <td>
+                        <span class="status-badge ${record.status}">
+                            ${statusNames[record.status] || record.status}
+                        </span>
+                    </td>
+                    <td>${formattedDate}</td>
+                    <td>${ownersText}</td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="table-action-btn btn-view" onclick="portfolio.viewRecord('${record.id}')" title="Görüntüle">
+                                👁️
+                            </button>
+                            <button class="table-action-btn btn-edit" onclick="portfolio.editRecord('${record.id}')" title="Düzenle">
+                                ✏️
+                            </button>
+                            <button class="table-action-btn btn-delete" onclick="portfolio.deleteRecord('${record.id}')" title="Sil">
+                                🗑️
+                            </button>
+                        </div>
+                    </td>
+                `;
+
+                return row;
             }
 
-            formatDate(dateString) {
-                if (!dateString) return '-';
-                const date = new Date(dateString);
-                return date.toLocaleDateString('tr-TR');
-            }
-
-            resetFilters() {
-                document.getElementById('searchInput').value = '';
-                document.getElementById('typeFilter').value = '';
-                document.getElementById('statusFilter').value = '';
-                document.getElementById('dateFromFilter').value = '';
-                document.getElementById('dateToFilter').value = '';
-                this.applyFilters();
-            }
-
-            showDetail(recordId) {
-                const record = this.allRecords.find(r => r.id === recordId);
+            viewRecord(recordId) {
+                const record = this.records.find(r => r.id === recordId);
                 if (!record) return;
 
-                const modalBody = document.getElementById('modalBody');
-                
-                const typeIcons = {
-                    'patent': '🔬',
-                    'trademark': '🏷️',
-                    'copyright': '📚',
-                    'design': '🎨'
+                const typeNames = {
+                    patent: 'Patent',
+                    trademark: 'Marka',
+                    copyright: 'Telif Hakkı',
+                    design: 'Tasarım'
                 };
 
-                const statusTexts = {
-                    'pending': 'Beklemede',
-                    'approved': 'Onaylandı',
-                    'rejected': 'Reddedildi'
+                const statusNames = {
+                    application: 'Başvuru',
+                    pending: 'Beklemede',
+                    approved: 'Onaylandı',
+                    rejected: 'Reddedildi',
+                    expired: 'Süresi Doldu'
                 };
+
+                document.getElementById('modalTitle').textContent = record.title;
+                
+                const modalBody = document.getElementById('modalBody');
+
+                let trademarkImageDetailHtml = '';
+                if (record.type === 'trademark' && record.trademarkImage && record.trademarkImage.content) {
+                    trademarkImageDetailHtml = `
+                        <div class="detail-item" style="grid-column: 1 / -1; text-align: center;">
+                            <div class="detail-label">Marka Örneği</div>
+                            <img src="${record.trademarkImage.content}" alt="Marka Örneği" style="max-width: 150px; max-height: 150px; border: 1px solid #e1e8ed; border-radius: 8px; margin-top: 10px;">
+                        </div>
+                    `;
+                }
 
                 modalBody.innerHTML = `
-                    <div style="display: grid; gap: 1rem;">
-                        <div style="display: flex; gap: 1rem; align-items: center;">
-                            <span class="type-badge type-${record.type}">
-                                ${typeIcons[record.type]} ${record.type.charAt(0).toUpperCase() + record.type.slice(1)}
-                            </span>
-                            <span class="status-badge status-${record.status}">
-                                ${statusTexts[record.status]}
-                            </span>
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <div class="detail-label">IP Türü</div>
+                            <div class="detail-value">${typeNames[record.type]}</div>
                         </div>
-                        
-                        <div>
-                            <strong>Başlık:</strong> ${record.title}
-                        </div>
-                        
-                        <div>
-                            <strong>Açıklama:</strong> ${record.description || 'Açıklama bulunmuyor'}
-                        </div>
-                        
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                            <div><strong>Başvuran:</strong> ${record.applicant}</div>
-                            <div><strong>Başvuru Tarihi:</strong> ${record.applicationDate ? this.formatDate(record.applicationDate) : '-'}</div>
-                            <div><strong>Başvuru No:</strong> ${record.applicationNumber || '-'}</div>
-                            <div><strong>Tescil No:</strong> ${record.registrationNumber || '-'}</div>
-                        </div>
-                        
-                        ${this.renderDynamicFields(record)}
-                        
-                        <div>
-                            <strong>Oluşturulma:</strong> ${this.formatDate(record.createdAt)}
-                        </div>
-                        
-                        ${record.files && record.files.length > 0 ? `
-                            <div>
-                                <strong>Dosyalar:</strong>
-                                <ul style="margin-top: 0.5rem;">
-                                    ${record.files.map(file => `<li>📎 ${file}</li>`).join('')}
-                                </ul>
+                        <div class="detail-item">
+                            <div class="detail-label">Durum</div>
+                            <div class="detail-value">
+                                <span class="status-badge ${record.status}">
+                                    ${statusNames[record.status]}
+                                </span>
                             </div>
-                        ` : ''}
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Başvuru Numarası</div>
+                            <div class="detail-value">${record.applicationNumber || '-'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Başvuru Tarihi</div>
+                            <div class="detail-value">${record.applicationDate ? new Date(record.applicationDate).toLocaleDateString('tr-TR') : '-'}</div>
+                        </div>
+                        <div class="detail-item" style="grid-column: 1 / -1;">
+                            <div class="detail-label">Açıklama</div>
+                            <div class="detail-value">${record.description || '-'}</div>
+                        </div>
+                        <div class="detail-item" style="grid-column: 1 / -1;">
+                            <div class="detail-label">Hak Sahipleri</div>
+                            <div class="detail-value">
+                                ${record.owners && record.owners.length > 0 ? record.owners.map(owner => `
+                                    <div style="margin-bottom: 5px;">
+                                        ${owner.type === 'company' ? '🏢' : '👤'} ${owner.name}
+                                    </div>
+                                `).join('') : '-'}
+                            </div>
+                        </div>
+                        ${trademarkImageDetailHtml}
+                        <div class="detail-item">
+                            <div class="detail-label">Oluşturma Tarihi</div>
+                            <div class="detail-value">${record.createdAt ? new Date(record.createdAt).toLocaleDateString('tr-TR') : '-'}</div>
+                        </div>
                     </div>
                 `;
 
-                document.getElementById('detailModal').style.display = 'block';
+                document.getElementById('detailModal').classList.add('show');
             }
 
-            renderDynamicFields(record) {
-                let html = '';
-                
-                // Type-specific fields
-                const dynamicFields = Object.keys(record).filter(key => 
-                    !['id', 'type', 'title', 'description', 'status', 'applicationDate', 
-                      'applicant', 'applicationNumber', 'registrationNumber', 'files',
-                      'createdAt', 'updatedAt', 'userId'].includes(key)
-                );
-
-                if (dynamicFields.length > 0) {
-                    html += '<div><strong>Ek Bilgiler:</strong></div>';
-                    html += '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 0.5rem;">';
-                    
-                    dynamicFields.forEach(field => {
-                        if (record[field]) {
-                            const label = this.getFieldLabel(field);
-                            html += `<div><strong>${label}:</strong> ${record[field]}</div>`;
-                        }
-                    });
-                    
-                    html += '</div>';
-                }
-
-                return html;
-            }
-
-            getFieldLabel(fieldName) {
-                const labels = {
-                    'inventorName': 'Buluş Sahibi',
-                    'patentType': 'Patent Türü',
-                    'protectionPeriod': 'Koruma Süresi',
-                    'technicalField': 'Teknik Alan',
-                    'trademarkType': 'Marka Türü',
-                    'niceClass': 'Nice Sınıfı',
-                    'colors': 'Renkler',
-                    'renewalDate': 'Yenileme Tarihi',
-                    'workType': 'Eser Türü',
-                    'authorName': 'Eser Sahibi',
-                    'publicationDate': 'Yayın Tarihi',
-                    'isbn': 'ISBN/ISMN',
-                    'designType': 'Tasarım Türü',
-                    'designerName': 'Tasarımcı',
-                    'locarnoClass': 'Locarno Sınıfı',
-                    'designPeriod': 'Tasarım Koruma Süresi'
-                };
-
-                return labels[fieldName] || fieldName;
-            }
-
-            closeModal() {
-                document.getElementById('detailModal').style.display = 'none';
+            editRecord(recordId) {
+                // Redirect to data-entry page with record ID
+                alert(`Düzenleme özelliği yakında eklenecek!\nKayıt ID: ${recordId}`);
             }
 
             async deleteRecord(recordId) {
-                if (!confirm('Bu kaydı silmek istediğinizden emin misiniz?')) {
-                    return;
-                }
+                const record = this.records.find(r => r.id === recordId);
+                if (!record) return;
 
-                try {
-                    const result = await ipRecordsService.deleteRecord(recordId);
-                    if (result.success) {
-                        await this.loadData();
-                        alert('Kayıt başarıyla silindi');
-                    } else {
-                        alert('Kayıt silinirken hata oluştu: ' + result.error);
+                if (confirm(`"${record.title}" kaydını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz!`)) {
+                    try {
+                        const result = await ipRecordsService.deleteRecord(recordId);
+                        if (result.success) {
+                            console.log('Record deleted from Firestore:', recordId);
+                            this.records = this.records.filter(r => r.id !== recordId);
+                            this.applyFilters(); // Tabloyu ve istatistikleri güncelle
+                            alert('Kayıt başarıyla silindi.');
+                        } else {
+                            throw new Error(result.error || 'Kayıt silinirken bilinmeyen bir hata oluştu.');
+                        }
+                    } catch (error) {
+                        console.error('Delete error:', error);
+                        alert('Kayıt silinirken bir hata oluştu: ' + error.message);
                     }
-                } catch (error) {
-                    console.error('Delete error:', error);
-                    alert('Kayıt silinirken hata oluştu');
                 }
             }
 
-            exportToCSV() {
-                if (this.filteredRecords.length === 0) {
-                    alert('Dışa aktarılacak kayıt bulunamadı');
-                    return;
+            closeModal() {
+                document.getElementById('detailModal').classList.remove('show');
+            }
+
+            exportData() {
+                try {
+                    const csvContent = this.generateCSV();
+                    const blob = new Blob(['\ufeff' + csvContent], { 
+                        type: 'text/csv;charset=utf-8;' 
+                    });
+                    
+                    const link = document.createElement('a');
+                    if (link.download !== undefined) {
+                        const url = URL.createObjectURL(blob);
+                        link.setAttribute('href', url);
+                        link.setAttribute('download', `ip_portfolio_${new Date().toISOString().split('T')[0]}.csv`);
+                        link.style.visibility = 'hidden';
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                    }
+                } catch (e) {
+                    alert('Dışa aktarma sırasında bir hata oluştu.');
+                    console.error('Export error:', e);
                 }
+            }
 
-                const headers = [
-                    'Tür', 'Başlık', 'Durum', 'Başvuran', 'Başvuru Tarihi',
-                    'Başvuru No', 'Tescil No', 'Açıklama', 'Oluşturulma'
-                ];
+            generateCSV() {
+                const headers = ['ID', 'Tür', 'Başlık', 'Açıklama', 'Durum', 'Başvuru Tarihi',
+                                 'Başvuru Numarası', 'Tescil Numarası', 'Hak Sahipleri', 'Oluşturulma Tarihi',
+                                 'Marka Görseli Var Mı', 'Notlar']; // Genişletilmiş başlıklar
 
-                const csvData = [
-                    headers.join(','),
-                    ...this.filteredRecords.map(record => [
-                        record.type,
-                        `"${record.title}"`,
-                        record.status,
-                        `"${record.applicant}"`,
-                        record.applicationDate || '',
-                        record.applicationNumber || '',
-                        record.registrationNumber || '',
-                        `"${(record.description || '').replace(/"/g, '""')}"`,
-                        this.formatDate(record.createdAt)
-                    ].join(','))
-                ].join('\n');
+                const rows = this.filteredRecords.map(record => [
+                    record.id,
+                    record.type,
+                    `"${record.title || ''}"`,
+                    `"${(record.description || '').replace(/"/g, '""')}"`,
+                    record.status,
+                    record.applicationDate || '',
+                    record.applicationNumber || '',
+                    record.registrationNumber || '',
+                    record.owners && record.owners.length > 0 ? `"${record.owners.map(o => o.name).join('; ')}"` : '',
+                    record.createdAt ? new Date(record.createdAt).toISOString() : '',
+                    record.trademarkImage ? 'Evet' : 'Hayır',
+                    `"${(record.notes || '').replace(/"/g, '""')}"`
+                ]);
 
-                const blob = new Blob(['\ufeff' + csvData], { 
-                    type: 'text/csv;charset=utf-8;' 
-                });
-                
-                const link = document.createElement('a');
-                link.href = URL.createObjectURL(blob);
-                link.download = `ip-portfolio-${new Date().toISOString().split('T')[0]}.csv`;
-                link.click();
+                return [headers, ...rows]
+                    .map(row => row.join(','))
+                    .join('\n');
             }
 
             showEmptyState() {
                 const tableContent = document.getElementById('tableContent');
                 tableContent.innerHTML = `
                     <div class="empty-state">
-                        <div class="empty-state-icon">🚀</div>
+                        <div class="empty-state-icon">📋</div>
                         <div>Henüz kayıt bulunmuyor</div>
                         <div style="margin-top: 1rem;">
                             <a href="data-entry.html" class="btn btn-primary">İlk kaydınızı oluşturun</a>
@@ -1029,15 +1393,39 @@
             }
         }
 
-        // Initialize Portfolio when DOM is loaded
-        document.addEventListener('DOMContentLoaded', () => {
-            window.portfolio = new Portfolio();
+        // Initialize Portfolio Module ONLY after Firebase authentication state is known
+        let portfolio;
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                // Sadece kullanıcı oturum açmışsa PortfolioModule'ü başlat
+                if (!portfolio) { // Birden fazla kez başlatmayı önle
+                    portfolio = new PortfolioModule();
+                }
+            } else {
+                // Kullanıcı oturum açmamışsa veya oturum kapatılmışsa
+                // localStorage'daki kullanıcıyı kontrol et (fallback)
+                const localUser = authService.getCurrentUser();
+                if (localUser && localUser.uid) {
+                    // localStorage'da kullanıcı varsa ve henüz Firebase ile oturum açılmadıysa
+                    if (!portfolio) {
+                        portfolio = new PortfolioModule();
+                    }
+                } else {
+                    // Ne Firebase ne de localStorage'da kullanıcı yoksa giriş sayfasına yönlendir
+                    console.log('❌ User not authenticated, redirecting to login page.');
+                    window.location.href = 'index.html';
+                }
+            }
         });
 
-        // Global functions for modal
-        window.closeModal = () => window.portfolio.closeModal();
+        // Global functions for modal (onclick'ten erişim için)
+        // Bu global fonksiyonlar artık portfolio objesi üzerinden çağrıldığı için
+        // doğrudan `window.closeModal = () => window.portfolio.closeModal();` gibi
+        // tanımlamalara gerek kalmayabilir, ancak eski HTML onclick'leri için tutulabilir.
+        // Daha iyi bir yaklaşım, `onclick` yerine JavaScript içinde `addEventListener` kullanmaktır.
+        // Mevcut onclick'ler için `portfolio.` ön eki eklenmiştir.
 
-        // Global test functions
+        // Global test functions (konsoldan erişim için)
         window.testPortfolio = {
             addTestRecord: async () => {
                 const testRecord = {
@@ -1045,32 +1433,45 @@
                     title: 'Test Patent ' + Date.now(),
                     description: 'Test açıklaması',
                     status: 'pending',
-                    applicant: 'Test Şirketi'
+                    owners: [{ name: 'Test User', type: 'individual' }], // Owners schema'ya uygun
+                    applicationNumber: 'TEST-' + Date.now(),
+                    createdAt: new Date().toISOString(),
+                    trademarkImage: null
                 };
                 const result = await ipRecordsService.addRecord(testRecord);
                 if (result.success) {
-                    window.portfolio.loadData();
-                    console.log('Test record added');
+                    // Test kaydı eklendikten sonra portföyü yenile
+                    portfolio?.loadRecords(); // Eğer portfolio tanımlıysa
+                    console.log('Test record added:', result.id);
+                } else {
+                    console.error('Failed to add test record:', result.error);
                 }
             },
-            exportData: () => window.portfolio.exportToCSV(),
-            getRecords: () => window.portfolio.allRecords,
+            exportData: () => portfolio?.exportData(),
+            getRecords: () => portfolio?.records,
+            getFilteredRecords: () => portfolio?.filteredRecords,
             clearAllRecords: async () => {
-                if (confirm('TÜM KAYITLARI SİLMEK İSTEDİĞİNİZDEN EMİN MİSİNİZ?')) {
-                    for (const record of window.portfolio.allRecords) {
-                        await ipRecordsService.deleteRecord(record.id);
+                if (confirm('TÜM KAYITLARI SİLMEK İSTEDİĞİNİZDEN EMİN MİSİNİZ? BU İŞLEM GERİ ALINAMAZ!')) {
+                    if (portfolio && portfolio.records) {
+                        const recordsToDelete = [...portfolio.records]; // Döngü sırasında değişmemesi için kopya al
+                        for (const record of recordsToDelete) {
+                            await ipRecordsService.deleteRecord(record.id);
+                        }
+                        await portfolio.loadRecords(); // Verileri yeniden yükle
+                        console.log('All records cleared.');
+                    } else {
+                        console.warn('No portfolio records to clear.');
                     }
-                    window.portfolio.loadData();
-                    console.log('All records cleared');
                 }
             }
         };
 
-        console.log('🚀 Portfolio module loaded!');
+        console.log('📊 Portfolio module loaded!');
         console.log('Test komutları:');
-        console.log('testPortfolio.addTestRecord() - Test kaydı ekle');
-        console.log('testPortfolio.exportData() - CSV dışa aktar');
-        console.log('testPortfolio.getRecords() - Tüm kayıtları görüntüle');
+        console.log('testPortfolio.addTestRecord() - Yeni test kaydı ekler.');
+        console.log('testPortfolio.exportData() - Filtrelenmiş kayıtları CSV olarak dışa aktarır.');
+        console.log('testPortfolio.getRecords() - Tüm kayıtları konsolda gösterir.');
+        console.log('testPortfolio.clearAllRecords() - Tüm kayıtları siler (DİKKAT: Geri alınamaz!).');
     </script>
 </body>
 </html>
