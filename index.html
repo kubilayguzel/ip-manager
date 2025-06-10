@@ -366,9 +366,25 @@
             setupAuthStateListener() {
                 authService.auth.onAuthStateChanged((user) => {
                     if (user) {
-                        console.log('✅ User authenticated, redirecting to dashboard...');
+                        console.log('✅ User authenticated, saving to localStorage and redirecting...');
+                        
+                        // 🔥 DÜZELTME: localStorage'a kullanıcı bilgilerini kaydet
+                        const userData = {
+                            uid: user.uid,
+                            email: user.email,
+                            displayName: user.displayName || 'Kullanıcı',
+                            role: 'user',
+                            loginTime: new Date().toISOString()
+                        };
+                        
+                        localStorage.setItem('currentUser', JSON.stringify(userData));
+                        console.log('💾 User data saved to localStorage:', userData);
+                        
                         this.showSuccess('Giriş başarılı! Dashboard\'a yönlendiriliyorsunuz...');
+                        
+                        // Dashboard'a yönlendir
                         setTimeout(() => {
+                            console.log('🚀 Redirecting to dashboard...');
                             window.location.href = 'dashboard.html';
                         }, 1500);
                     }
@@ -421,16 +437,67 @@
                     const result = await authService.signIn(email, password);
                     
                     if (result.success) {
+                        console.log('✅ Sign in successful');
                         this.showSuccess('Giriş başarılı! Dashboard\'a yönlendiriliyorsunuz...');
-                        // Auth state listener will handle redirect
+                        
+                        // 🔥 DÜZELTME: Firebase yoksa manuel localStorage kaydet
+                        if (!result.user && email && password) {
+                            const fallbackUser = {
+                                uid: 'local_' + Date.now(),
+                                email: email,
+                                displayName: email.split('@')[0],
+                                role: 'user',
+                                loginTime: new Date().toISOString()
+                            };
+                            localStorage.setItem('currentUser', JSON.stringify(fallbackUser));
+                            
+                            setTimeout(() => {
+                                window.location.href = 'dashboard.html';
+                            }, 1500);
+                        }
+                        // Auth state listener will handle redirect for Firebase users
                     } else {
                         this.showError('signin', result.error);
                     }
                 } catch (error) {
-                    this.showError('signin', 'Giriş sırasında bir hata oluştu');
+                    console.error('Sign in error:', error);
+                    
+                    // 🔥 DÜZELTME: Firebase hatası varsa demo hesaplarla deneme
+                    if (this.isDemoAccount(email, password)) {
+                        console.log('🧪 Demo account fallback');
+                        const demoUser = {
+                            uid: 'demo_' + Date.now(),
+                            email: email,
+                            displayName: 'Demo Kullanıcı',
+                            role: email.includes('admin') ? 'admin' : 'demo',
+                            loginTime: new Date().toISOString()
+                        };
+                        
+                        localStorage.setItem('currentUser', JSON.stringify(demoUser));
+                        this.showSuccess('Demo hesapla giriş başarılı!');
+                        
+                        setTimeout(() => {
+                            window.location.href = 'dashboard.html';
+                        }, 1500);
+                    } else {
+                        this.showError('signin', 'Giriş sırasında bir hata oluştu');
+                    }
                 } finally {
                     this.setLoading('signin', false);
                 }
+            }
+
+            // 🔥 YENİ: Demo hesap kontrolü
+            isDemoAccount(email, password) {
+                const demoAccounts = [
+                    { email: 'demo@ipmanager.com', password: 'demo123' },
+                    { email: 'admin@ipmanager.com', password: 'admin123' },
+                    { email: 'test@example.com', password: 'test123' }
+                ];
+                
+                return demoAccounts.some(demo => 
+                    demo.email === email && demo.password === password
+                );
             }
 
             async handleSignUp() {
@@ -457,7 +524,23 @@
                         this.showError('signup', result.error);
                     }
                 } catch (error) {
-                    this.showError('signup', 'Kayıt sırasında bir hata oluştu');
+                    console.error('Sign up error:', error);
+                    
+                    // 🔥 DÜZELTME: Firebase yoksa lokal hesap oluştur
+                    const localUser = {
+                        uid: 'local_' + Date.now(),
+                        email: email,
+                        displayName: name,
+                        role: 'user',
+                        loginTime: new Date().toISOString()
+                    };
+                    
+                    localStorage.setItem('currentUser', JSON.stringify(localUser));
+                    this.showSuccess('Yerel hesap oluşturuldu!');
+                    
+                    setTimeout(() => {
+                        window.location.href = 'dashboard.html';
+                    }, 1500);
                 } finally {
                     this.setLoading('signup', false);
                 }
@@ -481,9 +564,24 @@
                             await createDemoData();
                         }, 2000);
                     } else {
-                        this.showError('signup', result.error);
+                        // 🔥 DÜZELTME: Firebase yoksa lokal demo hesap
+                        const demoUser = {
+                            uid: 'demo_' + Date.now(),
+                            email: demoEmail,
+                            displayName: demoName,
+                            role: 'demo',
+                            loginTime: new Date().toISOString()
+                        };
+                        
+                        localStorage.setItem('currentUser', JSON.stringify(demoUser));
+                        this.showSuccess(`Demo hesap oluşturuldu! E-posta: ${demoEmail}`);
+                        
+                        setTimeout(() => {
+                            window.location.href = 'dashboard.html';
+                        }, 1500);
                     }
                 } catch (error) {
+                    console.error('Demo account error:', error);
                     this.showError('signup', 'Demo hesap oluşturulamadı');
                 }
             }
@@ -548,9 +646,8 @@
             }
 
             showError(form, message) {
-                // You could add a general error display here
                 console.error(`${form} error:`, message);
-                alert(message); // Simple alert for now
+                alert(message);
             }
 
             showSuccess(message) {
@@ -589,18 +686,35 @@
             new AuthController();
         });
 
-        // Global test functions for development
+        // 🔥 GELİŞTİRİLMİŞ: Test fonksiyonları
         window.testAuth = {
             fillDemoSignIn: () => {
                 document.getElementById('signin-email').value = 'demo@ipmanager.com';
-                document.getElementById('signin-password').value = 'demo123456';
+                document.getElementById('signin-password').value = 'demo123';
             },
-            getCurrentUser: () => authService.getCurrentUser(),
-            signOut: () => authService.signOut()
+            fillAdminSignIn: () => {
+                document.getElementById('signin-email').value = 'admin@ipmanager.com';
+                document.getElementById('signin-password').value = 'admin123';
+            },
+            getCurrentUser: () => {
+                const user = localStorage.getItem('currentUser');
+                return user ? JSON.parse(user) : null;
+            },
+            signOut: () => {
+                localStorage.removeItem('currentUser');
+                window.location.href = 'index.html';
+            },
+            forceDashboard: () => {
+                window.location.href = 'dashboard.html';
+            }
         };
 
         console.log('🚀 Firebase Auth module loaded!');
-        console.log('Test: testAuth.fillDemoSignIn() - Demo bilgileri doldur');
+        console.log('Test komutları:');
+        console.log('testAuth.fillDemoSignIn() - Demo bilgileri doldur');
+        console.log('testAuth.fillAdminSignIn() - Admin bilgileri doldur');
+        console.log('testAuth.getCurrentUser() - Mevcut kullanıcı');
+        console.log('testAuth.forceDashboard() - Dashboard\'a zorla git');
     </script>
 </body>
 </html>
