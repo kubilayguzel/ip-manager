@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IP Manager - Kişiler Yönetimi</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px 0;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+        }
+
+        .logo {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #1e3c72;
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 30px;
+        }
+
+        .nav-item {
+            color: #666;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background: #1e3c72;
+            color: white;
+        }
+
+        .user-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(45deg, #1e3c72, #2a5298);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        .logout-btn {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+        }
+
+        .logout-btn:hover {
+            background: #ff5252;
+            transform: translateY(-1px);
+        }
+
+        .main-container {
+            max-width: 1400px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        .page-header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .page-title {
+            font-size: 2em;
+            color: #1e3c72;
+            margin-bottom: 10px;
+        }
+
+        .page-subtitle {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .persons-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .persons-header {
+            padding: 30px;
+            border-bottom: 1px solid #e1e8ed;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .persons-actions {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .action-btn {
+            background: #1e3c72;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .action-btn:hover {
+            background: #2a5298;
+            transform: translateY(-1px);
+        }
+
+        .action-btn.secondary {
+            background: #6c757d;
+        }
+
+        .action-btn.secondary:hover {
+            background: #5a6268;
+        }
+
+        .filters-section {
+            padding: 20px 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e1e8ed;
+        }
+
+        .filters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            align-items: end;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .filter-label {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .filter-input, .filter-select {
+            padding: 8px 12px;
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+        }
+
+        .filter-input:focus, .filter-select:focus {
+            outline: none;
+            border-color: #1e3c72;
+        }
+
+        .search-input {
+            position: relative;
+        }
+
+        .search-input input {
+            padding-left: 35px;
+        }
+
+        .search-input::before {
+            content: '🔍';
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1em;
+            color: #666;
+        }
+
+        .filter-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            background: #e9ecef;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+        }
+
+        .filter-btn:hover {
+            background: #dee2e6;
+        }
+
+        .filter-btn.active {
+            background: #1e3c72;
+            color: white;
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        .persons-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9em;
+        }
+
+        .persons-table th {
+            background: #f8f9fa;
+            padding: 15px 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+            border-bottom: 2px solid #e1e8ed;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .persons-table th:hover {
+            background: #e9ecef;
+        }
+
+        .persons-table th.sortable::after {
+            content: '↕️';
+            position: absolute;
+            right: 8px;
+            font-size: 0.8em;
+            opacity: 0.5;
+        }
+
+        .persons-table th.sort-asc::after {
+            content: '↑';
+            opacity: 1;
+        }
+
+        .persons-table th.sort-desc::after {
+            content: '↓';
+            opacity: 1;
+        }
+
+        .persons-table td {
+            padding: 15px 12px;
+            border-bottom: 1px solid #f0f0f0;
+            vertical-align: middle;
+        }
+
+        .persons-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .persons-table tr.selected {
+            background: #e3f2fd;
+        }
+
+        .person-type {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.8em;
+            font-weight: 500;
+        }
+
+        .person-type.individual {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+
+        .person-type.company {
+            background: #e0f2f1;
+            color: #00695c;
+        }
+        .person-type.institution {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+        }
+
+        .table-action-btn {
+            padding: 5px 8px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8em;
+            transition: all 0.3s ease;
+        }
+
+        .btn-view {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .btn-view:hover {
+            background: #138496;
+        }
+
+        .btn-edit {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .btn-edit:hover {
+            background: #e0a800;
+        }
+
+        .btn-delete {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: #c82333;
+        }
+
+        .no-persons {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+
+        .no-persons-icon {
+            font-size: 3em;
+            margin-bottom: 20px;
+        }
+
+        .pagination {
+            padding: 20px 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            border-top: 1px solid #e1e8ed;
+        }
+
+        .page-btn {
+            padding: 8px 12px;
+            border: 1px solid #e1e8ed;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .page-btn:hover {
+            background: #f8f9fa;
+        }
+
+        .page-btn.active {
+            background: #1e3c72;
+            color: white;
+            border-color: #1e3c72;
+        }
+
+        .page-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .page-info {
+            color: #666;
+            font-size: 0.9em;
+            margin: 0 15px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #1e3c72;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Detail Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e1e8ed;
+        }
+
+        .modal-title {
+            font-size: 1.3em;
+            color: #1e3c72;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5em;
+            cursor: pointer;
+            color: #666;
+            padding: 5px;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .close-btn:hover {
+            background: #f0f0f0;
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .detail-item {
+            margin-bottom: 15px;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .detail-value {
+            color: #666;
+            word-break: break-word;
+        }
+
+        /* Person Form Specific Styles */
+        .person-form-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+
+        .person-form-grid .form-group {
+            margin-bottom: 0; /* Override general form-group margin */
+        }
+        
+        .person-form-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #e1e8ed;
+        }
+        .person-form-actions .btn {
+            padding: 8px 16px;
+            font-size: 0.9em;
+        }
+
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">🔥 IP Manager</div>
+            <nav class="nav-menu">
+                <a href="dashboard.html" class="nav-item">Dashboard</a>
+                <a href="portfolio.html" class="nav-item">Portföy</a>
+                <a href="data-entry.html" class="nav-item">Yeni Kayıt</a>
+                <a href="#" class="nav-item active">Kişiler Yönetimi</a>
+                <a href="#" class="nav-item">Raporlar</a>
+                <a href="#" class="nav-item">Ayarlar</a>
+            </nav>
+            <div class="user-section">
+                <div class="user-avatar" id="userAvatar">D</div>
+                <button class="logout-btn" id="logoutBtn">Çıkış</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <section class="page-header">
+            <h1 class="page-title">Kişiler Yönetimi</h1>
+            <p class="page-subtitle">Uygulamanızdaki tüm kişileri (hak sahipleri, başvuranlar vb.) yönetin.</p>
+        </section>
+
+        <div class="persons-container">
+            <div class="persons-header">
+                <div class="persons-stats">
+                    <div class="stat-item">
+                        <div class="stat-number" id="totalPersonsCount">0</div>
+                        <div class="stat-label">Toplam Kişi</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="individualCount">0</div>
+                        <div class="stat-label">Bireysel</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="companyCount">0</div>
+                        <div class="stat-label">Şirket</div>
+                    </div>
+                </div>
+                <div class="persons-actions">
+                    <button class="action-btn" id="addPersonBtn">
+                        ➕ Yeni Kişi Ekle
+                    </button>
+                    <button class="action-btn secondary" id="refreshPersonsBtn">
+                        🔄 Yenile
+                    </button>
+                </div>
+            </div>
+
+            <div class="filters-section">
+                <div class="filters-grid">
+                    <div class="filter-group">
+                        <label class="filter-label">Arama</label>
+                        <div class="search-input">
+                            <input type="text" id="searchInput" class="filter-input" placeholder="Ad, e-posta veya telefon ara...">
+                        </div>
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label">Kişi Türü</label>
+                        <select id="typeFilter" class="filter-select">
+                            <option value="">Tümü</option>
+                            <option value="individual">Bireysel</option>
+                            <option value="company">Şirket</option>
+                            <option value="institution">Kurum</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <button class="action-btn secondary" style="width:100%; margin-top: auto;" id="resetFiltersBtn">
+                            Filtreleri Sıfırla
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <div class="loading" id="loadingIndicator">
+                    <div class="loading-spinner"></div>
+                    <div>Kişiler yükleniyor...</div>
+                </div>
+
+                <table class="persons-table" id="personsTable" style="display: none;">
+                    <thead>
+                        <tr>
+                            <th class="sortable" data-sort="name">Ad Soyad</th>
+                            <th class="sortable" data-sort="email">E-posta</th>
+                            <th class="sortable" data-sort="phone">Telefon</th>
+                            <th class="sortable" data-sort="type">Tür</th>
+                            <th>İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody id="personsTableBody">
+                        </tbody>
+                </table>
+
+                <div class="no-persons" id="noPersons" style="display: none;">
+                    <div class="no-persons-icon">👥</div>
+                    <h3>Henüz kişi bulunamadı</h3>
+                    <p>Yeni bir kişi eklemek için "Yeni Kişi Ekle" butonunu kullanın.</p>
+                    <button class="action-btn" style="margin-top: 20px; display: inline-flex;" id="addFirstPersonBtn">
+                        ➕ İlk Kişinizi Ekleyin
+                    </button>
+                </div>
+            </div>
+
+            <div class="pagination" id="pagination" style="display: none;">
+                <button class="page-btn" id="prevBtn">‹ Önceki</button>
+                <div class="page-info" id="pageInfo">Sayfa 1 / 1</div>
+                <button class="page-btn" id="nextBtn">Sonraki ›</button>
+            </div>
+        </div>
+    </main>
+
+    <div class="modal" id="personModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="personModalTitle">Kişi Detayları</h3>
+                <button class="close-btn" id="closePersonModalBtn">&times;</button>
+            </div>
+            <form id="personForm">
+                <div class="person-form-grid">
+                    <div class="form-group">
+                        <label class="form-label" for="personName">Ad Soyad *</label>
+                        <input type="text" id="personName" class="filter-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="personEmail">E-posta</label>
+                        <input type="email" id="personEmail" class="filter-input">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="personPhone">Telefon</label>
+                        <input type="tel" id="personPhone" class="filter-input">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="personType">Kişi Türü *</label>
+                        <select id="personType" class="filter-select" required>
+                            <option value="">Seçiniz</option>
+                            <option value="individual">Bireysel</option>
+                            <option value="company">Şirket</option>
+                            <option value="institution">Kurum</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="personAddress">Adres</label>
+                        <textarea id="personAddress" class="filter-input" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="person-form-actions">
+                    <button type="button" class="btn btn-secondary" id="cancelPersonFormBtn">İptal</button>
+                    <button type="submit" class="btn btn-primary" id="savePersonBtn">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <script type="module">
+        import { 
+            authService, 
+            personsService, // Yeni personsService import edildi
+            auth 
+        } from './firebase-config.js';
+
+        // Kişileri yöneten ana sınıf
+        class PersonsModule {
+            constructor() {
+                this.currentUser = null;
+                this.allPersons = [];
+                this.filteredPersons = [];
+                this.currentPage = 1;
+                this.personsPerPage = 10;
+                this.sortColumn = 'name';
+                this.sortDirection = 'asc';
+                this.currentPersonId = null; // Düzenlenen kişinin ID'si
+                this.init();
+            }
+
+            init() {
+                // Kullanıcı kimlik doğrulama durumunu dinle
+                auth.onAuthStateChanged(async (user) => {
+                    if (user) {
+                        this.currentUser = user;
+                        console.log('✅ User authenticated:', user.email);
+                        // Kullanıcı oturum açtıysa arayüzü ve verileri hazırla
+                        this.setupEventListeners();
+                        await this.loadPersons(); // Kişileri Firebase'den yükle
+                    } else {
+                        // Kullanıcı oturum açmamışsa veya oturum kapatılmışsa
+                        // localStorage'daki kullanıcıyı kontrol et (fallback)
+                        const localUser = authService.getCurrentUser();
+                        if (localUser && localUser.uid) {
+                            this.currentUser = localUser;
+                            console.log('⚠️ LocalStorage user detected, running in local mode:', localUser.email);
+                            this.setupEventListeners();
+                            await this.loadPersons(); // Kişileri localStorage'dan yükle
+                        } else {
+                            // Ne Firebase ne de localStorage'da kullanıcı yoksa giriş sayfasına yönlendir
+                            console.log('❌ User not authenticated, redirecting to login page.');
+                            window.location.href = 'index.html';
+                        }
+                    }
+                });
+                console.log('👥 Persons Module başlatılıyor...');
+            }
+
+            setupEventListeners() {
+                // Header Navigasyon
+                document.getElementById('logoutBtn').addEventListener('click', async () => {
+                    if (confirm('Çıkış yapmak istediğinizden emin misiniz?')) {
+                        try {
+                            await authService.signOut();
+                            // signOut metodu zaten index.html'ye yönlendirecek
+                        } catch (error) {
+                            console.error('Logout error:', error);
+                            alert('Çıkış yaparken bir hata oluştu.');
+                        }
+                    }
+                });
+
+                // Kişi ekleme/yönetim butonları
+                document.getElementById('addPersonBtn').addEventListener('click', () => this.openPersonModal('add'));
+                document.getElementById('addFirstPersonBtn').addEventListener('click', () => this.openPersonModal('add')); // Empty state butonu
+                document.getElementById('refreshPersonsBtn').addEventListener('click', () => this.loadPersons());
+
+                // Filtreleme ve Arama
+                document.getElementById('searchInput').addEventListener('input', () => this.applyFilters());
+                document.getElementById('typeFilter').addEventListener('change', () => this.applyFilters());
+                document.getElementById('resetFiltersBtn').addEventListener('click', () => this.resetFilters());
+
+                // Modal butonları
+                document.getElementById('closePersonModalBtn').addEventListener('click', () => this.closePersonModal());
+                document.getElementById('cancelPersonFormBtn').addEventListener('click', () => this.closePersonModal());
+                document.getElementById('personForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.savePerson();
+                });
+
+                // Modal dışı tıklama
+                document.getElementById('personModal').addEventListener('click', (e) => {
+                    if (e.target.id === 'personModal') {
+                        this.closePersonModal();
+                    }
+                });
+
+                // Sıralama
+                document.querySelectorAll('.persons-table th.sortable').forEach(th => {
+                    th.addEventListener('click', () => this.handleSort(th.dataset.sort));
+                });
+
+                // Sayfalama
+                document.getElementById('prevBtn').addEventListener('click', () => this.changePage(-1));
+                document.getElementById('nextBtn').addEventListener('click', () => this.changePage(1));
+            }
+
+            async loadPersons() {
+                const loadingIndicator = document.getElementById('loadingIndicator');
+                const personsTable = document.getElementById('personsTable');
+                const noPersons = document.getElementById('noPersons');
+                const tableBody = document.getElementById('personsTableBody');
+
+                loadingIndicator.style.display = 'block';
+                personsTable.style.display = 'none';
+                noPersons.style.display = 'none';
+                tableBody.innerHTML = ''; // Önceki kayıtları temizle
+
+                try {
+                    const result = await personsService.getPersons(); // personsService'den çek
+                    if (result.success) {
+                        this.allPersons = result.data;
+                        this.updateStats();
+                        this.applyFilters(); // Filtreleri ve tabloyu yeniden render et
+                    } else {
+                        console.error('Failed to load persons:', result.error);
+                        this.showEmptyState();
+                    }
+                } catch (error) {
+                    console.error('Error loading persons data:', error);
+                    this.showEmptyState();
+                } finally {
+                    loadingIndicator.style.display = 'none';
+                }
+            }
+
+            updateStats() {
+                const stats = {
+                    total: this.allPersons.length,
+                    individual: this.allPersons.filter(p => p.type === 'individual').length,
+                    company: this.allPersons.filter(p => p.type === 'company').length,
+                    institution: this.allPersons.filter(p => p.type === 'institution').length
+                };
+
+                document.getElementById('totalPersonsCount').textContent = stats.total;
+                document.getElementById('individualCount').textContent = stats.individual;
+                document.getElementById('companyCount').textContent = stats.company;
+            }
+
+            applyFilters() {
+                const search = document.getElementById('searchInput').value.toLowerCase();
+                const typeFilter = document.getElementById('typeFilter').value;
+
+                this.filteredPersons = this.allPersons.filter(person => {
+                    // Arama filtresi
+                    if (search && !(
+                        String(person.name).toLowerCase().includes(search) ||
+                        String(person.email || '').toLowerCase().includes(search) ||
+                        String(person.phone || '').toLowerCase().includes(search)
+                    )) {
+                        return false;
+                    }
+
+                    // Tip filtresi
+                    if (typeFilter && person.type !== typeFilter) {
+                        return false;
+                    }
+                    return true;
+                });
+
+                this.currentPage = 1;
+                this.sortPersons();
+                this.renderTable();
+            }
+
+            handleSort(column) {
+                if (this.sortColumn === column) {
+                    this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+                } else {
+                    this.sortColumn = column;
+                    this.sortDirection = 'asc';
+                }
+                this.sortPersons();
+                this.updateSortIndicators();
+                this.renderTable();
+            }
+
+            sortPersons() {
+                this.filteredPersons.sort((a, b) => {
+                    let aVal = a[this.sortColumn] || '';
+                    let bVal = b[this.sortColumn] || '';
+
+                    if (typeof aVal === 'string') {
+                        aVal = aVal.toLowerCase();
+                        bVal = bVal.toLowerCase();
+                    }
+
+                    if (aVal < bVal) return this.sortDirection === 'asc' ? -1 : 1;
+                    if (aVal > bVal) return this.sortDirection === 'asc' ? 1 : -1;
+                    return 0;
+                });
+            }
+
+            updateSortIndicators() {
+                document.querySelectorAll('.persons-table th.sortable').forEach(th => {
+                    th.classList.remove('sort-asc', 'sort-desc');
+                    const span = th.querySelector('.sort-icon');
+                    if (span) span.textContent = '↕️';
+                });
+
+                const activeTh = document.querySelector(`.persons-table th[data-sort="${this.sortColumn}"]`);
+                if (activeTh) {
+                    activeTh.classList.add(`sort-${this.sortDirection}`);
+                    const span = activeTh.querySelector('.sort-icon');
+                    if (span) span.textContent = this.sortDirection === 'asc' ? '↑' : '↓';
+                }
+            }
+
+            renderTable() {
+                const tbody = document.getElementById('personsTableBody');
+                const pagination = document.getElementById('pagination');
+                const personsTable = document.getElementById('personsTable');
+                const noPersons = document.getElementById('noPersons');
+                
+                const totalPages = Math.ceil(this.filteredPersons.length / this.personsPerPage);
+                const startIndex = (this.currentPage - 1) * this.personsPerPage;
+                const endIndex = startIndex + this.personsPerPage;
+                const pagePersons = this.filteredPersons.slice(startIndex, endIndex);
+
+                tbody.innerHTML = '';
+
+                if (pagePersons.length === 0) {
+                    personsTable.style.display = 'none';
+                    noPersons.style.display = 'block';
+                    pagination.style.display = 'none';
+                    return;
+                } else {
+                    personsTable.style.display = 'table';
+                    noPersons.style.display = 'none';
+                }
+
+                pagePersons.forEach(person => {
+                    const row = this.createTableRow(person);
+                    tbody.appendChild(row);
+                });
+
+                if (totalPages > 1) {
+                    pagination.style.display = 'flex';
+                    document.getElementById('prevBtn').disabled = this.currentPage === 1;
+                    document.getElementById('nextBtn').disabled = this.currentPage === totalPages;
+                    document.getElementById('pageInfo').textContent = `Sayfa ${this.currentPage} / ${totalPages}`;
+                } else {
+                    pagination.style.display = 'none';
+                }
+            }
+
+            createTableRow(person) {
+                const row = document.createElement('tr');
+                const typeNames = {
+                    individual: 'Bireysel',
+                    company: 'Şirket',
+                    institution: 'Kurum'
+                };
+                const typeIcons = {
+                    individual: '👤',
+                    company: '🏢',
+                    institution: '🏛️'
+                };
+
+                row.innerHTML = `
+                    <td>
+                        <div style="font-weight: 600;">${person.name}</div>
+                        ${person.address ? `<div style="font-size: 0.8em; color: #666;">${person.address}</div>` : ''}
+                    </td>
+                    <td>${person.email || '-'}</td>
+                    <td>${person.phone || '-'}</td>
+                    <td>
+                        <span class="person-type ${person.type}">
+                            ${typeIcons[person.type] || '👤'} ${typeNames[person.type] || person.type}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="table-action-btn btn-view" title="Görüntüle" 
+                                onclick="personsModule.openPersonModal('view', '${person.id}')">
+                                👁️
+                            </button>
+                            <button class="table-action-btn btn-edit" title="Düzenle" 
+                                onclick="personsModule.openPersonModal('edit', '${person.id}')">
+                                ✏️
+                            </button>
+                            <button class="table-action-btn btn-delete" title="Sil" 
+                                onclick="personsModule.deletePerson('${person.id}')">
+                                🗑️
+                            </button>
+                        </div>
+                    </td>
+                `;
+                return row;
+            }
+
+            changePage(direction) {
+                this.currentPage += direction;
+                this.renderTable();
+            }
+
+            openPersonModal(mode, personId = null) {
+                const modal = document.getElementById('personModal');
+                const modalTitle = document.getElementById('personModalTitle');
+                const savePersonBtn = document.getElementById('savePersonBtn');
+                const form = document.getElementById('personForm');
+
+                this.currentPersonId = personId; // Modalda hangi kişinin düzenlendiğini tut
+
+                // Formu temizle
+                form.reset();
+
+                if (mode === 'add') {
+                    modalTitle.textContent = 'Yeni Kişi Ekle';
+                    savePersonBtn.textContent = 'Kaydet';
+                    savePersonBtn.disabled = false;
+                } else if (mode === 'edit' || mode === 'view') {
+                    const person = this.allPersons.find(p => p.id === personId);
+                    if (!person) {
+                        alert('Kişi bulunamadı.');
+                        return;
+                    }
+
+                    modalTitle.textContent = mode === 'edit' ? 'Kişi Bilgilerini Düzenle' : 'Kişi Detayları';
+                    savePersonBtn.textContent = 'Güncelle';
+                    savePersonBtn.disabled = mode === 'view'; // Görüntüleme modunda kaydet butonu pasif
+
+                    // Form alanlarını doldur
+                    document.getElementById('personName').value = person.name || '';
+                    document.getElementById('personEmail').value = person.email || '';
+                    document.getElementById('personPhone').value = person.phone || '';
+                    document.getElementById('personType').value = person.type || '';
+                    document.getElementById('personAddress').value = person.address || '';
+
+                    // Görüntüleme modunda inputları salt okunur yap
+                    document.querySelectorAll('#personForm input, #personForm select, #personForm textarea').forEach(input => {
+                        input.readOnly = mode === 'view';
+                        input.disabled = mode === 'view';
+                    });
+                }
+                modal.classList.add('show');
+            }
+
+            closePersonModal() {
+                const modal = document.getElementById('personModal');
+                modal.classList.remove('show');
+                // Inputları tekrar düzenlenebilir yap
+                document.querySelectorAll('#personForm input, #personForm select, #personForm textarea').forEach(input => {
+                    input.readOnly = false;
+                    input.disabled = false;
+                });
+                this.currentPersonId = null;
+            }
+
+            async savePerson() {
+                const personName = document.getElementById('personName').value.trim();
+                const personType = document.getElementById('personType').value;
+
+                if (!personName || !personType) {
+                    alert('Ad Soyad ve Kişi Türü alanları zorunludur.');
+                    return;
+                }
+
+                const personData = {
+                    name: personName,
+                    email: document.getElementById('personEmail').value.trim(),
+                    phone: document.getElementById('personPhone').value.trim(),
+                    type: personType,
+                    address: document.getElementById('personAddress').value.trim()
+                };
+
+                const saveBtn = document.getElementById('savePersonBtn');
+                saveBtn.disabled = true; // Kaydetme sırasında butonu pasif yap
+
+                try {
+                    let result;
+                    if (this.currentPersonId) {
+                        // Mevcut kişiyi güncelle
+                        result = await personsService.updatePerson(this.currentPersonId, personData);
+                    } else {
+                        // Yeni kişi ekle
+                        result = await personsService.addPerson(personData);
+                    }
+
+                    if (result.success) {
+                        alert(`Kişi başarıyla ${this.currentPersonId ? 'güncellendi' : 'eklendi'}!`);
+                        this.closePersonModal();
+                        await this.loadPersons(); // Listeyi yenile
+                    } else {
+                        throw new Error(result.error || 'Kişi kaydedilirken hata oluştu.');
+                    }
+                } catch (error) {
+                    console.error('Save person error:', error);
+                    alert('Kişi kaydedilirken bir hata oluştu: ' + error.message);
+                } finally {
+                    saveBtn.disabled = false; // Butonu tekrar aktif yap
+                }
+            }
+
+            async deletePerson(personId) {
+                if (!confirm('Bu kişiyi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz!')) {
+                    return;
+                }
+
+                try {
+                    const result = await personsService.deletePerson(personId);
+                    if (result.success) {
+                        alert('Kişi başarıyla silindi!');
+                        await this.loadPersons(); // Listeyi yenile
+                    } else {
+                        throw new Error(result.error || 'Kişi silinirken hata oluştu.');
+                    }
+                } catch (error) {
+                    console.error('Delete person error:', error);
+                    alert('Kişi silinirken bir hata oluştu: ' + error.message);
+                }
+            }
+
+            resetFilters() {
+                document.getElementById('searchInput').value = '';
+                document.getElementById('typeFilter').value = '';
+                this.applyFilters();
+            }
+
+            showEmptyState() {
+                const tableContainer = document.getElementById('tableContainer');
+                const loadingIndicator = document.getElementById('loadingIndicator');
+                const personsTable = document.getElementById('personsTable');
+                const noPersons = document.getElementById('noPersons');
+                const pagination = document.getElementById('pagination');
+
+                loadingIndicator.style.display = 'none';
+                personsTable.style.display = 'none';
+                pagination.style.display = 'none';
+                noPersons.style.display = 'block';
+            }
+        }
+
+        // Modülü başlat
+        let personsModule;
+        // Firebase Auth durumunu bekleyerek PersonsModule'ü başlat
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                if (!personsModule) {
+                    personsModule = new PersonsModule();
+                }
+            } else {
+                // Kullanıcı oturum açmamışsa giriş sayfasına yönlendir
+                console.log('❌ User not authenticated for Persons Management, redirecting to login page.');
+                window.location.href = 'index.html'; 
+            }
+        });
+
+        // Test fonksiyonları (konsoldan erişim için)
+        window.personsModule = personsModule; // Global erişim sağlamak için
+
+        window.testPersons = {
+            addTestPerson: async () => {
+                if (!personsModule) {
+                    console.error("PersonsModule not initialized. Please ensure a user is logged in.");
+                    return;
+                }
+                const testPerson = {
+                    name: `Test Kişi ${Date.now()}`,
+                    email: `test${Date.now()}@example.com`,
+                    phone: '05001234567',
+                    type: 'individual',
+                    address: 'Test Adresi'
+                };
+                const result = await personsService.addPerson(testPerson);
+                if (result.success) {
+                    console.log('Test person added:', result.id);
+                    await personsModule.loadPersons(); // Listeyi yenile
+                } else {
+                    console.error('Failed to add test person:', result.error);
+                }
+            },
+            clearAllPersons: async () => {
+                if (!personsModule || !personsModule.allPersons) {
+                    console.warn("PersonsModule not initialized or no persons to clear.");
+                    return;
+                }
+                if (confirm('TÜM KİŞİLERİ SİLMEK İSTEDİĞİNİZDEN EMİN MİSİNİZ? BU İŞLEM GERİ ALINAMAZ!')) {
+                    const personsToDelete = [...personsModule.allPersons]; // Kopya al
+                    for (const person of personsToDelete) {
+                        await personsService.deletePerson(person.id);
+                    }
+                    await personsModule.loadPersons();
+                    console.log('All persons cleared.');
+                }
+            },
+            getPersons: () => personsModule?.allPersons,
+            getFilteredPersons: () => personsModule?.filteredPersons
+        };
+        console.log('👥 Persons Module is ready!');
+        console.log('Test için: testPersons.addTestPerson() veya testPersons.clearAllPersons()');
+    </script>
+</body>
+</html>
