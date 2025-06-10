@@ -1,4 +1,4 @@
-// Firebase Configuration for IP Manager
+// Firebase Configuration for IP Manager - DEMO MODE
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
 import { 
     getAuth, 
@@ -22,28 +22,31 @@ import {
     onSnapshot
 } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
-// Firebase Config - Replace with your config
+// Firebase Config - DEMO MODE: Geçersiz config ile localStorage'u zorla
 const firebaseConfig = {
-    apiKey: "your-api-key",
-    authDomain: "your-project.firebaseapp.com", 
-    projectId: "your-project-id",
-    storageBucket: "your-project.appspot.com",
-    messagingSenderId: "123456789",
-    appId: "your-app-id"
+    apiKey: "demo-mode-disabled",
+    authDomain: "demo-mode-disabled",
+    projectId: "demo-mode-disabled",
+    storageBucket: "demo-mode-disabled",
+    messagingSenderId: "demo-mode-disabled",
+    appId: "demo-mode-disabled"
 };
 
-// Initialize Firebase
+// Initialize Firebase - Demo modda hata ile localStorage fallback'i zorla
 let app, auth, db;
 let isFirebaseAvailable = false;
 
 try {
+    // Firebase'i zorla devre dışı bırak demo test için
+    throw new Error('Demo mode - using localStorage only');
+    
     app = initializeApp(firebaseConfig);
     auth = getAuth(app);
     db = getFirestore(app);
     isFirebaseAvailable = true;
     console.log('🔥 Firebase initialized successfully');
 } catch (error) {
-    console.warn('⚠️ Firebase initialization failed, using localStorage fallback:', error);
+    console.warn('⚠️ Firebase disabled - using localStorage demo mode:', error.message);
     isFirebaseAvailable = false;
 }
 
@@ -52,11 +55,14 @@ export const authService = {
     auth: auth,
     
     async signIn(email, password) {
+        console.log('🔐 Attempting sign in with:', email);
+        
+        // Demo modda direkt localStorage kullan
+        if (!isFirebaseAvailable) {
+            return this.localSignIn(email, password);
+        }
+        
         try {
-            if (!isFirebaseAvailable) {
-                return this.localSignIn(email, password);
-            }
-            
             const result = await signInWithEmailAndPassword(auth, email, password);
             return {
                 success: true,
@@ -64,19 +70,21 @@ export const authService = {
                 message: 'Giriş başarılı'
             };
         } catch (error) {
-            console.error('Sign in error:', error);
-            
-            // Fallback to local authentication
+            console.error('Firebase sign in error:', error);
+            // Firebase hata verirse localStorage fallback
             return this.localSignIn(email, password);
         }
     },
 
     async signUp(email, password, displayName) {
+        console.log('📝 Attempting sign up with:', email);
+        
+        // Demo modda direkt localStorage kullan
+        if (!isFirebaseAvailable) {
+            return this.localSignUp(email, password, displayName);
+        }
+        
         try {
-            if (!isFirebaseAvailable) {
-                return this.localSignUp(email, password, displayName);
-            }
-            
             const result = await createUserWithEmailAndPassword(auth, email, password);
             
             // Update profile
@@ -90,14 +98,14 @@ export const authService = {
                 message: 'Hesap oluşturuldu'
             };
         } catch (error) {
-            console.error('Sign up error:', error);
+            console.error('Firebase sign up error:', error);
             return this.localSignUp(email, password, displayName);
         }
     },
 
     async signOut() {
         try {
-            if (isFirebaseAvailable) {
+            if (isFirebaseAvailable && auth) {
                 await signOut(auth);
             }
             localStorage.removeItem('currentUser');
@@ -110,7 +118,7 @@ export const authService = {
     },
 
     getCurrentUser() {
-        if (isFirebaseAvailable && auth.currentUser) {
+        if (isFirebaseAvailable && auth && auth.currentUser) {
             return auth.currentUser;
         }
         
@@ -119,17 +127,24 @@ export const authService = {
         return localUser ? JSON.parse(localUser) : null;
     },
 
-    // Local authentication fallback
+    // Local authentication fallback - ENHANCED
     localSignIn(email, password) {
+        console.log('🧪 Local sign in attempt:', email, password);
+        
         const demoAccounts = [
             { email: 'demo@ipmanager.com', password: 'demo123', name: 'Demo Kullanıcı', role: 'demo' },
-            { email: 'admin@ipmanager.com', password: 'admin123', name: 'Admin', role: 'admin' },
+            { email: 'admin@ipmanager.com', password: 'admin123', name: 'Admin Kullanıcı', role: 'admin' },
             { email: 'test@example.com', password: 'test123', name: 'Test Kullanıcı', role: 'user' }
         ];
 
+        console.log('Available demo accounts:', demoAccounts.map(acc => `${acc.email}/${acc.password}`));
+
         const account = demoAccounts.find(acc => 
-            acc.email === email && acc.password === password
+            acc.email.toLowerCase().trim() === email.toLowerCase().trim() && 
+            acc.password === password.trim()
         );
+
+        console.log('Found account:', account);
 
         if (account) {
             const userData = {
@@ -141,6 +156,8 @@ export const authService = {
             };
             
             localStorage.setItem('currentUser', JSON.stringify(userData));
+            console.log('✅ Local sign in successful:', userData);
+            
             return {
                 success: true,
                 user: userData,
@@ -148,9 +165,10 @@ export const authService = {
             };
         }
 
+        console.error('❌ Local sign in failed - invalid credentials');
         return {
             success: false,
-            error: 'Geçersiz e-posta veya şifre'
+            error: 'Geçersiz e-posta veya şifre. Demo hesaplar: demo@ipmanager.com/demo123, admin@ipmanager.com/admin123'
         };
     },
 
@@ -175,6 +193,8 @@ export const authService = {
 // IP Records Service
 export const ipRecordsService = {
     async addRecord(record) {
+        console.log('💾 Adding record:', record);
+        
         try {
             if (isFirebaseAvailable) {
                 const user = authService.getCurrentUser();
@@ -203,6 +223,8 @@ export const ipRecordsService = {
     },
 
     async getRecords() {
+        console.log('📋 Getting records...');
+        
         try {
             if (isFirebaseAvailable) {
                 const user = authService.getCurrentUser();
@@ -284,6 +306,8 @@ export const ipRecordsService = {
         records.push(newRecord);
         localStorage.setItem('ipRecords', JSON.stringify(records));
         
+        console.log('✅ Local record added:', newRecord);
+        
         return {
             success: true,
             id: newRecord.id,
@@ -293,6 +317,8 @@ export const ipRecordsService = {
 
     localGetRecords() {
         const records = this.getLocalRecords();
+        console.log('📋 Local records found:', records.length);
+        
         return {
             success: true,
             data: records.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
@@ -320,6 +346,7 @@ export const ipRecordsService = {
         const records = this.getLocalRecords();
         const filteredRecords = records.filter(r => r.id !== recordId);
         localStorage.setItem('ipRecords', JSON.stringify(filteredRecords));
+        console.log('🗑️ Local record deleted:', recordId);
         return { success: true };
     },
 
@@ -388,14 +415,20 @@ export async function createDemoData() {
 export function requireAuth() {
     const user = authService.getCurrentUser();
     if (!user) {
+        console.log('❌ Authentication required, redirecting to login');
         window.location.href = 'index.html';
         return false;
     }
+    console.log('✅ User authenticated:', user.email);
     return user;
 }
 
 // Export auth for direct access
 export { auth };
 
-console.log('🔥 Firebase config loaded successfully');
-console.log('Available services: authService, ipRecordsService, createDemoData, requireAuth');
+console.log('🔥 Firebase config loaded - DEMO MODE ACTIVE');
+console.log('📋 Demo hesaplar:');
+console.log('  demo@ipmanager.com / demo123');
+console.log('  admin@ipmanager.com / admin123');
+console.log('  test@example.com / test123');
+console.log('🧪 Available services: authService, ipRecordsService, createDemoData, requireAuth');
