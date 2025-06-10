@@ -1,59 +1,78 @@
 # IP Manager - Fikri Mülkiyet Yönetim Sistemi
 
-## 📋 Proje Açıklaması
+![Version](https://img.shields.io/badge/version-2.0-blue.svg)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
+![Demo](https://img.shields.io/badge/demo-live-brightgreen.svg)
 
-IP Manager, fikri mülkiyet haklarının (patent, marka, telif hakkı, tasarım) dijital ortamda yönetilmesi için geliştirilmiş modern bir web uygulamasıdır.
+🌐 **Live Demo:** https://kubilayguzel.github.io/ip-manager
 
-## 🚀 Özellikler
+IP Manager, fikri mülkiyet haklarının (patent, marka, telif hakkı, tasarım) dijital ortamda yönetilmesi için geliştirilmiş **modern ve entegre** bir web uygulamasıdır.
 
-- **Kimlik Doğrulama Sistemi** - Güvenli giriş/çıkış
-- **Dashboard** - Genel bakış ve istatistikler  
-- **Veri Giriş Modülü** - IP kayıt oluşturma
-- **Kişi Yönetimi** - Hak sahiplerini organize etme
-- **Çoklu IP Türü** - Patent, Marka, Telif Hakkı, Tasarım
-- **Dosya Yönetimi** - Belge yükleme ve organizasyon
-- **Responsive Tasarım** - Mobil uyumlu arayüz
+## 🚀 Yeni Özellikler (v2.0)
 
-## 🛠️ Teknolojiler
+### ✨ **Portfolio Sayfası (YENİ!)**
+- 📊 **Gelişmiş Tablo Görünümü** - Tüm IP kayıtları düzenli tabloda
+- 🔍 **Akıllı Filtreleme** - Tür, durum, tarih ve metin arama
+- 📈 **Gerçek Zamanlı İstatistikler** - Anlık sayılar ve durumlar
+- 📁 **CSV Dışa Aktarma** - Verilerinizi kolayca dışa aktarın
+- 👁️ **Detaylı Görüntüleme** - Modal ile kayıt detayları
+- 🔄 **Dinamik Sıralama** - Tüm kolonlarda çift yönlü sıralama
 
-- **Frontend:** HTML5, CSS3, JavaScript (ES6+)
-- **Tasarım:** Modern CSS Grid, Flexbox, Animations
-- **Veri:** LocalStorage (demo amaçlı)
-- **İkonlar:** Unicode Emoji
-- **Responsive:** Mobile-first yaklaşım
+### 🔗 **Tam Entegre Sistem**
+- 🔄 **Sayfalar Arası Senkronizasyon** - Veriler tüm sayfalarda güncel
+- 📱 **%100 Responsive** - Mobil ve masaüstü uyumlu
+- ⚡ **Gelişmiş Hata Yönetimi** - localStorage olmadan da çalışır
+- 🎯 **Optimize Edilmiş UX** - Kullanıcı dostu arayüz
 
-## 📁 Dosya Yapısı
+## 📁 Proje Yapısı
 
 ```
 ip-manager/
-├── index.html          # Giriş sayfası (Kimlik doğrulama)
-├── dashboard.html      # Ana sayfa (Dashboard)
-├── data-entry.html     # Veri giriş formu
-└── README.md          # Bu dosya
+├── index.html          # 🔐 Kimlik Doğrulama Sistemi
+├── dashboard.html      # 📊 Ana Sayfa & Canlı İstatistikler  
+├── data-entry.html     # ➕ Gelişmiş Veri Giriş Modülü
+├── portfolio.html      # 📋 Portföy Yönetim Sistemi (YENİ!)
+└── README.md          # 📖 Dokümantasyon
 ```
 
-## 🔧 Kurulum
+## 🎯 Modül Durumları
 
-### 1. Depoyu İndirin
+| Modül | Durum | Açıklama | Özellikler |
+|-------|-------|----------|------------|
+| 🔐 **Kimlik Doğrulama** | ✅ Aktif | Güvenli giriş sistemi | Demo hesaplar, session yönetimi |
+| 📊 **Dashboard** | ✅ Güncellandı | Gerçek verilerle istatistikler | Canlı sayılar, aktivite akışı |
+| ➕ **Veri Giriş** | ✅ Geliştirildi | Portfolio entegrasyonu | 4 IP türü, dosya yükleme |
+| 📋 **Portfolio** | 🆕 **YENİ** | Tam özellikli kayıt yönetimi | Filtreleme, arama, dışa aktarma |
+| 📈 **Raporlar** | 🔄 Planlanan | Gelişmiş raporlama sistemi | Grafikler, analizler |
+| ⚙️ **Ayarlar** | 🔄 Planlanan | Kullanıcı ve sistem ayarları | Profil, tercihler |
+
+## 🧪 Demo Hesapları
+
+Uygulamayı test etmek için aşağıdaki hesapları kullanabilirsiniz:
+
+| E-posta | Şifre | Rol | Açıklama |
+|---------|--------|-----|----------|
+| `demo@ipmanager.com` | `demo123` | Demo Kullanıcı | Temel özellikler |
+| `admin@ipmanager.com` | `admin123` | Yönetici | Tüm yetkiler |
+| `test@example.com` | `test123` | Test Kullanıcı | Test amaçlı |
+
+## 🔧 Kurulum & Çalıştırma
+
+### 1. Repository'yi İndirin
 ```bash
-git clone https://github.com/[kullanici-adi]/ip-manager.git
+git clone https://github.com/kubilayguzel/ip-manager.git
 cd ip-manager
 ```
 
 ### 2. Yerel Sunucu Başlatın
-
-**Python ile:**
 ```bash
+# Python ile
 python -m http.server 8000
-```
 
-**Node.js ile:**
-```bash
+# Node.js ile  
 npx http-server
-```
 
-**PHP ile:**
-```bash
+# PHP ile
 php -S localhost:8000
 ```
 
@@ -62,113 +81,102 @@ php -S localhost:8000
 http://localhost:8000
 ```
 
-## 👨‍💻 Kullanım
+## 🧪 Geliştirici Araçları
 
-### Demo Hesaplar
-- **E-posta:** demo@ipmanager.com  
-- **Şifre:** demo123
+### Tarayıcı Konsolu Komutları:
 
-### Diğer Test Hesapları
-- **admin@ipmanager.com** / admin123
-- **test@example.com** / test123
-
-### Temel İşlem Akışı
-1. **index.html** - Giriş yapın
-2. **dashboard.html** - Genel durumu görüntüleyin
-3. **data-entry.html** - Yeni IP kaydı oluşturun
-
-## 🧪 Test Özellikleri
-
-### Tarayıcı Konsolu Komutları
-
-**Giriş Sayfası (index.html):**
+#### 🔐 **Giriş Sayfasında (index.html)**
 ```javascript
-testAuth.fillDemo()          // Demo bilgileri doldur
-testAuth.getCurrentUser()    // Aktif kullanıcı
-testAuth.logout()           // Çıkış yap
+testAuth.fillDemo()              // Demo bilgileri otomatik doldur
+testAuth.getCurrentUser()        // Aktif kullanıcı bilgileri
+testAuth.logout()                // Çıkış yap
 ```
 
-**Dashboard (dashboard.html):**
+#### 📊 **Dashboard'da (dashboard.html)**  
 ```javascript
-testDashboard.refreshStats()                    // İstatistikleri yenile
-testDashboard.addActivity("patent", "Test")     // Aktivite ekle
-testDashboard.getCurrentUser()                  // Kullanıcı bilgisi
+testDashboard.refreshStats()     // İstatistikleri gerçek verilerle yenile
+testDashboard.addActivity("patent", "Test aktivite") // Yeni aktivite ekle
+testDashboard.getCurrentUser()   // Kullanıcı bilgilerini görüntüle
 ```
 
-**Veri Giriş (data-entry.html):**
+#### ➕ **Veri Girişinde (data-entry.html)**
 ```javascript
-testDataEntry.setTestData("trademark")  // Marka test verisi
-testDataEntry.setTestData("patent")     // Patent test verisi
-testDataEntry.getFormData()             // Form verilerini al
-testDataEntry.resetForm()               // Formu sıfırla
+testDataEntry.setTestData("patent")    // Patent test verisi yükle
+testDataEntry.setTestData("trademark") // Marka test verisi yükle
+testDataEntry.getFormData()            // Form verilerini JSON olarak al
+testDataEntry.resetForm()              // Formu temizle
 ```
 
-## 📝 Modül Detayları
+#### 📋 **Portfolio'da (portfolio.html)**
+```javascript
+testPortfolio.addTestRecord()     // Yeni test kaydı ekle
+testPortfolio.exportData()        // Verileri CSV olarak dışa aktar
+testPortfolio.getRecords()        // Tüm kayıtları görüntüle
+testPortfolio.clearAllRecords()   // Tüm kayıtları sil (dikkatli!)
+```
 
-### Modül 1: Kimlik Doğrulama (index.html)
-- ✅ Güvenli giriş sistemi
-- ✅ Form validasyonu
-- ✅ Session yönetimi
-- ✅ Demo hesap desteği
-- ✅ Responsive tasarım
+## 🌟 Özellik Listesi
 
-### Modül 2: Dashboard (dashboard.html)
-- ✅ İstatistik kartları
-- ✅ Grafik placeholder'ları
-- ✅ Son aktiviteler
-- ✅ Hızlı aksiyonlar
-- ✅ Navigasyon menüsü
+### ✅ **Kimlik Doğrulama**
+- 🔐 Güvenli giriş sistemi
+- 📱 Responsive login sayfası
+- ⚡ Session yönetimi
+- 🎯 Demo hesap desteği
 
-### Modül 3: Veri Giriş (data-entry.html) - Versiyon 4
-- ✅ 4 IP türü desteği (Patent, Marka, Telif, Tasarım)
-- ✅ Kişi yönetimi sistemi
-- ✅ Modal ile yeni kişi ekleme
-- ✅ Dosya yükleme (Drag & Drop)
-- ✅ Form validasyonu
-- ✅ Dinamik form alanları
+### ✅ **Dashboard**
+- 📊 Gerçek zamanlı istatistikler
+- 📈 IP türlerine göre sayılar
+- 🔄 Dinamik veri yenileme
+- 🎨 Modern tasarım
 
-## 🎯 Özellikler
+### ✅ **Veri Giriş**
+- 🏷️ 4 IP türü desteği (Patent, Marka, Telif, Tasarım)
+- 👥 Kişi yönetimi sistemi
+- 📁 Dosya yükleme (Drag & Drop)
+- ⚙️ Dinamik form alanları
+- ✅ Gelişmiş form validasyonu
 
-### IP Türleri
-- **📋 Patent** - Buluş ve teknolojik yenilikler
-- **🏷️ Marka** - İsim, logo ve tanıtım işaretleri
-- **© Telif Hakkı** - Edebi ve sanatsal eserler
-- **🎨 Tasarım** - Endüstriyel tasarımlar
+### ✅ **Portfolio Yönetimi**
+- 📋 Tablo görünümü
+- 🔍 Gelişmiş arama ve filtreleme
+- 📊 Anlık istatistikler
+- 👁️ Detaylı kayıt görüntüleme
+- 📁 CSV dışa aktarma
+- 🗑️ Kayıt silme
+- 🔄 Dinamik sıralama
 
-### Kişi Yönetimi
-- **👤 Bireysel** - Gerçek kişiler
-- **🏢 Şirket** - Tüzel kişiler
-- **🏛️ Kurum** - Kamu kurumları
+## 🔄 Veri Akışı
 
-### Dosya Yönetimi
-- **Desteklenen Formatlar:** PDF, DOC, DOCX, JPG, PNG
-- **Maksimum Boyut:** 10MB
-- **Drag & Drop** desteği
+```
+Giriş → Dashboard → Yeni Kayıt → Data Entry → 
+Kaydet → Portfolio → Filtrele/Görüntüle → Dashboard (Güncel İstatistikler)
+```
 
-## 🔮 Gelecek Sürümler
+## 🌟 Changelog
 
-### Modül 4: Portfolio (Planlanan)
-- IP listesi ve filtreleme
-- Detaylı görüntüleme
-- Arama özelliği
+### **v2.0.0** (Aralık 2024)
+- ➕ **Portfolio sayfası eklendi**
+- 🔗 **Tam modül entegrasyonu**
+- 📊 **Gerçek zamanlı veri senkronizasyonu**
+- 🔧 **localStorage hata yönetimi**
+- 📱 **Geliştirilmiş responsive tasarım**
+- 🎯 **Optimize edilmiş kullanıcı deneyimi**
+- 📁 **CSV dışa aktarma özelliği**
+- 🔍 **Gelişmiş arama ve filtreleme**
 
-### Modül 5: Raporlama (Planlanan)
-- Grafik ve analizler
-- PDF rapor oluşturma
-- İstatistiksel veriler
-
-### Modül 6: Ayarlar (Planlanan)
-- Kullanıcı profili
-- Sistem ayarları
-- Yedekleme/Geri yükleme
+### **v1.0.0** (2024)
+- 🔐 Kimlik doğrulama sistemi
+- 📊 Temel dashboard
+- ➕ Veri giriş modülü
+- 📝 Temel dokümantasyon
 
 ## 🤝 Katkıda Bulunma
 
-1. Fork yapın
-2. Feature branch oluşturun (`git checkout -b feature/yeni-ozellik`)
-3. Değişikliklerinizi commit edin (`git commit -am 'Yeni özellik eklendi'`)
-4. Branch'i push edin (`git push origin feature/yeni-ozellik`)
-5. Pull Request oluşturun
+1. **Fork** yapın
+2. **Feature branch** oluşturun (`git checkout -b feature/yeni-ozellik`)
+3. **Commit** edin (`git commit -am 'Yeni özellik eklendi'`)
+4. **Push** edin (`git push origin feature/yeni-ozellik`)
+5. **Pull Request** oluşturun
 
 ## 📄 Lisans
 
@@ -176,14 +184,14 @@ Bu proje MIT lisansı altında lisanslanmıştır.
 
 ## 📞 İletişim
 
-- **Geliştirici:** [Adınız]
-- **E-posta:** [E-posta adresiniz]
-- **Proje URL:** https://github.com/[kullanici-adi]/ip-manager
+- **Geliştirici:** Kubilay Güzel
+- **GitHub:** [@kubilayguzel](https://github.com/kubilayguzel)
+- **Proje URL:** https://github.com/kubilayguzel/ip-manager
 
 ## 🙏 Teşekkürler
 
-Bu projeyi kullandığınız için teşekkürler! Geri bildirimlerinizi bekliyoruz.
+Bu projeyi kullandığınız için teşekkürler! ⭐ **Star** vermeyi unutmayın!
 
 ---
 
-**Not:** Bu proje demo amaçlıdır. Gerçek üretim ortamında kullanım için güvenlik önlemleri alınmalıdır.
+**Not:** Bu proje demo amaçlıdır. Gerçek üretim ortamında kullanım için ek güvenlik önlemleri alınmalıdır.
