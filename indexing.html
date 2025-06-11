@@ -678,11 +678,11 @@
                 
                 // Null kontrolü eklendi
                 const documentUploadSection = document.getElementById('documentUploadSection');
-                if (documentUploadSection) {
+                if (documentUploadSection) { // Hata veren yerlerden biri burasıydı
                     documentUploadSection.style.display = 'none';
                 }
                 const recordUpdateSection = document.getElementById('recordUpdateSection');
-                if (recordUpdateSection) {
+                if (recordUpdateSection) { // Hata veren yerlerden biri burasıydı
                     recordUpdateSection.style.display = 'none';
                 }
 
@@ -724,7 +724,8 @@
                 const record = this.allRecords.find(r => r.id === recordId);
                 if (record) {
                     this.selectedRecord = record;
-                    this.originalRecordData = JSON.parse(JSON.stringify(record)); // Derin kopyasını kaydet
+                    // Orijinal kaydın derin kopyasını alırken notes undefined ise null yap
+                    this.originalRecordData = JSON.parse(JSON.stringify({ ...record, notes: record.notes === undefined ? null : record.notes })); 
 
                     document.getElementById('selectedRecordDisplay').value = `${record.title} (${record.applicationNumber || record.type})`;
                     
@@ -746,16 +747,13 @@
                     this.updateStatusOptionsForRecord(record.type, record.status);
 
                     // Mevcut dosyaları yükle
-                    // Buraya dikkat: selectedRecord'dan gelen 'files' orijinal dosyalarıdır.
-                    // uploadedFiles, sadece bu oturumda eklenen veya değiştirilen dosyaları tutacak.
-                    // Bu yüzden başlangıçta uploadedFiles'ı sıfırlıyoruz. Eğer mevcut dosyaları da düzenlemeye izin vereceksek,
-                    // onları da buraya yüklememiz gerekirdi. Şu an sadece YENİ eklenenleri işlemeye odaklanalım.
-                    this.uploadedFiles = []; // Bu sayfada sadece yeni eklenen dosyaları indeksleyeceğiz
+                    // Bu sayfada sadece yeni eklenen dosyaları indeksleyeceğiz.
+                    this.uploadedFiles = []; 
                     this.updateFileList();
 
                     // İsteğe bağlı güncelleme alanlarını mevcut kayıt verisiyle doldur
                     document.getElementById('updateRecordStatus').value = record.status || '';
-                    document.getElementById('updateRecordNotes').value = record.notes || ''; // Notlar alanı da varsa
+                    document.getElementById('updateRecordNotes').value = record.notes || ''; 
                     
                     // Seçilen kayda göre belge tiplerini ve atamalarını filtrele ve güncelle
                     this.filterDocumentTypesByRecordType(record.type);
@@ -955,15 +953,15 @@
 
                 // Yüklenen dosyalar için Document Type ve Document Designation seçimi zorunlu
                 this.uploadedFiles.forEach((file, index) => {
-                    // Document Type zorunlu kontrolü
+                    // Document Type zorunlu kontrolü (sadece value boşsa)
                     if (!file.documentType || file.documentType === '') {
                         isValid = false;
                         this.showNotification(`'${file.name}' belgesi için tip seçmelisiniz.`, 'error');
-                        // İlgili dropdown'a hata sınıfı ekleme mantığı burada genişletilebilir.
                     }
 
                     // Document Designation zorunlu kontrolü (sadece `required: true` olan atamalar için)
-                    const docDesignationDef = this.currentDocumentDesignations.find(dd => dd.value === file.documentDesignation);
+                    const docDesignationDef = this.allDocumentDesignations.find(dd => dd.value === file.documentDesignation);
+                    // Eğer atama tanımı varsa VE atama gerekli ise VE atama seçilmemişse hata ver
                     if (docDesignationDef && docDesignationDef.required && (!file.documentDesignation || file.documentDesignation === '')) {
                         isValid = false;
                         this.showNotification(`'${file.name}' belgesi için atama seçmelisiniz. (Zorunlu Alan)`, 'error');
@@ -1001,10 +999,8 @@
                     const updatedFilesForRecord = [];
                     const uploadedFileIds = new Set(this.uploadedFiles.map(f => f.id));
 
-                    // Eski dosyaları ekle (eğer uploadedFiles'ta yoksa veya güncellenmemişse)
+                    // Eski dosyaları ekle (eğer yeni yüklenenler arasında ID'siyle aynı değilse)
                     currentFilesOnRecord.forEach(existingFile => {
-                        // Eğer bu eski dosya, yeni yüklenenler arasında ID'siyle aynıysa, eklemiyoruz
-                        // çünkü yeni versiyonu 'this.uploadedFiles' içinde zaten var.
                         if (!uploadedFileIds.has(existingFile.id)) {
                             updatedFilesForRecord.push(existingFile);
                         }
@@ -1012,7 +1008,7 @@
                     
                     // Yeni yüklenen/güncellenen dosyaları ekle/değiştir
                     this.uploadedFiles.forEach(uploadedFile => {
-                        updatedFilesForRecord.push(uploadedFile); // Direkt ekle, updateRecord kendi mantığını halleder
+                        updatedFilesForRecord.push(uploadedFile); // Direkt ekle
                     });
 
 
@@ -1020,21 +1016,26 @@
                         files: updatedFilesForRecord, // Kayıt üzerinde olması gereken son dosya listesi
                     };
                     
-                    // İsteğe bağlı güncellemeler
+                    // İsteğe bağlı güncellemeler: Status
                     const newStatus = document.getElementById('updateRecordStatus').value;
-                    // Eğer durum seçilmişse VE mevcut durumdan farklıysa güncelle
+                    // Eğer durum seçilmişse ("Değiştirmeyin" değil) VE mevcut durumdan farklıysa güncelle
                     if (newStatus && newStatus !== this.originalRecordData.status) {
                         recordUpdates.status = newStatus;
-                    } else { // Durum değişmediyse mevcut durumu koru
-                        recordUpdates.status = this.originalRecordData.status;
+                    } else { 
+                        recordUpdates.status = (this.originalRecordData.status === undefined) ? null : this.originalRecordData.status;
                     }
 
-                    const newNotes = document.getElementById('updateRecordNotes').value.trim();
-                    // Eğer notlar değişmişse güncelle
-                    if (newNotes !== (this.originalRecordData.notes || '').trim()) {
-                        recordUpdates.notes = newNotes;
-                    } else { // Notlar değişmediyse mevcut notları koru
-                        recordUpdates.notes = this.originalRecordData.notes;
+                    // İsteğe bağlı güncellemeler: Notes
+                    const newNotes = document.getElementById('updateRecordNotes').value; 
+                    const originalNotes = this.originalRecordData.notes;
+
+                    // Trim'lenmiş değerleri karşılaştır
+                    if (newNotes.trim() !== (originalNotes || '').trim()) {
+                        // Eğer newNotes boş bir string ise null olarak gönder (Firebase için)
+                        recordUpdates.notes = newNotes.trim() === '' ? null : newNotes.trim();
+                    } else {
+                        // Değişmediyse orijinal değeri koru, undefined ise null yap
+                        recordUpdates.notes = (originalNotes === undefined) ? null : originalNotes;
                     }
 
                     const result = await ipRecordsService.updateRecord(this.selectedRecord.id, recordUpdates);
@@ -1066,11 +1067,11 @@
                 
                 // Null kontrolü eklendi
                 const documentUploadSection = document.getElementById('documentUploadSection');
-                if (documentUploadSection) {
+                if (documentUploadSection) { // Hata veren yerlerden biri burasıydı
                     documentUploadSection.style.display = 'none';
                 }
                 const recordUpdateSection = document.getElementById('recordUpdateSection');
-                if (recordUpdateSection) {
+                if (recordUpdateSection) { // Hata veren yerlerden biri burasıydı
                     recordUpdateSection.style.display = 'none';
                 }
 
