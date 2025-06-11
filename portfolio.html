@@ -639,7 +639,8 @@
                 <a href="#" class="nav-item active">Portföy</a>
                 <a href="data-entry.html" class="nav-item">Yeni Kayıt</a>
                 <a href="persons.html" class="nav-item">Kişiler Yönetimi</a>
-                <a href="excel-upload.html" class="nav-item">Excel Yükle</a> <a href="#" class="nav-item">Raporlar</a>
+                <a href="excel-upload.html" class="nav-item">Excel Yükle</a>
+                <a href="#" class="nav-item">Raporlar</a>
                 <a href="#" class="nav-item">Ayarlar</a>
             </nav>
             <div class="user-section">
@@ -810,8 +811,8 @@
                     if (user) {
                         this.currentUser = user;
                         // Kullanıcı bilgilerini ve rolünü güncellemek için authService'ten al
-                        this.currentUser = authService.getCurrentUser(); //
-                        console.log('✅ User authenticated:', user.email, 'Role:', this.currentUser.role); //
+                        this.currentUser = authService.getCurrentUser();
+                        console.log('✅ User authenticated:', user.email, 'Role:', this.currentUser.role);
                         // Kullanıcı oturum açtıysa verileri yükle
                         this.loadUserData();
                         this.initializeEventListeners();
@@ -819,21 +820,21 @@
                     } else {
                         // Kullanıcı oturum açmamışsa veya oturum kapatılmışsa
                         // localStorage'daki kullanıcıyı kontrol et (fallback)
-                        const localUser = authService.getCurrentUser(); //
-                        if (localUser && localUser.uid) { //
-                            this.currentUser = localUser; //
-                            console.log('⚠️ LocalStorage user detected, running in local mode:', localUser.email, 'Role:', this.currentUser.role); //
-                            this.loadUserData(); //
-                            this.initializeEventListeners(); //
+                        const localUser = authService.getCurrentUser();
+                        if (localUser && localUser.uid) {
+                            this.currentUser = localUser;
+                            console.log('⚠️ LocalStorage user detected, running in local mode:', localUser.email, 'Role:', this.currentUser.role);
+                            this.loadUserData();
+                            this.initializeEventListeners();
                             this.loadRecords(); // Verileri localStorage'dan yükle
                         } else {
                             // Ne Firebase ne de localStorage'da kullanıcı yoksa giriş sayfasına yönlendir
-                            console.log('❌ User not authenticated, redirecting to login page.'); //
-                            window.location.href = 'index.html'; //
+                            console.log('❌ User not authenticated, redirecting to login page.');
+                            window.location.href = 'index.html';
                         }
                     }
                 });
-                console.log('📊 Portfolio Modülü başlatılıyor...'); //
+                console.log('📊 Portfolio Modülü başlatılıyor...');
             }
 
             loadUserData() {
@@ -942,14 +943,14 @@
                 tableBody.innerHTML = ''; 
 
                 try {
-                    const result = await ipRecordsService.getRecords(); //
+                    const result = await ipRecordsService.getRecords();
                     
                     if (result.success) {
                         this.records = result.data;
                         this.updateStats();
                         this.applyFilters(); 
                     } else {
-                        console.error('Failed to load records:', result.error); //
+                        console.error('Failed to load records:', result.error);
                         this.showEmptyState();
                     }
                 } catch (error) {
@@ -1036,7 +1037,7 @@
                     record.applicationNumber,
                     record.registrationNumber,
                     // Eğer admin ise ve kayıt sahibi bilgisi varsa onu da aramaya dahil et
-                    record._ownerInfo //
+                    record._ownerInfo
                 ];
                 if (record.owners && record.owners.some(owner => owner.name.toLowerCase().includes(search))) {
                     return true;
@@ -1173,8 +1174,8 @@
 
                 // Eğer Süper Admin ise ve kayıt sahibi bilgisi varsa ekle
                 let ownerInfoHtml = ''; 
-                if (authService.isSuperAdmin()) { //
-                    ownerInfoHtml = `<div style="font-size: 0.75em; color: #888; margin-top: 5px;">${record.userEmail || '-'}</div>`; //
+                if (authService.isSuperAdmin()) {
+                    ownerInfoHtml = `<div style="font-size: 0.75em; color: #888; margin-top: 5px;">${record.userEmail || '-'}</div>`;
                 }
 
                 row.innerHTML = `
@@ -1216,8 +1217,13 @@
             }
 
             viewRecord(recordId) {
+                console.log('Viewing record with ID:', recordId); // Debugging: Kayıt ID'sini konsola yazdır
                 const record = this.records.find(r => r.id === recordId);
-                if (!record) return;
+                if (!record) {
+                    console.error('Record not found for ID:', recordId); // Debugging: Kayıt bulunamazsa hata yazdır
+                    return;
+                }
+                console.log('Record data:', record); // Debugging: Kayıt verisini konsola yazdır
 
                 const typeNames = {
                     patent: 'Patent',
@@ -1252,13 +1258,13 @@
                     <div class="detail-grid">
                         <div class="detail-item">
                             <div class="detail-label">IP Türü</div>
-                            <div class="detail-value">${typeNames[record.type]}</div>
+                            <div class="detail-value">${typeNames[record.type] || record.type}</div>
                         </div>
                         <div class="detail-item">
                             <div class="detail-label">Durum</div>
                             <div class="detail-value">
                                 <span class="status-badge ${record.status}">
-                                    ${statusNames[record.status]}
+                                    ${statusNames[record.status] || record.status}
                                 </span>
                             </div>
                         </div>
@@ -1301,26 +1307,33 @@
             }
 
             editRecord(recordId) {
-                alert(`Düzenleme özelliği yakında eklenecek!\nKayıt ID: ${recordId}`);
+                // Yönlendirme yaparak data-entry.html sayfasında düzenleme modunu aç
+                console.log('Editing record with ID:', recordId); // Debugging
+                window.location.href = `data-entry.html?recordId=${recordId}`;
             }
 
             async deleteRecord(recordId) {
                 const record = this.records.find(r => r.id === recordId);
-                if (!record) return;
+                if (!record) {
+                    alert('Silinecek kayıt bulunamadı.');
+                    return;
+                }
 
                 if (confirm(`"${record.title}" kaydını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz!`)) {
                     try {
+                        console.log('Attempting to delete record:', recordId); // Debugging
                         const result = await ipRecordsService.deleteRecord(recordId);
                         if (result.success) {
-                            console.log('Record deleted from Firestore:', recordId);
+                            console.log('Record deleted from Firestore (or LocalStorage):', recordId);
                             this.records = this.records.filter(r => r.id !== recordId);
                             this.applyFilters(); 
                             alert('Kayıt başarıyla silindi.');
                         } else {
+                            console.error('Failed to delete record:', result.error); // Debugging
                             throw new Error(result.error || 'Kayıt silinirken bilinmeyen bir hata oluştu.');
                         }
                     } catch (error) {
-                        console.error('Delete error:', error);
+                        console.error('Delete error:', error); // Debugging
                         alert('Kayıt silinirken bir hata oluştu: ' + error.message);
                     }
                 }
@@ -1359,8 +1372,8 @@
                                  'Marka Görseli Var Mı', 'Notlar']; 
                 
                 // Eğer süper admin ise, "Kayıt Sahibi E-postası" kolonunu ekle
-                if (authService.isSuperAdmin()) { //
-                    headers.push('Kayıt Sahibi E-postası'); //
+                if (authService.isSuperAdmin()) {
+                    headers.push('Kayıt Sahibi E-postası');
                 }
 
                 const rows = this.filteredRecords.map(record => {
@@ -1379,8 +1392,8 @@
                         `"${(record.notes || '').replace(/"/g, '""')}"`
                     ];
                     
-                    if (authService.isSuperAdmin()) { //
-                        rowData.push(record.userEmail || ''); //
+                    if (authService.isSuperAdmin()) {
+                        rowData.push(record.userEmail || '');
                     }
                     return rowData;
                 });
@@ -1391,10 +1404,10 @@
             }
 
             showEmptyState() {
-                const tableContent = document.getElementById('table-container'); // Düzeltilen ID
-                if (!tableContent) { // Güvenli kontrol
-                    console.error("Hata: 'table-container' elemanı bulunamadı. showEmptyState çalıştırılamıyor."); //
-                    return; //
+                const tableContent = document.getElementById('table-container');
+                if (!tableContent) {
+                    console.error("Hata: 'table-container' elemanı bulunamadı. showEmptyState çalıştırılamıyor.");
+                    return;
                 }
                 tableContent.innerHTML = `
                     <div class="no-records"> <div class="no-records-icon">📋</div>
@@ -1415,14 +1428,14 @@
                     portfolio = new PortfolioModule();
                 }
             } else {
-                const localUser = authService.getCurrentUser(); //
-                if (localUser && localUser.uid) { //
+                const localUser = authService.getCurrentUser();
+                if (localUser && localUser.uid) {
                     if (!portfolio) {
                         portfolio = new PortfolioModule();
                     }
                 } else {
-                    console.log('❌ User not authenticated, redirecting to login page.'); //
-                    window.location.href = 'index.html'; //
+                    console.log('❌ User not authenticated, redirecting to login page.');
+                    window.location.href = 'index.html';
                 }
             }
         });
@@ -1439,18 +1452,18 @@
                     title: 'Test Patent ' + Date.now(),
                     description: 'Test açıklaması',
                     status: 'pending',
-                    owners: [{ name: 'Test User', type: 'individual' }], 
+                    owners: [{ name: 'Test User', type: 'individual' }],
                     applicationNumber: 'TEST-' + Date.now(),
                     createdAt: new Date().toISOString(),
                     trademarkImage: null
                 };
-                const result = await ipRecordsService.addRecord(testRecord); //
+                const result = await ipRecordsService.addRecord(testRecord);
                 if (result.success) {
                     console.log('Test record added:', result.id);
                     await portfolio.loadRecords(); 
                     alert('Test kaydı başarıyla eklendi.');
                 } else {
-                    console.error('Failed to add test record:', result.error); //
+                    console.error('Failed to add test record:', result.error);
                     alert('Test kaydı eklenemedi: ' + result.error);
                 }
             },
@@ -1466,7 +1479,7 @@
                 if (confirm('TÜM KAYITLARI SİLMEK İSTEDİĞİNİZDEN EMİN MİSİNİZ? BU İŞLEM GERİ ALINAMAZ!')) {
                     const recordsToDelete = [...portfolio.records]; 
                     for (const record of recordsToDelete) {
-                        await ipRecordsService.deleteRecord(record.id); //
+                        await ipRecordsService.deleteRecord(record.id);
                     }
                     await portfolio.loadRecords(); 
                     console.log('All records cleared.');
