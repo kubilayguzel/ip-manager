@@ -767,6 +767,8 @@
         } from './firebase-config.js';
 
         // Kişileri yöneten ana sınıf
+        let personsModule; // Global olarak tanımlandı
+
         class PersonsModule {
             constructor() {
                 this.currentUser = null;
@@ -1048,7 +1050,7 @@
                 // Süper Admin ise _ownerInfo'yu göster
                 let ownerInfoCellHtml = '';
                 if (authService.isSuperAdmin()) {
-                    ownerInfoCellHtml = `<td>${person._ownerInfo || '-'}</td>`;
+                    ownerInfoCellHtml = `<td>${person.userEmail || '-'}</td>`; // _ownerInfo yerine userEmail kullanıldı
                 }
 
                 row.innerHTML = `
@@ -1089,33 +1091,42 @@
                 this.renderTable();
             }
 
-            openPersonModal(mode, personId = null) {
+            // Görüntüleme ve Düzenleme için tek modal kullanımı
+            async openPersonModal(mode, personId = null) {
                 const modal = document.getElementById('personModal');
                 const modalTitle = document.getElementById('personModalTitle');
                 const savePersonBtn = document.getElementById('savePersonBtn');
                 const form = document.getElementById('personForm');
                 const modalOwnerInfoGroup = document.getElementById('modalOwnerInfoGroup');
+                const modalOwnerInfoInput = document.getElementById('modalOwnerInfo');
 
                 this.currentPersonId = personId; 
 
                 form.reset();
-                this.clearModalErrors();
+                this.clearModalErrors('personForm'); // Form hatalarını temizle
+
+                // Tüm form elemanlarını varsayılan olarak düzenlenebilir yap
+                document.querySelectorAll('#personForm input, #personForm select, #personForm textarea').forEach(input => {
+                    input.readOnly = false;
+                    input.disabled = false;
+                });
 
                 if (mode === 'add') {
                     modalTitle.textContent = 'Yeni Kişi Ekle';
                     savePersonBtn.textContent = 'Kaydet';
-                    savePersonBtn.disabled = false;
-                    modalOwnerInfoGroup.style.display = 'none';
+                    savePersonBtn.style.display = 'inline-block'; // Kaydet butonunu göster
+                    modalOwnerInfoGroup.style.display = 'none'; // Kayıt sahibi bilgisini gizle
                 } else if (mode === 'edit' || mode === 'view') {
                     const person = this.allPersons.find(p => p.id === personId);
                     if (!person) {
                         alert('Kişi bulunamadı.');
+                        this.closePersonModal();
                         return;
                     }
 
                     modalTitle.textContent = mode === 'edit' ? 'Kişi Bilgilerini Düzenle' : 'Kişi Detayları';
                     savePersonBtn.textContent = 'Güncelle';
-                    savePersonBtn.disabled = mode === 'view'; 
+                    savePersonBtn.style.display = mode === 'view' ? 'none' : 'inline-block'; // Görüntüleme modunda kaydet butonunu gizle
 
                     document.getElementById('personName').value = person.name || '';
                     document.getElementById('personEmail').value = person.email || '';
@@ -1124,27 +1135,22 @@
                     document.getElementById('personAddress').value = person.address || '';
 
                     // Süper Admin ise kayıt sahibini göster
-                    if (authService.isSuperAdmin() && person._ownerInfo) {
-                        document.getElementById('modalOwnerInfo').value = person._ownerInfo;
+                    if (authService.isSuperAdmin() && person.userEmail) { // userEmail kullanıldı
+                        modalOwnerInfoInput.value = person.userEmail;
                         modalOwnerInfoGroup.style.display = 'block';
                     } else {
                         modalOwnerInfoGroup.style.display = 'none';
                     }
 
+                    // Görüntüleme modunda veya admin olmayan kullanıcı için yetki kontrolü
                     document.querySelectorAll('#personForm input, #personForm select, #personForm textarea').forEach(input => {
-                        // Admin olmayan kullanıcılar sadece kendi kayıtlarını görüntüleyebilir, başkasınınkini düzenleyemez
-                        if (!authService.isSuperAdmin()) {
-                            if (person.userId !== this.currentUser.uid) { // Eğer kendi kaydı değilse ve admin değilse
-                                input.readOnly = true;
-                                input.disabled = true;
-                            } else { // Kendi kaydıysa veya admin ise
-                                input.readOnly = mode === 'view';
-                                input.disabled = mode === 'view';
-                            }
-                        } else { // Admin ise her zaman düzenleme/görüntüleme moduna göre
-                            input.readOnly = mode === 'view';
-                            input.disabled = mode === 'view';
+                        let isReadOnly = mode === 'view';
+                        // Eğer admin değilse ve başkasına ait kaydı düzenlemeye çalışıyorsa
+                        if (!authService.isSuperAdmin() && person.userId !== this.currentUser.uid) {
+                            isReadOnly = true; // Sadece okuma modunda kalsın
                         }
+                        input.readOnly = isReadOnly;
+                        input.disabled = isReadOnly; // Disabled da yap
                     });
                 }
                 modal.classList.add('show');
@@ -1153,11 +1159,13 @@
             closePersonModal() {
                 const modal = document.getElementById('personModal');
                 modal.classList.remove('show');
+                // Form elemanlarını varsayılan hallerine döndür
                 document.querySelectorAll('#personForm input, #personForm select, #personForm textarea').forEach(input => {
                     input.readOnly = false;
                     input.disabled = false;
                 });
                 this.currentPersonId = null;
+                this.clearModalErrors('personForm'); // Modal kapatılırken hataları temizle
             }
 
             async savePerson() { 
@@ -1190,8 +1198,13 @@
                              saveBtn.disabled = false;
                              return;
                         }
+                        personData.updatedAt = new Date().toISOString(); // Güncelleme tarihi ekle
                         result = await personsService.updatePerson(this.currentPersonId, personData);
                     } else {
+                        personData.createdAt = new Date().toISOString(); // Oluşturma tarihi ekle
+                        personData.updatedAt = new Date().toISOString(); // Güncelleme tarihi ekle
+                        personData.userId = this.currentUser.uid; // Kaydı oluşturan kullanıcı ID'si
+                        personData.userEmail = this.currentUser.email; // Kaydı oluşturan kullanıcı E-posta
                         result = await personsService.addPerson(personData);
                     }
 
@@ -1259,22 +1272,30 @@
                 noPersons.style.display = 'block';
             }
             
-            clearModalErrors() {
+            clearModalErrors(formId) {
                 // Herhangi bir hata mesajı alanı varsa burada temizleyebilirsiniz.
+                document.querySelectorAll(`#${formId} .filter-input`).forEach(input => {
+                    input.classList.remove('error-field');
+                });
+                document.querySelectorAll(`#${formId} .error-message`).forEach(errorDiv => {
+                    errorDiv.style.display = 'none';
+                });
             }
         }
 
-        let personsModule;
+        // personsModule nesnesini window global kapsamına atama
         auth.onAuthStateChanged((user) => {
             if (user) {
                 if (!personsModule) {
                     personsModule = new PersonsModule();
+                    window.personsModule = personsModule; // Global erişim için atama
                 }
             } else {
                 const localUser = authService.getCurrentUser();
                 if (localUser && localUser.uid) {
                     if (!personsModule) {
                         personsModule = new PersonsModule();
+                        window.personsModule = personsModule; // Global erişim için atama
                     }
                 } else {
                     console.log('❌ User not authenticated for Persons Management, redirecting to login page.');
@@ -1282,8 +1303,6 @@
                 }
             }
         });
-
-        window.personsModule = personsModule; 
 
         window.testPersons = {
             addTestPerson: async () => {
