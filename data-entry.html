@@ -265,7 +265,7 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 20px;
-            flex-wrap: wrap; /* Küçük ekranlarda sığdırmak için */
+            flex-wrap: wrap; /* Küçük ekranlarda sarmalama */
             gap: 10px;
         }
 
@@ -443,14 +443,36 @@
 
         .file-item {
             display: flex;
+            flex-direction: column; /* Dikey düzen için */
             justify-content: space-between;
-            align-items: center;
+            align-items: flex-start; /* Kontrolleri sola yasla */
             padding: 10px;
             background: #f8f9fa;
             border-radius: 8px;
             margin-bottom: 10px;
         }
-
+        .file-item > span { /* Dosya adı */
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 5px; /* Kontrollerle arasında boşluk */
+        }
+        
+        /* YENİ CSS STİLLERİ BAŞLANGICI */
+        .file-item-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap; /* Küçük ekranlarda sarmalama */
+            width: 100%; /* İçindeki elementlerin yerleşimi için */
+        }
+        .file-item-select {
+            flex-grow: 1; /* Dropdown'ın mümkün olduğunca genişlemesini sağla */
+            min-width: 150px; /* Minimum genişlik */
+            padding: 5px 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 0.85em;
+        }
         .remove-file {
             background: #ff6b6b;
             color: white;
@@ -464,10 +486,12 @@
             align-items: center;
             justify-content: center;
             transition: background 0.3s ease;
+            flex-shrink: 0; /* Küçülmesini engelle */
         }
         .remove-file:hover {
             background: #c82333;
         }
+        /* YENİ CSS STİLLERİ SONU */
 
         .form-actions {
             display: flex;
@@ -563,6 +587,13 @@
                 flex-direction: column;
             }
             .btn { /* Mobil buton genişliği */
+                width: 100%;
+            }
+            .file-item-controls { /* Mobil ekranda kontrolleri düzgün hizala */
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .file-item-select, .remove-file {
                 width: 100%;
             }
         }
@@ -1046,7 +1077,7 @@
     </div>
 
     <script type="module">
-        import { authService, ipRecordsService, personsService, auth } from './firebase-config.js';
+        import { authService, ipRecordsService, personsService, auth, generateUUID } from './firebase-config.js';
 
         // Dropdown Menü Fonksiyonu (Dashboard'dan kopyalandı)
         function toggleDropdown(event) {
@@ -1073,13 +1104,29 @@
                 this.selectedType = null;
                 this.selectedOwners = [];
                 this.persons = [];
-                this.uploadedFiles = [];
+                this.uploadedFiles = []; // Her bir obje artık documentType ve id içerecek
                 this.uploadedTrademarkImage = null;
                 this.selectedPersonForSearch = null;
                 this.currentUser = null;
                 this.recordIdToEdit = null;
+                this.originalRecordData = null; // Kayıt güncellenirken değişiklikleri izlemek için
+                
+                // YENİ: Doküman tipleri listesi
+                this.documentTypes = [
+                    'Belge Tipi Seçiniz', // Varsayılan boş seçenek
+                    'Başvuru Formu',
+                    'Patent Belgesi',
+                    'Marka Tescil Belgesi',
+                    'Telif Hakkı Tescil Belgesi',
+                    'Tasarım Tescil Belgesi',
+                    'Resmi Yazışma',
+                    'Vekaletname',
+                    'Teknik Çizim',
+                    'Karar',
+                    'Diğer'
+                ];
 
-                // Metodları sınıf örneğine bağlama
+                // Metodları sınıf örneğine bağlama (constructor içinde arrow function kullanılıyorsa bind'a gerek yok)
                 // init metodunu arrow function olarak tanımladığımız için burada bind etmeye gerek yok
                 this.updateUserInfo = this.updateUserInfo.bind(this);
                 this.loadRecordForEdit = this.loadRecordForEdit.bind(this);
@@ -1126,6 +1173,8 @@
                 this.handleBack = this.handleBack.bind(this);
                 this.setTestData = this.setTestData.bind(this);
                 this.getFormData = this.getFormData.bind(this);
+                this.compareRecordsForChanges = this.compareRecordsForChanges.bind(this);
+
 
                 this.init();
             }
@@ -1238,7 +1287,7 @@
                     this.fillFormWithRecordData(recordToEdit);
                     this.showNotification('Kayıt başarıyla yüklendi.', 'success');
 
-                } catch (error) {
+                } /* cite: 5 */ catch (error) {
                     console.error('Error loading record for edit:', error);
                     this.showNotification('Kayıt yüklenirken bir hata oluştu: ' + error.message, 'error');
                     setTimeout(() => { window.location.href = 'portfolio.html'; }, 2000);
@@ -1246,12 +1295,13 @@
             }
 
             fillFormWithRecordData(record) {
+                this.originalRecordData = JSON.parse(JSON.stringify(record)); // Derin kopyasını kaydet
+
                 this.selectType(record.type);
                 document.querySelectorAll('.type-card').forEach(card => {
                     card.classList.add('disabled');
                     card.style.pointerEvents = 'none';
                 });
-
 
                 this.selectedOwners = record.owners ? record.owners.map(o => o.id || o.name) : [];
                 this.renderOwnerList();
@@ -1295,7 +1345,11 @@
                     document.getElementById('designFeatures').value = record.designFeatures || '';
                 }
 
-                this.uploadedFiles = record.files || [];
+                // uploadedFiles dizisini mevcut belgelerle doldur ve documentType'ları da yükle
+                this.uploadedFiles = record.files ? record.files.map(file => ({
+                    ...file,
+                    documentType: file.documentType || 'Diğer' // Yoksa 'Diğer' varsay
+                })) : [];
                 this.updateFileList();
 
                 document.getElementById('mainFormTitle').textContent = `"${record.title}" Kaydını Düzenle`;
@@ -1716,8 +1770,8 @@
 
                     if (result.success) {
                         alert(`Kişi başarıyla ${this.currentPersonId ? 'güncellendi' : 'eklendi'}!`);
-                        this.closePersonModal();
-                        await this.loadPersons();
+                        this.hideAddPersonModal(); // closePersonModal yerine hideAddPersonModal
+                        await this.loadPersonsFromService(); // loadPersons yerine loadPersonsFromService
                     } else {
                         const errorMessage = result.error || (error && (error.code || error.message || JSON.stringify(error))) || 'Bilinmeyen bir hata oluştu.';
                         throw new Error(errorMessage);
@@ -1732,7 +1786,7 @@
             }
 
             clearModalErrors(formId) {
-                document.querySelectorAll(`#${formId} .filter-input`).forEach(input => {
+                document.querySelectorAll(`#${formId} .form-input`).forEach(input => {
                     input.classList.remove('error-field');
                 });
                 document.querySelectorAll(`#${formId} .error-message`).forEach(errorDiv => {
@@ -1782,7 +1836,7 @@
                     alert('Kişi bulunamadı.');
                     return;
                 }
-
+                
                 if (!authService.isSuperAdmin() && personToDelete.userId !== this.currentUser.uid) {
                     alert('Bu kişiyi silme yetkiniz yoktur.');
                     return;
@@ -1796,7 +1850,7 @@
                     const result = await personsService.deletePerson(personId);
                     if (result.success) {
                         alert('Kişi başarıyla silindi!');
-                        await this.loadPersons();
+                        await this.loadPersonsFromService(); // loadPersons yerine loadPersonsFromService
                     } else {
                         throw new Error(result.error || 'Kişi silinirken hata oluştu.');
                     }
@@ -1828,12 +1882,13 @@
             setupFileUpload() {
                 const fileUploadArea = document.getElementById('fileUpload');
                 const fileInput = document.getElementById('fileInput');
-                const fileList = document.getElementById('fileList');
+                // const fileList = document.getElementById('fileList'); // Bu artık direkt updateFileList'te yönetiliyor
 
                 fileUploadArea.addEventListener('click', () => fileInput.click());
 
                 fileInput.addEventListener('change', (e) => {
                     this.handleFiles(e.target.files);
+                    e.target.value = ''; // Aynı dosya tekrar seçilebilsin diye inputu temizle
                 });
 
                 // Drag & Drop
@@ -1860,15 +1915,29 @@
                 for (const file of files) {
                     const validationResult = this.validateFile(file);
                     if (validationResult.isValid) {
+                        // Aynı dosyanın daha önce yüklenip yüklenmediğini kontrol et (adı ve boyutu aynıysa)
+                        const existingFile = this.uploadedFiles.find(f => 
+                            f.name === file.name && f.size === file.size
+                        );
+                        if (existingFile) {
+                            this.showNotification(`'${file.name}' zaten eklenmiş.`, 'info');
+                            continue;
+                        }
+
                         this.readFileAsDataURL(file).then(dataUrl => {
-                            this.uploadedFiles.push({
+                            // YENİ: Dokümana benzersiz ID ve varsayılan doküman tipi ata
+                            const newFileObj = {
+                                id: generateUUID(), // Yeni eklenen dosyaya ID ver
                                 name: file.name,
-                                type: file.type,
+                                type: file.type, // Mime type
                                 size: file.size,
-                                content: dataUrl
-                            });
+                                content: dataUrl, // Base64 içeriği
+                                documentType: this.documentTypes[0], // Varsayılan: "Belge Tipi Seçiniz"
+                                uploadedAt: new Date().toISOString() // Yükleme zamanı
+                            };
+                            this.uploadedFiles.push(newFileObj);
                             this.updateFileList();
-                            this.showNotification(`Dosya yüklendi: ${file.name}`, 'success');
+                            this.showNotification(`Dosya yüklendi: ${file.name}. Lütfen tipini seçin.`, 'success');
                         }).catch(error => {
                             this.showNotification(`Dosya okuma hatası: ${file.name} - ${error.message}`, 'error');
                             console.error('File read error:', error);
@@ -1896,23 +1965,49 @@
                 const fileListElement = document.getElementById('fileList');
                 const fileItem = document.createElement('div');
                 fileItem.className = 'file-item';
-                fileItem.dataset.fileName = file.name;
+                fileItem.dataset.fileId = file.id; // Dosyanın benzersiz ID'si
+
+                // Doküman tipi seçeneği için HTML oluştur
+                let docTypeSelectHtml = `<select class="file-item-select" data-file-id="${file.id}">`;
+                this.documentTypes.forEach(type => {
+                    const selected = (file.documentType === type || (type === 'Belge Tipi Seçiniz' && !file.documentType)) ? 'selected' : '';
+                    docTypeSelectHtml += `<option value="${type}" ${selected}>${type}</option>`;
+                });
+                docTypeSelectHtml += `</select>`;
 
                 fileItem.innerHTML = `
                     <span>${file.name} (${this.formatFileSize(file.size)})</span>
-                    <button type="button" class="remove-file" data-file-name="${file.name}">×</button>
+                    <div class="file-item-controls">
+                        ${docTypeSelectHtml}
+                        <button type="button" class="remove-file" data-file-id="${file.id}">×</button>
+                    </div>
                 `;
                 fileListElement.appendChild(fileItem);
 
-                fileItem.querySelector('.remove-file').addEventListener('click', (e) => {
-                    this.removeFile(e.target.dataset.fileName);
-                });
+                // Doküman tipi değiştiğinde güncellemeyi kaydet
+                const docTypeSelect = fileItem.querySelector(`.file-item-select[data-file-id="${file.id}"]`);
+                if (docTypeSelect) {
+                    docTypeSelect.addEventListener('change', (e) => {
+                        const updatedFile = this.uploadedFiles.find(f => f.id === file.id);
+                        if (updatedFile) {
+                            updatedFile.documentType = e.target.value;
+                        }
+                    });
+                }
+
+                // Dosya kaldırma butonu
+                const removeBtn = fileItem.querySelector(`.remove-file[data-file-id="${file.id}"]`);
+                if (removeBtn) {
+                    removeBtn.addEventListener('click', (e) => {
+                        this.removeFile(e.target.dataset.fileId);
+                    });
+                }
             }
 
-            removeFile(fileNameToRemove) {
-                this.uploadedFiles = this.uploadedFiles.filter(file => file.name !== fileNameToRemove);
+            removeFile(fileIdToRemove) { // ID'ye göre silmek için güncelledik
+                this.uploadedFiles = this.uploadedFiles.filter(file => file.id !== fileIdToRemove);
                 this.updateFileList();
-                this.showNotification(`Dosya kaldırıldı: ${fileNameToRemove}`, 'info');
+                this.showNotification(`Dosya kaldırıldı.`, 'info');
             }
 
             updateFileList() {
@@ -1925,13 +2020,14 @@
             setupTrademarkImageUpload() {
                 const trademarkImageUploadArea = document.getElementById('trademarkImageUpload');
                 const trademarkImageInput = document.getElementById('trademarkImageInput');
-                const trademarkImagePreview = document.getElementById('trademarkImagePreview');
+                // const trademarkImagePreview = document.getElementById('trademarkImagePreview'); // Zaten renderTrademarkImagePreview'da kullanılıyor
 
                 if (trademarkImageUploadArea) {
                     trademarkImageUploadArea.addEventListener('click', () => trademarkImageInput.click());
 
                     trademarkImageInput.addEventListener('change', (e) => {
                         this.handleTrademarkImage(e.target.files[0]);
+                        e.target.value = ''; // Aynı dosya tekrar seçilebilsin diye inputu temizle
                     });
 
                     // Drag & Drop for trademark image
@@ -2057,13 +2153,7 @@
                 // Tarih validasyonları (opsiyonel ama iyi olur)
                 const appDate = document.getElementById('applicationDate').value;
                 const regDate = document.getElementById('registrationDate')?.value;
-                const expiryDate = document.getElementById('expiryDate')?.value;
-                const priorityDate = document.getElementById('priority')?.value;
-                const creationDate = document.getElementById('creationDate')?.value;
-                const publicationDate = document.getElementById('publicationDate')?.value;
-                const renewalDate = document.getElementById('renewalDate')?.value;
-                const bulletinDate = document.getElementById('bulletinDate')?.value;
-                const designDate = document.getElementById('designDate')?.value;
+                // ... (Diğer tarih alanları) ...
 
 
                 if (appDate && regDate && new Date(regDate) < new Date(appDate)) {
@@ -2097,7 +2187,8 @@
                     applicationNumber: document.getElementById('applicationNumber').value.trim(),
                     applicationDate: document.getElementById('applicationDate').value,
                     description: document.getElementById('description').value.trim(),
-                    files: this.uploadedFiles,
+                    files: this.uploadedFiles, // Güncellenmiş files dizisi
+                    transactions: [] // Bu dizi submitForm içinde doldurulacak, updateRecord içinde de kullanılacak
                 };
 
                 // Ortak opsiyonel alanlar
@@ -2145,6 +2236,7 @@
                 });
             }
 
+            // submitForm metodunu güncelliyoruz: transaction mantığını burada yöneteceğiz
             async submitForm() {
                 if (!this.validateForm()) {
                     this.showNotification('Lütfen formdaki eksik veya hatalı alanları düzeltin.', 'error');
@@ -2160,24 +2252,41 @@
                 submitLoading.style.display = 'inline-block';
                 this.showNotification('Kaydediliyor...', 'info');
 
-                const formData = this.collectFormData();
+                const newFormData = this.collectFormData(); // Formdaki anlık veriler
                 let result;
 
                 try {
-                    if (this.recordIdToEdit) {
-                        result = await ipRecordsService.updateRecord(this.recordIdToEdit, formData);
-                        if (result.success) {
-                            this.showNotification('Kayıt başarıyla güncellendi!', 'success');
-                        } else {
-                            throw new Error(result.error || 'Kayıt güncellenirken bir hata oluştu.');
-                        }
-                    } else {
-                        result = await ipRecordsService.addRecord(formData);
+                    // Eğer yeni bir kayıt oluşturuluyorsa (recordIdToEdit yoksa)
+                    if (!this.recordIdToEdit) {
+                        // `addRecord` zaten ilk "Record Created" transaction'ı ve dosya transaction'larını ekler.
+                        result = await ipRecordsService.addRecord(newFormData);
                         if (result.success) {
                             this.showNotification('Kayıt başarıyla oluşturuldu!', 'success');
-                            this.resetForm(); // Yeni kayıt sonrası formu temizle
+                            this.resetForm();
                         } else {
                             throw new Error(result.error || 'Kayıt eklenirken bir hata oluştu.');
+                        }
+                    } else { // Mevcut bir kayıt güncelleniyorsa
+                        // `updateRecord` içindeki transaction yönetimi, formdaki değişiklikleri algılayıp ekler.
+                        // `updatesToSend` objesi, `newFormData`'nın tüm alanlarını içerecektir.
+                        // `files` dizisi `ipRecordsService.updateRecord` içinde zaten işlenir.
+                        // `transactions` dizisini burada oluşturmamıza gerek yok, `updateRecord` bunu yönetecek.
+                        
+                        // Önemli: `updateRecord` fonksiyonu, `updates` objesini doğrudan Firebase'e gönderiyor.
+                        // Bu yüzden `updates` objesi, `newFormData`'nın tüm ilgili alanlarını içermeli,
+                        // ve `transactions` dizisi `updateRecord` tarafından yönetileceği için burada boş veya mevcut haliyle bırakılmalı.
+                        
+                        // `ipRecordsService.updateRecord` metodunun `updates` parametresini
+                        // beklediği gibi göndermek için `newFormData`'yı direkt kullanabiliriz.
+                        // İçindeki `transactions` dizisi `updateRecord` tarafından yönetilecek.
+                        result = await ipRecordsService.updateRecord(this.recordIdToEdit, newFormData);
+                        
+                        if (result.success) {
+                            this.showNotification('Kayıt başarıyla güncellendi!', 'success');
+                            // Güncelleme sonrası formu yeni verilerle tekrar yükle
+                            await this.loadRecordForEdit(this.recordIdToEdit);
+                        } else {
+                            throw new Error(result.error || 'Kayıt güncellenirken bir hata oluştu.');
                         }
                     }
                 } catch (error) {
@@ -2190,12 +2299,75 @@
                 }
             }
 
+            // YENİ: Kayıtlar arası değişiklikleri karşılaştıran yardımcı metot (şimdilik sadece fieldChanges kontrolü için kullanılmayacak, bilgisel kaldı)
+            compareRecordsForChanges(oldRecord, newRecord) {
+                const changes = {
+                    fieldChanges: [],
+                    newFiles: [],
+                    updatedFiles: [],
+                    deletedFiles: []
+                };
+
+                if (!oldRecord) return changes; // Yeni kayıt ise değişiklik yoktur
+
+                // Alan değişiklikleri
+                const comparableFields = ['type', 'title', 'status', 'applicationNumber', 'applicationDate', 'description', 
+                                          'registrationDate', 'patentClass', 'expiryDate', 'priority', 'claims', 
+                                          'trademarkType', 'niceClass', 'registrationNumber', 'renewalDate', 
+                                          'goodsServices', 'bulletinDate', 'bulletinNumber', 'workType', 
+                                          'creationDate', 'publicationDate', 'publisher', 'designType', 
+                                          'locarnoClass', 'designDate', 'designFeatures'];
+
+                comparableFields.forEach(field => {
+                    const oldValue = oldRecord[field] || '';
+                    const newValue = newRecord[field] || '';
+                    // deep comparison for objects like owners is not handled here
+                    if (String(oldValue).trim() !== String(newValue).trim()) {
+                        changes.fieldChanges.push({ field: field, old: oldValue, new: newValue });
+                    }
+                });
+
+                // Dosya değişiklikleri (ID'ye göre karşılaştırılır)
+                const oldFilesMap = new Map((oldRecord.files || []).map(f => [f.id, f]));
+                const newFilesMap = new Map((newRecord.files || []).map(f => [f.id, f]));
+
+                // Yeni dosyalar
+                newRecord.files.forEach(newFile => {
+                    if (!oldFilesMap.has(newFile.id)) {
+                        changes.newFiles.push(newFile);
+                    } else {
+                        // Güncellenen dosyalar (content hariç, o da değişebilir ama tipi/adı/boyutu daha önemli)
+                        const oldFile = oldFilesMap.get(newFile.id);
+                        if (oldFile.name !== newFile.name ||
+                            oldFile.documentType !== newFile.documentType ||
+                            oldFile.size !== newFile.size ||
+                            oldFile.content !== newFile.content // İçerik değişirse de güncelleme say
+                        ) {
+                            changes.updatedFiles.push(newFile);
+                        }
+                    }
+                });
+
+                // Silinen dosyalar
+                oldRecord.files.forEach(oldFile => {
+                    if (!newFilesMap.has(oldFile.id)) {
+                        changes.deletedFiles.push(oldFile);
+                    }
+                });
+
+                // Not: trademarkImage değişikliklerini de burada ele alabilirsiniz.
+                // Basitlik için şu an sadece string/file array'leri karşılaştırıyoruz.
+
+                return changes;
+            }
+
             resetForm() {
                 document.getElementById('ipForm').reset();
                 this.selectedType = null;
                 this.selectedOwners = [];
                 this.uploadedFiles = [];
                 this.uploadedTrademarkImage = null;
+                this.originalRecordData = null; // Reset original data
                 this.updateFileList();
                 this.renderOwnerList();
                 this.clearAllFormErrors();
@@ -2230,6 +2402,20 @@
                 }
                 this.selectedOwners = [testOwner.id];
                 this.renderOwnerList();
+
+                // Test için dummy bir dosya ekle
+                const dummyFile = {
+                    id: generateUUID(),
+                    name: `test_doc_${type}.pdf`,
+                    type: 'application/pdf',
+                    size: 10240, // 10KB
+                    content: 'data:application/pdf;base64,JVBERi0xLjEKJcOkw... (dummy base64 content)',
+                    documentType: 'Başvuru Formu', // Varsayılan test tipi
+                    uploadedAt: new Date().toISOString()
+                };
+                this.uploadedFiles.push(dummyFile);
+                this.updateFileList();
+
 
                 if (type === 'patent') {
                     document.getElementById('patentClass').value = 'A';
