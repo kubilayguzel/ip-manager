@@ -1048,23 +1048,21 @@
     <script type="module">
         import { authService, ipRecordsService, personsService, auth } from './firebase-config.js';
 
-        // Dropdown Menü Fonksiyonu (Data-Entry'ye de eklendi)
+        // Dropdown Menü Fonksiyonu (Dashboard'dan kopyalandı)
         function toggleDropdown(event) {
-            event.preventDefault(); // Varsayılan bağlantı davranışını engelle
+            event.preventDefault(); 
             const dropdown = document.getElementById("managementDropdown");
-            dropdown.classList.toggle("active"); // 'active' sınıfını ekleyip/kaldırarak görünürlüğü kontrol et
+            dropdown.classList.toggle("active");
             
-            // Dropdown dışına tıklanınca kapanması için
             window.onclick = function(e) {
                 if (!e.target.matches('.dropdown-toggle') && !e.target.closest('.dropdown-content')) {
                     if (dropdown.classList.contains('active')) {
                         dropdown.classList.remove('active');
-                        window.onclick = null; // Olay dinleyiciyi kaldır
+                        window.onclick = null;
                     }
                 }
             }
         }
-        // Fonksiyonu global scope'a atayalım ki HTML'den erişilebilsin
         window.toggleDropdown = toggleDropdown;
 
 
@@ -1086,6 +1084,7 @@
                     if (user) {
                         this.currentUser = authService.getCurrentUser(); 
                         console.log('✅ User authenticated:', this.currentUser.email, 'Role:', this.currentUser.role);
+                        this.updateUserInfo(); // Header'daki kullanıcı bilgilerini güncelle
                         await this.loadPersonsFromService(); 
                         this.initializeEventListeners();
                         this.setupFileUpload();
@@ -1117,6 +1116,7 @@
                         if (localUser && localUser.uid) { 
                             this.currentUser = localUser; 
                             console.log('⚠️ LocalStorage user detected, running in local mode:', this.currentUser.email, 'Role:', this.currentUser.role); 
+                            this.updateUserInfo();
                             await this.loadPersonsFromService(); 
                             this.initializeEventListeners(); 
                             this.setupFileUpload();
@@ -1151,11 +1151,24 @@
                 console.log('📝 Veri Giriş Modülü başlatılıyor...');
             }
 
+            updateUserInfo() {
+                // Header'daki kullanıcı bilgilerini güncellemek için (isteğe bağlı, genel header yapısı için)
+                const userNameEl = document.getElementById('userName'); // Eğer header'da bu ID varsa
+                const userRoleEl = document.getElementById('userRole'); // Eğer header'da bu ID varsa
+                const userAvatarEl = document.getElementById('userAvatar'); // Eğer header'da bu ID varsa
+
+                if (this.currentUser && userNameEl) {
+                    const userName = this.currentUser.displayName || this.currentUser.email.split('@')[0] || 'Kullanıcı';
+                    userNameEl.textContent = userName;
+                    if (userRoleEl) userRoleEl.textContent = this.currentUser.role === 'admin' ? 'Yönetici' :
+                                                              this.currentUser.role === 'superadmin' ? 'Süper Yönetici' : 'Kullanıcı';
+                    if (userAvatarEl) userAvatarEl.textContent = userName.charAt(0).toUpperCase();
+                }
+            }
+
             async loadRecordForEdit(recordId) {
                 this.showNotification('Kayıt yükleniyor...', 'info');
                 try {
-                    // Tüm kayıtları alıp filtrelemek yerine, belirli bir kaydı alacak bir servis metodu daha verimli olabilir.
-                    // Şimdilik mevcut getRecords üzerinden filtreleme yapalım.
                     const allRecordsResult = await ipRecordsService.getRecords();
                     if (!allRecordsResult.success) {
                         throw new Error(allRecordsResult.error || 'Kayıtlar yüklenemedi.');
@@ -1164,12 +1177,10 @@
 
                     if (!recordToEdit) {
                         this.showNotification('Düzenlenecek kayıt bulunamadı!', 'error');
-                        // Kayıt bulunamazsa portföy sayfasına geri dön
                         setTimeout(() => { window.location.href = 'portfolio.html'; }, 2000);
                         return;
                     }
 
-                    // Kayıt sahibinin kendi kaydı olup olmadığını kontrol et (admin değilse)
                     if (!authService.isSuperAdmin() && recordToEdit.userId !== this.currentUser.uid) {
                         this.showNotification('Bu kaydı düzenleme yetkiniz yoktur.', 'error');
                         setTimeout(() => { window.location.href = 'portfolio.html'; }, 2000);
@@ -1182,26 +1193,21 @@
                 } catch (error) {
                     console.error('Error loading record for edit:', error);
                     this.showNotification('Kayıt yüklenirken bir hata oluştu: ' + error.message, 'error');
-                    // Hata durumunda da portföy sayfasına geri dön
                     setTimeout(() => { window.location.href = 'portfolio.html'; }, 2000);
                 }
             }
 
             fillFormWithRecordData(record) {
-                // Fikri Mülkiyet Türü
                 this.selectType(record.type);
-                // Düzenleme modunda tür seçimini devre dışı bırak
                 document.querySelectorAll('.type-card').forEach(card => {
-                    card.classList.add('disabled'); // Yeni CSS sınıfı ekleyelim
-                    card.style.pointerEvents = 'none'; // Tıklamayı engelle
+                    card.classList.add('disabled');
+                    card.style.pointerEvents = 'none';
                 });
                 
 
-                // Hak Sahipleri
-                this.selectedOwners = record.owners ? record.owners.map(o => o.id || o.name) : []; // ID veya isim ile eşleştir
+                this.selectedOwners = record.owners ? record.owners.map(o => o.id || o.name) : [];
                 this.renderOwnerList();
 
-                // Genel Bilgiler
                 document.getElementById('title').value = record.title || '';
                 document.getElementById('status').value = record.status || '';
                 document.getElementById('applicationNumber').value = record.applicationNumber || '';
@@ -1212,7 +1218,6 @@
                     document.getElementById('registrationDate').value = record.registrationDate;
                 }
 
-                // Dinamik Alanlar
                 if (record.type === 'patent') {
                     document.getElementById('patentClass').value = record.patentClass || '';
                     document.getElementById('expiryDate').value = record.expiryDate || '';
@@ -1242,11 +1247,9 @@
                     document.getElementById('designFeatures').value = record.designFeatures || '';
                 }
 
-                // Yüklenmiş Dosyalar
                 this.uploadedFiles = record.files || [];
                 this.updateFileList();
 
-                // Form başlığını ve buton metnini güncelle
                 document.getElementById('mainFormTitle').textContent = `"${record.title}" Kaydını Düzenle`;
                 document.getElementById('submitText').textContent = 'Güncelle';
             }
@@ -1273,7 +1276,6 @@
             initializeEventListeners() {
                 document.querySelectorAll('.type-card').forEach(card => {
                     card.addEventListener('click', () => {
-                        // Eğer düzenleme modundaysak türü değiştirmeyi engelle
                         if (!this.recordIdToEdit) {
                             this.selectType(card.dataset.type);
                         } else {
@@ -1308,7 +1310,6 @@
 
                 document.getElementById('typeSelector')?.addEventListener('click', () => this.clearFieldError('type'));
 
-                // Durum combo box'ı için change event listener
                 document.getElementById('status')?.addEventListener('change', (e) => {
                     this.clearFieldError('status');
                 });
@@ -1349,7 +1350,7 @@
                     this.showTypeFields(type);
                     this.updateTitleLabel(type); 
                     this.toggleTrademarkImageUpload(type === 'trademark'); 
-                    this.updateStatusOptions(type); // Tip değiştiğinde durum seçeneklerini güncelle
+                    this.updateStatusOptions(type);
                     this.clearFieldError('type'); 
                     console.log(`Selected type: ${type}`);
                 } else {
@@ -1358,7 +1359,6 @@
                 }
             }
 
-            // Durum seçeneklerini güncelleme metodu
             updateStatusOptions(type = this.selectedType) {
                 const statusSelect = document.getElementById('status');
                 if (!statusSelect) return;
@@ -1401,7 +1401,6 @@
                     targetFields.classList.add('show');
                 }
 
-                // Tescil Tarihi alanını sadece marka için göster, diğerleri için gizle
                 const registrationDateGroup = document.getElementById('registrationDateGroup');
                 if (registrationDateGroup) {
                     registrationDateGroup.style.display = (type === 'trademark') ? 'block' : 'none';
@@ -1448,13 +1447,11 @@
                 }
 
                 this.selectedOwners.forEach(personId => {
-                    const person = this.persons.find(p => p.id === personId);
-                    // Eğer person bulunamazsa (örneğin ID ile eşleşmiyorsa),
-                    // ID ile eşleşen bir kişi bulunamadığında isim üzerinden de arayabiliriz
+                    let person = this.persons.find(p => p.id === personId);
                     if (!person) {
-                        const foundByName = this.persons.find(p => p.name === personId); // Eğer ownerId aslında isimse
+                        const foundByName = this.persons.find(p => p.name === personId);
                         if (foundByName) {
-                            personId = foundByName.id; // Gerçek ID'yi kullan
+                            personId = foundByName.id;
                             person = foundByName;
                         } else {
                             console.warn(`Person with ID/Name ${personId} not found in this.persons. Skipping.`);
@@ -1642,7 +1639,6 @@
                 }
 
                 if (!isValid) {
-                    // Hatalı alanlar varsa uyarıyı göstermeye gerek yok, fieldError zaten görünüyor
                     return;
                 }
 
@@ -1655,19 +1651,18 @@
                     let result;
                     if (this.currentPersonId) {
                         const personToUpdate = this.allPersons.find(p => p.id === this.currentPersonId);
-                        // Admin olmayan kullanıcı, başkasına ait kaydı güncelleyemesin
                         if (!authService.isSuperAdmin() && personToUpdate && personToUpdate.userId !== this.currentUser.uid) {
                              alert('Bu kaydı güncelleme yetkiniz yoktur.');
                              saveBtn.disabled = false;
                              return;
                         }
-                        newPersonData.updatedAt = new Date().toISOString(); // Güncelleme tarihi ekle
+                        newPersonData.updatedAt = new Date().toISOString();
                         result = await personsService.updatePerson(this.currentPersonId, newPersonData);
                     } else {
-                        newPersonData.createdAt = new Date().toISOString(); // Oluşturma tarihi ekle
-                        newPersonData.updatedAt = new Date().toISOString(); // Güncelleme tarihi ekle
-                        newPersonData.userId = this.currentUser.uid; // Kaydı oluşturan kullanıcı ID'si
-                        newPersonData.userEmail = this.currentUser.email; // Kaydı oluşturan kullanıcı E-posta
+                        newPersonData.createdAt = new Date().toISOString();
+                        newPersonData.updatedAt = new Date().toISOString();
+                        newPersonData.userId = this.currentUser.uid;
+                        newPersonData.userEmail = this.currentUser.email;
                         result = await personsService.addPerson(newPersonData);
                     }
 
@@ -1682,8 +1677,53 @@
                     console.error('Save person error:', error);
                     alert('Kişi kaydedilirken bir hata oluştu: ' + error.message);
                 } finally {
-                    saveBtn.disabled = false; 
+                    saveBtn.disabled = false;
                 }
+            }
+
+            clearModalErrors(formId) {
+                document.querySelectorAll(`#${formId} .filter-input`).forEach(input => {
+                    input.classList.remove('error-field');
+                });
+                document.querySelectorAll(`#${formId} .error-message`).forEach(errorDiv => {
+                    errorDiv.style.display = 'none';
+                });
+            }
+
+            isValidEmail(email) {
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                return emailRegex.test(email);
+            }
+
+            showNotification(message, type = 'info') {
+                const notification = document.createElement('div');
+                notification.className = `notification-message ${type}`;
+                notification.innerHTML = `<span>${type === 'success' ? '✅' : (type === 'error' ? '❌' : 'ℹ️')}</span><span>${message}</span>`;
+                
+                notification.style.position = 'fixed';
+                notification.style.top = '20px';
+                notification.style.right = '20px';
+                notification.style.zIndex = '1001';
+                notification.style.opacity = '0'; 
+                notification.style.transition = 'opacity 0.5s ease-in-out, transform 0.5s ease-in-out';
+                notification.style.transform = 'translateY(-20px)'; 
+                
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    notification.style.opacity = '1';
+                    notification.style.transform = 'translateY(0)';
+                }, 10); 
+
+                setTimeout(() => {
+                    notification.style.opacity = '0';
+                    notification.style.transform = 'translateY(-20px)';
+                    setTimeout(() => {
+                        if (document.body.contains(notification)) {
+                            document.body.removeChild(notification);
+                        }
+                    }, 500); 
+                }, 3000);
             }
 
             async deletePerson(personId) {
@@ -1693,7 +1733,6 @@
                     return;
                 }
                 
-                // Admin olmayan kullanıcı, başkasına ait kaydı silemesin
                 if (!authService.isSuperAdmin() && personToDelete.userId !== this.currentUser.uid) {
                     alert('Bu kişiyi silme yetkiniz yoktur.');
                     return;
@@ -1723,7 +1762,7 @@
                 this.applyFilters();
             }
 
-            showEmptyState(message = 'Henüz kişi bulunamadı.') { // Varsayılan mesaj eklendi
+            showEmptyState() {
                 const loadingIndicator = document.getElementById('loadingIndicator');
                 const personsTable = document.getElementById('personsTable');
                 const noPersons = document.getElementById('noPersons');
@@ -1733,7 +1772,6 @@
                 personsTable.style.display = 'none';
                 pagination.style.display = 'none';
                 noPersons.style.display = 'block';
-                noPersons.querySelector('h3').textContent = message; // Mesajı güncelle
             }
             
             clearModalErrors(formId) {
@@ -1744,11 +1782,6 @@
                     errorDiv.style.display = 'none';
                 });
             }
-
-            isValidEmail(email) {
-                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                return emailRegex.test(email);
-            }
         }
 
         // personsModule nesnesini window global kapsamına atama
@@ -1756,14 +1789,14 @@
             if (user) {
                 if (!personsModule) {
                     personsModule = new PersonsModule();
-                    window.personsModule = personsModule; // Global erişim için atama
+                    window.personsModule = personsModule;
                 }
             } else {
                 const localUser = authService.getCurrentUser();
                 if (localUser && localUser.uid) {
                     if (!personsModule) {
                         personsModule = new PersonsModule();
-                        window.personsModule = personsModule; // Global erişim için atama
+                        window.personsModule = personsModule;
                     }
                 } else {
                     console.log('❌ User not authenticated for Persons Management, redirecting to login page.');
@@ -1805,11 +1838,10 @@
                 if (confirm('TÜM KİŞİLERİ SİLMEK İSTEDİĞİNİZDEN EMİN MİSİNİZ? BU İŞLEM GERİ ALINAMAZ!')) {
                     const personsToDelete = [...personsModule.allPersons]; 
                     for (const person of personsToDelete) {
-                        // Silme işlemi için yetki kontrolü
                         if (!authService.isSuperAdmin() && person.userId !== personsModule.currentUser.uid) {
                             console.warn(`Yetkisiz silme girişimi: ${person.id} kişisi başka bir kullanıcıya ait.`);
                             alert(`"${person.name}" kişisi başka bir kullanıcıya ait olduğu için silinemedi.`);
-                            continue; // Bu kişiyi atla ve diğerlerine geç
+                            continue;
                         }
                         await personsService.deletePerson(person.id);
                     }
