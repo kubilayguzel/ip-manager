@@ -64,6 +64,31 @@ function generateUUID() {
     });
 }
 
+// Ortak çeviri objeleri (firebase-config.js içine taşındı)
+const subDesignationTranslations = {
+    'opposition_to_publication': 'Yayına İtiraz',
+    'response_to_opposition': 'İtiraza Karşı Görüş',
+    'opposition_decision_rejected': 'Yayına İtiraz Kararı - Ret',
+    'opposition_decision_accepted': 'Yayına İtiraz Kararı - Kabul'
+};
+
+const documentDesignationTranslations = {
+    'opposition_trademark_office': 'Yayına İtiraz - Markalar Dairesi',
+    'Başvuru Ek Dokümanı': 'Başvuru Ek Dokümanı',
+    'Resmi Yazışma': 'Resmi Yazışma',
+    'Vekaletname': 'Vekaletname',
+    'Teknik Çizim': 'Teknik Çizim',
+    'Karar': 'Karar',
+    'Finansal Belge': 'Finansal Belge',
+    'Yayın Kararı': 'Yayın Kararı',
+    'Ret Kararı': 'Ret Kararı',
+    'Tescil Belgesi': 'Tescil Belgesi',
+    'Araştırma Raporu': 'Araştırma Raporu',
+    'İnceleme Raporu': 'İnceleme Raporu',
+    'Diğer Belge': 'Diğer Belge',
+    'Genel Not': 'Genel Not'
+};
+
 // Authentication Service
 export const authService = {
     auth: auth,
@@ -472,7 +497,7 @@ export const ipRecordsService = {
 
             const newTransactions = [...(currentRecord.transactions || [])];
             // Parent transaction ID'sini belirlemek için, eğer spesifik bir alt atama yapıldıysa, ana atamayı parent olarak kullanacağız.
-            let parentTxId = null; 
+            let defaultParentTxId = null; 
 
             // 1. Ana güncelleme işlemi (eğer temel alanlarda değişiklik varsa)
             const changedFields = [];
@@ -505,14 +530,14 @@ export const ipRecordsService = {
                     userEmail: user.email,
                     parentId: null // Bu işlem ana seviyede bir işlem
                 });
-                parentTxId = recordUpdateTxId; // Diğer işlemler bunun altında olabilir
+                defaultParentTxId = recordUpdateTxId; // Diğer işlemler bunun altında olabilir
             } else if (currentRecord.transactions && currentRecord.transactions.length > 0) {
                  // Eğer kayıt güncelleniyor ama temel alanlarda değişiklik yoksa,
                  // son ana işlemi (Record Created veya Record Updated) parent olarak alabiliriz.
                  // Bu, transaction ağacını daha anlamlı kılar.
                  const lastRootTransaction = newTransactions.find(tx => tx.parentId === null);
                  if (lastRootTransaction) {
-                     parentTxId = lastRootTransaction.transactionId;
+                     defaultParentTxId = lastRootTransaction.transactionId;
                  }
             }
 
@@ -525,33 +550,76 @@ export const ipRecordsService = {
                 const existingFile = oldFiles.find(oldF => oldF.id === newFile.id);
                 if (!existingFile) {
                     // Yeni eklenen dosya
-                    let description = newFile.documentDesignation || "Belge indekslendi."; // Default açıklama
-                    
-                    // Eğer alt atama varsa, ana atama parent, alt atama description olsun
-                    if (newFile.subDesignation) {
-                        description = newFile.subDesignation;
-                    } 
-                    // else if (newFile.documentDesignation) { // Sadece ana atama varsa, o olsun açıklama
-                    //     description = newFile.documentDesignation;
-                    // }
+                    let description = '';
+                    let mainTxId = generateUUID(); // Ana transaction ID'si
 
-                    const fileTxId = generateUUID();
-                    newTransactions.unshift({
-                        transactionId: fileTxId,
-                        type: "Document Indexed",
-                        description: description, // Yeni belirlenen açıklama
-                        documentId: newFile.id,
-                        documentName: newFile.name,
-                        documentDesignation: newFile.documentDesignation, 
-                        subDesignation: newFile.subDesignation, 
-                        timestamp: newFile.uploadedAt || updatedTimestamp,
-                        userId: user.uid,
-                        userEmail: user.email,
-                        parentId: newFile.subDesignation ? null : parentTxId // Alt atama varsa ana transaction, yoksa üst trans. bağla
-                        // NOTE: Eğer alt atama varsa, bu transaction kendisi ana transaction olacak, parentId = null.
-                        // Yoksa, normal Record Updated parent'ına bağlanacak.
-                        // Bu yapı, portfolyo detayındaki yeni renderTransactionHistory ile uyumlu.
-                    });
+                    // Eğer alt atama varsa, ana atama (parent) olarak bir transaction oluştur, alt atama (child) için ayrı bir transaction oluştur.
+                    if (newFile.documentDesignation && newFile.subDesignation) {
+                        // Parent transaction (Atama)
+                        description = documentDesignationTranslations[newFile.documentDesignation] || newFile.documentDesignation;
+                        newTransactions.unshift({
+                            transactionId: mainTxId,
+                            type: "Document Indexed", // Ana işlem tipi
+                            description: description,
+                            documentId: newFile.id,
+                            documentName: newFile.name,
+                            documentDesignation: newFile.documentDesignation,
+                            subDesignation: null, // Bu parent tx için alt atama null
+                            timestamp: newFile.uploadedAt || updatedTimestamp,
+                            userId: user.uid,
+                            userEmail: user.email,
+                            parentId: newFile.selectedParentTransactionId || defaultParentTxId // Kullanıcı seçtiyse onu, yoksa otomatik parent
+                        });
+
+                        // Child transaction (Alt Atama)
+                        const childTxId = generateUUID();
+                        description = subDesignationTranslations[newFile.subDesignation] || newFile.subDesignation;
+                        newTransactions.unshift({
+                            transactionId: childTxId,
+                            type: "Document Sub-Indexed", // Alt işlem tipi
+                            description: description,
+                            documentId: newFile.id,
+                            documentName: newFile.name,
+                            documentDesignation: newFile.documentDesignation,
+                            subDesignation: newFile.subDesignation,
+                            timestamp: newFile.uploadedAt || updatedTimestamp,
+                            userId: user.uid,
+                            userEmail: user.email,
+                            parentId: mainTxId // Parent'ı ana atama transaction'ı
+                        });
+                    } else if (newFile.documentDesignation) {
+                        // Sadece atama varsa, o tek başına bir transaction
+                        description = documentDesignationTranslations[newFile.documentDesignation] || newFile.documentDesignation;
+                        newTransactions.unshift({
+                            transactionId: mainTxId,
+                            type: "Document Indexed",
+                            description: description,
+                            documentId: newFile.id,
+                            documentName: newFile.name,
+                            documentDesignation: newFile.documentDesignation,
+                            subDesignation: null,
+                            timestamp: newFile.uploadedAt || updatedTimestamp,
+                            userId: user.uid,
+                            userEmail: user.email,
+                            parentId: newFile.selectedParentTransactionId || defaultParentTxId // Kullanıcı seçtiyse onu, yoksa otomatik parent
+                        });
+                    } else {
+                        // Ne atama ne de alt atama varsa, genel bir açıklama
+                        description = `Yeni belge indekslendi: ${newFile.name}`;
+                        newTransactions.unshift({
+                            transactionId: mainTxId,
+                            type: "Document Indexed",
+                            description: description,
+                            documentId: newFile.id,
+                            documentName: newFile.name,
+                            documentDesignation: null,
+                            subDesignation: null,
+                            timestamp: newFile.uploadedAt || updatedTimestamp,
+                            userId: user.uid,
+                            userEmail: user.email,
+                            parentId: newFile.selectedParentTransactionId || defaultParentTxId
+                        });
+                    }
                 } else {
                     // 3. Mevcut dosyaların güncellenmesi için transaction
                     const fileChanges = [];
@@ -582,7 +650,7 @@ export const ipRecordsService = {
                             timestamp: updatedTimestamp,
                             userId: user.uid,
                             userEmail: user.email,
-                            parentId: parentTxId
+                            parentId: defaultParentTxId // Parent'ı ana güncelleme işlemi
                         });
                     }
                 }
@@ -612,7 +680,7 @@ export const ipRecordsService = {
                         timestamp: updatedTimestamp,
                         userId: user.uid,
                         userEmail: user.email,
-                        parentId: parentTxId
+                        parentId: defaultParentTxId
                     });
                 }
             });
@@ -667,7 +735,7 @@ export const ipRecordsService = {
                 throw new Error('Kayıt bulunamadı.');
             }
             const recordData = docSnap.data();
-            const newTransactions = recordData.transactions.filter(tx => tx.transactionId !== transactionId);
+            const newTransactions = recordData.transactions.filter(tx => tx.transactionId !== transactionId && tx.parentId !== transactionId); // Child'ları da sil
 
             await updateDoc(recordRef, { transactions: newTransactions });
             console.log(`✅ Firebase transaction ${transactionId} deleted.`);
@@ -745,7 +813,7 @@ export const ipRecordsService = {
         const recordIndex = records.findIndex(r => r.id === recordId);
         if (recordIndex !== -1) {
             const record = records[recordIndex];
-            record.transactions = (record.transactions || []).filter(tx => tx.transactionId !== transactionId);
+            record.transactions = (record.transactions || []).filter(tx => tx.transactionId !== transactionId && tx.parentId !== transactionId); // Child'ları da sil
             localStorage.setItem('ipRecords', JSON.stringify(records));
             console.log(`✅ Local transaction ${transactionId} deleted from record ${recordId}.`);
             return { success: true };
@@ -974,6 +1042,9 @@ export const personsService = {
         }
     }
 };
+
+// Export çeviri objeleri de dışarıdan erişilebilir olsun
+export { subDesignationTranslations, documentDesignationTranslations };
 
 // Create demo data with multiple users (Super Admin görür)
 export async function createDemoData() {
