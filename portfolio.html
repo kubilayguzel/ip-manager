@@ -111,12 +111,15 @@
         /* Dropdown başlığının stilini nav-item'a benzet */
         .dropdown .nav-item {
             cursor: pointer;
-            padding-right: 25px; /* Ok ikonu için boşluk */
+            display: flex; /* YENİ: İçeriği (metin + ok) hizalamak için flex kullan */
+            align-items: center; /* YENİ: Dikeyde ortala */
+            gap: 5px; /* YENİ: Metin ile ok arasına boşluk */
+            /* padding-right: 25px; */ /* KALDIRILDI: Artık gap kullanılıyor */
         }
         .dropdown .nav-item::after {
             content: ' ▼'; /* Küçük ok ikonu */
             font-size: 0.8em;
-            vertical-align: middle;
+            vertical-align: middle; /* Bu, flex ile birlikte davranışı değişebilir */
         }
 
 
@@ -284,7 +287,7 @@
         .filter-input, .filter-select {
             padding: 8px 12px;
             border: 2px solid #e1e8ed;
-            border-radius: 8px;
+            border-radius: 10px;
             font-size: 0.9em;
             transition: all 0.3s ease;
         }
@@ -868,8 +871,7 @@
                 </div>
 
                 <a href="excel-upload.html" class="nav-item">Excel'den Yükle</a>
-                <a href="indexing.html" class="nav-item">Belge İndeksle</a>
-                <a href="#" class="nav-item">Raporlar</a>
+                <a href="indexing.html" class="nav-item">Belge İndeksle</a> <a href="#" class="nav-item">Raporlar</a>
                 <a href="#" class="nav-item">Ayarlar</a>
             </nav>
             <div class="user-section">
@@ -971,13 +973,13 @@
                 <table class="portfolio-table" id="portfolioTable" style="display: none;">
                     <thead>
                         <tr>
-                            <th class="sortable" data-sort="type">Tür</th>
-                            <th class="sortable" data-sort="title">Başlık</th>
+                            <th>Tür</th>
+                            <th>Başlık</th>
                             <th>Marka Örneği</th>
-                            <th class="sortable" data-sort="applicationNumber">Başvuru No</th>
-                            <th class="sortable" data-sort="status">Durum</th>
-                            <th class="sortable" data-sort="applicationDate">Başvuru Tarihi</th>
-                            <th class="sortable" data-sort="owners">Hak Sahipleri</th>
+                            <th>Başvuru No</th>
+                            <th>Durum</th>
+                            <th>Başvuru Tarihi</th>
+                            <th>Hak Sahipleri</th>
                             <th>İşlemler</th>
                         </tr>
                     </thead>
@@ -1450,7 +1452,7 @@
                 }
                 
                 // Başvuru Numarası için yeni URL'li link oluşturma
-                const baseUrl = "https://www.turkpatent.gov.tr/arastirma-yap?form=trademark"; 
+                const baseUrl = "https://online.turkpatent.gov.tr/trademark/search/applicationNumber?"; 
                 const applicationNumberLink = record.applicationNumber 
                     ? `<a href="${baseUrl}q=${encodeURIComponent(record.applicationNumber)}" target="_blank" title="TürkPatent web sitesinde ara">${record.applicationNumber}</a>`
                     : '-';
@@ -1517,14 +1519,15 @@
                     approved: 'Onaylandı',
                     rejected: 'Reddedildi',
                     expired: 'Süresi Doldu',
-                    published: 'Yayınlandı',
-                    partial_refusal: 'Kısmi Ret',
-                    refused: 'Ret',
-                    opposition_received: 'İtiraz Geldi',
-                    opposition_filed: 'İtiraz Edildi',
-                    registered: 'Tescilli',
-                    not_renewed: 'Yenilenmedi',
-                    invalid_void: 'Başvuru Geçersiz/Hükümsüz'
+                    published: 'Yayınlandı', // Marka özel
+                    partial_refusal: 'Kısmi Ret', // Marka özel
+                    refused: 'Ret', // Marka özel
+                    opposition_received: 'İtiraz Geldi', // Marka özel
+                    request_for_extension: 'Ek Süre Talebi', // Yeni eklendi
+                    opposition_filed: 'İtiraz Edildi', // Marka özel
+                    registered: 'Tescilli', // Marka özel
+                    not_renewed: 'Yenilenmedi', // Marka özel
+                    invalid_void: 'Başvuru Geçersiz/Hükümsüz' // Marka özel
                 };
 
                 // Tarihleri düzgün formatla
@@ -1706,6 +1709,7 @@
                                         📄 <a href="${file.content}" download="${file.name}" class="file-link">${file.name}</a> 
                                         <span style="font-size: 0.8em; color: #888;">(${this.formatFileSize(file.size)})</span>
                                         <span style="font-size: 0.8em; color: #555;"> - Tipi: ${file.documentType || 'Belirtilmedi'}</span>
+                                        ${file.documentDesignation ? `<span style="font-size: 0.8em; color: #555;"> (${file.documentDesignation})</span>` : ''}
                                         <span style="font-size: 0.7em; color: #999;"> (${formatDate(file.uploadedAt)})</span>
                                     </div>
                                 `).join('')}
@@ -1768,11 +1772,15 @@
                         let description = tx.description;
                         // Özel işlem tipleri için açıklama formatlaması
                         if (tx.type === "Document Indexed") {
-                            description = `'${tx.documentName}' (${tx.documentType || 'Belirtilmedi'}) belgesi eklendi.`;
+                            description = `'${tx.documentName}' (${tx.documentType || 'Belirtilmedi'}`;
+                            if(tx.documentDesignation) description += ` - ${tx.documentDesignation}`;
+                            description += `) belgesi eklendi.`;
                         } else if (tx.type === "Document Updated") {
                             description = `'${tx.documentName}' belgesi güncellendi: ${tx.description.substring(tx.description.indexOf(':') + 1).trim()}`;
                         } else if (tx.type === "Document Deleted") {
-                            description = `'${tx.documentName}' (${tx.documentType || 'Belirtilmedi'}) belgesi silindi.`;
+                             description = `'${tx.documentName}' (${tx.documentType || 'Belirtilmedi'}`;
+                            if(tx.documentDesignation) description += ` - ${tx.documentDesignation}`;
+                            description += `) belgesi silindi.`;
                         } else if (tx.type === "Record Updated" && tx.description.startsWith("Kayıt verileri güncellendi:")) {
                             description = `Kayıt bilgileri güncellendi: ${tx.description.substring(tx.description.indexOf(':') + 1).trim()}`;
                         }
