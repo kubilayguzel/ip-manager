@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IP Manager - Yeni Kayıt</title>
     <style>
-        /* CSS stilleri burada kalacak */
         * {
             margin: 0;
             padding: 0;
@@ -1079,6 +1078,55 @@
                 this.selectedPersonForSearch = null; 
                 this.currentUser = null; 
                 this.recordIdToEdit = null; // Düzenlenecek kaydın ID'si
+                
+                // Metodları sınıf örneğine bağlama (TypeError'ı çözmek için)
+                this.init = this.init.bind(this);
+                this.updateUserInfo = this.updateUserInfo.bind(this);
+                this.loadRecordForEdit = this.loadRecordForEdit.bind(this);
+                this.fillFormWithRecordData = this.fillFormWithRecordData.bind(this);
+                this.loadPersonsFromService = this.loadPersonsFromService.bind(this);
+                this.initializeEventListeners = this.initializeEventListeners.bind(this);
+                this.clearFieldError = this.clearFieldError.bind(this);
+                this.showFieldError = this.showFieldError.bind(this);
+                this.selectType = this.selectType.bind(this);
+                this.updateStatusOptions = this.updateStatusOptions.bind(this);
+                this.showTypeFields = this.showTypeFields.bind(this);
+                this.updateTitleLabel = this.updateTitleLabel.bind(this);
+                this.renderOwnerList = this.renderOwnerList.bind(this);
+                this.removeOwner = this.removeOwner.bind(this);
+                this.showAddPersonModal = this.showAddPersonModal.bind(this);
+                this.hideAddPersonModal = this.hideAddPersonModal.bind(this);
+                this.showSearchPersonModal = this.showSearchPersonModal.bind(this);
+                this.hideSearchPersonModal = this.hideSearchPersonModal.bind(this);
+                this.searchPersons = this.searchPersons.bind(this);
+                this.renderSearchResults = this.renderSearchResults.bind(this);
+                this.addSelectedPersonToOwners = this.addSelectedPersonToOwners.bind(this);
+                this.savePerson = this.savePerson.bind(this);
+                this.clearModalErrors = this.clearModalErrors.bind(this);
+                this.isValidEmail = this.isValidEmail.bind(this);
+                this.showNotification = this.showNotification.bind(this);
+                this.setupFileUpload = this.setupFileUpload.bind(this);
+                this.handleFiles = this.handleFiles.bind(this);
+                this.validateFile = this.validateFile.bind(this);
+                this.addFileToList = this.addFileToList.bind(this);
+                this.removeFile = this.removeFile.bind(this);
+                this.updateFileList = this.updateFileList.bind(this);
+                this.setupTrademarkImageUpload = this.setupTrademarkImageUpload.bind(this);
+                this.handleTrademarkImage = this.handleTrademarkImage.bind(this);
+                this.renderTrademarkImagePreview = this.renderTrademarkImagePreview.bind(this);
+                this.removeTrademarkImage = this.removeTrademarkImage.bind(this);
+                this.toggleTrademarkImageUpload = this.toggleTrademarkImageUpload.bind(this);
+                this.formatFileSize = this.formatFileSize.bind(this);
+                this.validateForm = this.validateForm.bind(this);
+                this.clearAllFormErrors = this.clearAllFormErrors.bind(this);
+                this.collectFormData = this.collectFormData.bind(this);
+                this.readFileAsDataURL = this.readFileAsDataURL.bind(this);
+                this.submitForm = this.submitForm.bind(this);
+                this.resetForm = this.resetForm.bind(this);
+                this.handleBack = this.handleBack.bind(this);
+                this.setTestData = this.setTestData.bind(this);
+                this.getFormData = this.getFormData.bind(this);
+
                 this.init();
             }
 
@@ -1087,7 +1135,7 @@
                     if (user) {
                         this.currentUser = authService.getCurrentUser(); 
                         console.log('✅ User authenticated:', this.currentUser.email, 'Role:', this.currentUser.role);
-                        this.updateUserInfo(); // Header'daki kullanıcı bilgilerini güncelle
+                        this.updateUserInfo();
                         await this.loadPersonsFromService(); 
                         this.initializeEventListeners();
                         this.setupFileUpload();
@@ -1095,9 +1143,8 @@
                         this.renderOwnerList(); 
                         this.updateTitleLabel(); 
                         this.toggleTrademarkImageUpload(false); 
-                        this.updateStatusOptions(); // İlk yüklemede durum seçeneklerini ayarla
+                        this.updateStatusOptions();
                         
-                        // URL'den kayıt ID'sini kontrol et (Düzenleme modu)
                         const urlParams = new URLSearchParams(window.location.search);
                         this.recordIdToEdit = urlParams.get('recordId');
 
@@ -1107,7 +1154,6 @@
                             await this.loadRecordForEdit(this.recordIdToEdit);
                         } else {
                             console.log('Creating new record.');
-                            // Sadece yeni kayıt oluşturulurken URL'den tip alınır
                             const typeFromUrl = urlParams.get('type');
                             if (typeFromUrl) {
                                 this.selectType(typeFromUrl);
@@ -1127,9 +1173,8 @@
                             this.renderOwnerList();
                             this.updateTitleLabel(); 
                             this.toggleTrademarkImageUpload(false); 
-                            this.updateStatusOptions(); // İlk yüklemede durum seçeneklerini ayarla
+                            this.updateStatusOptions();
 
-                            // URL'den kayıt ID'sini kontrol et (Düzenleme modu)
                             const urlParams = new URLSearchParams(window.location.search);
                             this.recordIdToEdit = urlParams.get('recordId');
 
@@ -1155,10 +1200,9 @@
             }
 
             updateUserInfo() {
-                // Header'daki kullanıcı bilgilerini güncellemek için (isteğe bağlı, genel header yapısı için)
-                const userNameEl = document.getElementById('userName'); // Eğer header'da bu ID varsa
-                const userRoleEl = document.getElementById('userRole'); // Eğer header'da bu ID varsa
-                const userAvatarEl = document.getElementById('userAvatar'); // Eğer header'da bu ID varsa
+                const userNameEl = document.getElementById('userName');
+                const userRoleEl = document.getElementById('userRole');
+                const userAvatarEl = document.getElementById('userAvatar');
 
                 if (this.currentUser && userNameEl) {
                     const userName = this.currentUser.displayName || this.currentUser.email.split('@')[0] || 'Kullanıcı';
@@ -1258,9 +1302,8 @@
             }
 
 
-            async loadPersonsFromService() {
+            async loadPersonsFromService() { // Bu metodun çağrıldığı yer düzeltildi
                 try {
-                    // Bu satırın personsService.getPersons() olarak doğru olduğundan emin olun!
                     const result = await personsService.getPersons();
                     if (result.success) {
                         this.persons = result.data;
@@ -1277,7 +1320,7 @@
                 }
             }
 
-            initializeEventListeners() {
+            initializeEventListeners() { // Tüm metodlar ok fonksiyonu olarak tanımlandığı için bu event listenerlar sorunsuz çalışmalı
                 document.querySelectorAll('.type-card').forEach(card => {
                     card.addEventListener('click', () => {
                         if (!this.recordIdToEdit) {
@@ -1288,17 +1331,17 @@
                     });
                 });
 
-                document.getElementById('addPersonBtn')?.addEventListener('click', () => this.showAddPersonModal());
-                document.getElementById('searchPersonBtn')?.addEventListener('click', () => this.showSearchPersonModal());
-                document.getElementById('closeAddPersonModal')?.addEventListener('click', () => this.hideAddPersonModal());
-                document.getElementById('closeSearchPersonModal')?.addEventListener('click', () => this.hideSearchPersonModal());
-                document.getElementById('cancelPersonBtn')?.addEventListener('click', () => this.hideAddPersonModal());
-                document.getElementById('savePersonBtn')?.addEventListener('click', () => this.savePerson());
-                document.getElementById('submitBtn')?.addEventListener('click', () => this.submitForm());
-                document.getElementById('resetBtn')?.addEventListener('click', () => this.resetForm());
-                document.getElementById('backBtn')?.addEventListener('click', () => this.handleBack());
+                document.getElementById('addPersonBtn')?.addEventListener('click', this.showAddPersonModal);
+                document.getElementById('searchPersonBtn')?.addEventListener('click', this.showSearchPersonModal);
+                document.getElementById('closeAddPersonModal')?.addEventListener('click', this.hideAddPersonModal);
+                document.getElementById('closeSearchPersonModal')?.addEventListener('click', this.hideSearchPersonModal);
+                document.getElementById('cancelPersonBtn')?.addEventListener('click', this.hideAddPersonModal);
+                document.getElementById('savePersonBtn')?.addEventListener('click', this.savePerson);
+                document.getElementById('submitBtn')?.addEventListener('click', this.submitForm);
+                document.getElementById('resetBtn')?.addEventListener('click', this.resetForm);
+                document.getElementById('backBtn')?.addEventListener('click', this.handleBack);
                 document.getElementById('searchPersonInput')?.addEventListener('input', (e) => this.searchPersons(e.target.value));
-                document.getElementById('addSelectedPersonBtn')?.addEventListener('click', () => this.addSelectedPersonToOwners());
+                document.getElementById('addSelectedPersonBtn')?.addEventListener('click', this.addSelectedPersonToOwners);
 
                 document.getElementById('addPersonModal')?.addEventListener('click', (e) => {
                     if (e.target.id === 'addPersonModal') this.hideAddPersonModal();
@@ -1675,13 +1718,11 @@
                         this.closePersonModal();
                         await this.loadPersons(); 
                     } else {
-                        // result.error dolu değilse, hata nesnesinin kendisini kullanmaya çalış
                         const errorMessage = result.error || (error && (error.code || error.message || JSON.stringify(error))) || 'Bilinmeyen bir hata oluştu.';
-                        throw new Error(errorMessage); // Hata mesajını düzgün fırlat
+                        throw new Error(errorMessage);
                     }
                 } catch (error) {
-                    console.error('Save person error:', error); // Burası line 1680
-                    // Hata mesajını daha detaylı göstermek için
+                    console.error('Save person error:', error);
                     const displayMessage = error.message || (error && (error.code || JSON.stringify(error))) || 'Bilinmeyen bir hata oluştu.';
                     alert('Kişi kaydedilirken bir hata oluştu: ' + displayMessage);
                 } finally {
@@ -1825,4 +1866,4 @@
         console.log('Formu temizlemek için: testDataEntry.resetForm()');
     </script>
 </body>
-</html> 
+</html>
