@@ -396,45 +396,7 @@
             max-height: 200px; /* Belirli bir yükseklik sınırı */
             overflow-y: auto; /* Dikey kaydırma çubuğu */
         }
-        /* Simplified transaction item for indexing page */
-        .indexing-transaction-history .transaction-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between; /* Açıklama, Tarih ve Dokümanı hizala */
-            padding: 8px 0;
-            border-bottom: 1px dashed #eee;
-        }
-        .indexing-transaction-history .transaction-item:last-child {
-            border-bottom: none;
-        }
-        .indexing-transaction-history .transaction-description-col {
-            flex-grow: 1; /* Açıklama alanı daha fazla yer kaplasın */
-            font-size: 0.9em;
-            color: #333;
-            word-break: break-word; /* Uzun açıklamaları bölmek için */
-            padding-right: 10px; /* Sağdaki elementten boşluk */
-        }
-        .indexing-transaction-history .transaction-date-col {
-            font-size: 0.8em;
-            color: #666;
-            white-space: nowrap; /* Tarihin tek satırda kalması için */
-            padding-right: 10px; /* Sağdaki elementten boşluk */
-        }
-        .indexing-transaction-history .transaction-document-col {
-            flex-shrink: 0; /* Küçülmesini engelle */
-            font-size: 0.8em;
-            white-space: nowrap; /* Doküman adının tek satırda kalması için */
-            text-align: right;
-        }
-        .indexing-transaction-history .transaction-document-link {
-            color: #007bff;
-            text-decoration: underline;
-        }
-        .indexing-transaction-history .transaction-document-link:hover {
-            color: #0056b3;
-        }
-
-        /* Styles for tree structure */
+        /* Styles for tree structure in modals */
         .transaction-tree-container {
             margin-top: 10px;
         }
@@ -1107,7 +1069,7 @@
                         <select class="file-item-select" data-file-id="${file.id}" data-field="selectedParentTransactionId" style="margin-top: 5px;">
                             <option value="">Yeni İşlem Oluştur (Bağımsız)</option>
                             <optgroup label="Mevcut Ana Atama İşlemleri">
-                                ${this.existingDocumentIndexedTransactions.filter(tx => !tx.parentId).map(tx => `
+                                ${this.existingDocumentIndexedTransactions.filter(tx => !tx.parentId && tx.documentDesignation === selectedDesignationDef.value).map(tx => `
                                     <option value="${tx.transactionId}" ${file.selectedParentTransactionId === tx.transactionId ? 'selected' : ''}>
                                         ${tx.description} (${new Date(tx.timestamp).toLocaleDateString('tr-TR')})
                                     </option>
@@ -1208,7 +1170,7 @@
                             const selected = (file.subDesignation === subDesignation.value) ? 'selected' : '';
                             subDesignationSelectHtml += `<option value="${subDesignation.value}" ${selected}>${subDesignation.name}</option>`;
                         });
-                        subDesignationSelectHtml += `</select>`;
+                        subDesignationSelectHtml += `</select`;
                         newControlsDiv.innerHTML += subDesignationSelectHtml;
                     }
                     
@@ -1218,7 +1180,7 @@
                             <select class="file-item-select" data-file-id="${file.id}" data-field="selectedParentTransactionId" style="margin-top: 5px;">
                                 <option value="">Yeni İşlem Oluştur (Bağımsız)</option>
                                 <optgroup label="Mevcut Ana Atama İşlemleri">
-                                    ${this.existingDocumentIndexedTransactions.filter(tx => !tx.parentId).map(tx => `
+                                    ${this.existingDocumentIndexedTransactions.filter(tx => !tx.parentId && tx.documentDesignation === selectedDesignationDef.value).map(tx => `
                                         <option value="${tx.transactionId}" ${file.selectedParentTransactionId === tx.transactionId ? 'selected' : ''}>
                                             ${tx.description} (${new Date(tx.timestamp).toLocaleDateString('tr-TR')})
                                         </option>
@@ -1578,13 +1540,19 @@
                 });
 
                 // Kök işlemleri bul (parentId null olanlar veya Document Indexed olup da parent'ı olmayanlar)
-                const rootTransactions = relevantTransactions.filter(tx => !tx.parentId || tx.type === "Document Indexed" && !transactionsMap.has(tx.parentId));
+                // YALNIZCA parentId null olanları veya parent'ı relevantTransactions'ta olmayan Document Indexed'ları al.
+                const rootTransactions = relevantTransactions.filter(tx => 
+                    !tx.parentId || (tx.type === "Document Indexed" && !transactionsMap.has(tx.parentId))
+                );
                 
                 // Kök transactionları kronolojik olarak sırala
                 rootTransactions.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
                 // Parent transactionları kaydet (parent seçim combobox'ı için)
-                this.existingDocumentIndexedTransactions = rootTransactions.filter(tx => tx.type === "Document Indexed");
+                // Sadece Document Indexed tipindeki root transaction'ları alıyoruz.
+                this.existingDocumentIndexedTransactions = relevantTransactions.filter(tx => 
+                    tx.type === "Document Indexed" && !tx.parentId
+                );
 
 
                 const buildTreeHtml = (transactionsToRender, currentParentId, level) => {
