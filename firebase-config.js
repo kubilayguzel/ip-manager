@@ -1,4 +1,4 @@
-// kubilayguzel/ip-manager/ip-manager-16f863853773f6ccdf95834f40912917f000fa80/firebase-config.js
+// kubilayguzel/ip-manager/ip-manager-16f863853773f6cc3df95834f40912917f000fa80/firebase-config.js
 // Mevcut kodunuzu açın ve aşağıdaki değişiklikleri yapın.
 
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
@@ -384,9 +384,9 @@ export const ipRecordsService = {
                 }
 
                 let q;
-                // 🔥 SÜPER ADMİN KONTROLÜ - TÜM VERİLERİ GETİR
+                // 🔥 SÜPER ADMİN KONTROLÜ
                 if (authService.isSuperAdmin()) {
-                    console.log('🔥 SÜPER ADMİN ERİŞİM - Tüm kullanıcıların verileri getiriliyor...');
+                    console.log('🔥 SÜPER ADMİN: Tüm kullanıcıların verileri getiriliyor...');
                     
                     q = query(
                         collection(db, 'ipRecords'),
@@ -403,7 +403,6 @@ export const ipRecordsService = {
                             ...data
                         });
                     });
-                    
                     console.log(`🔥 SÜPER ADMİN: ${records.length} kayıt (tüm kullanıcılar) getirildi`);
                     return {
                         success: true,
@@ -502,7 +501,7 @@ export const ipRecordsService = {
                     timestamp: updatedTimestamp,
                     userId: user.uid,
                     userEmail: user.email,
-                    parentId: null // Bu işlem ana seviyede bir işlem
+                    parentId: null // Ana işlem
                 });
                 parentTxId = recordUpdateTxId; // Diğer işlemler bunun altında olabilir
             } else if (currentRecord.transactions && currentRecord.transactions.length > 0) {
@@ -524,7 +523,7 @@ export const ipRecordsService = {
                 const existingFile = oldFiles.find(oldF => oldF.id === newFile.id);
                 if (!existingFile) {
                     // Yeni eklenen dosya
-                    let description = `'${newFile.name}' belgesi eklendi.`;
+                    let description = `Belge indekslendi.`; // Açıklama daha kısa
                     if (newFile.documentDesignation) {
                         description += ` Atama: '${newFile.documentDesignation}'`;
                         if (newFile.subDesignation) {
@@ -536,7 +535,7 @@ export const ipRecordsService = {
                     newTransactions.unshift({
                         transactionId: fileTxId,
                         type: "Document Indexed",
-                        description: description,
+                        description: description, // Yeni kısa açıklama
                         documentId: newFile.id,
                         documentName: newFile.name,
                         documentDesignation: newFile.documentDesignation, // Yeni
@@ -568,7 +567,7 @@ export const ipRecordsService = {
                          newTransactions.unshift({
                             transactionId: fileTxId,
                             type: "Document Updated",
-                            description: `'${newFile.name}' belgesi güncellendi (${fileChanges.join(', ')}).`,
+                            description: `'${newFile.name}' belgesi güncellendi (${fileChanges.join(', ')}).`, // Bu açıklama değişmedi, kapsam dışı
                             documentId: newFile.id,
                             documentName: newFile.name,
                             documentDesignation: newFile.documentDesignation, // Yeni
@@ -586,7 +585,7 @@ export const ipRecordsService = {
             oldFiles.forEach(oldFile => {
                 const stillExists = newFiles.some(newF => newF.id === oldFile.id);
                 if (!stillExists) {
-                    let description = `'${oldFile.name}' belgesi silindi.`;
+                    let description = `Belge silindi.`; // Açıklama daha kısa
                      if (oldFile.documentDesignation) {
                         description += ` Atama: '${oldFile.documentDesignation}'`;
                         if (oldFile.subDesignation) {
@@ -598,7 +597,7 @@ export const ipRecordsService = {
                     newTransactions.unshift({
                         transactionId: fileTxId,
                         type: "Document Deleted",
-                        description: description,
+                        description: description, // Yeni kısa açıklama
                         documentId: oldFile.id,
                         documentName: oldFile.name,
                         documentDesignation: oldFile.documentDesignation, // Yeni
