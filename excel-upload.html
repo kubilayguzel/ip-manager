@@ -529,6 +529,24 @@
     <script type="module">
         import { authService, ipRecordsService, personsService, auth } from './firebase-config.js';
 
+        // Dropdown Menü Fonksiyonu (Dashboard'dan kopyalandı)
+        function toggleDropdown(event) {
+            event.preventDefault(); 
+            const dropdown = document.getElementById("managementDropdown");
+            dropdown.classList.toggle("active");
+            
+            window.onclick = function(e) {
+                if (!e.target.matches('.dropdown-toggle') && !e.target.closest('.dropdown-content')) {
+                    if (dropdown.classList.contains('active')) {
+                        dropdown.classList.remove('active');
+                        window.onclick = null;
+                    }
+                }
+            }
+        }
+        window.toggleDropdown = toggleDropdown;
+
+
         class ExcelUploadModule {
             constructor() {
                 this.selectedFile = null;
@@ -545,6 +563,7 @@
                     if (user) {
                         this.currentUser = authService.getCurrentUser();
                         console.log('✅ User authenticated for Excel Upload:', this.currentUser.email, 'Role:', this.currentUser.role);
+                        this.updateUserInfo(); // Header'daki kullanıcı bilgilerini güncelle
                         await this.loadAllPersons(); // Kişileri yükle
                         this.initializeEventListeners();
                     } else {
@@ -552,6 +571,7 @@
                         if (localUser && localUser.uid) {
                             this.currentUser = localUser;
                             console.log('⚠️ LocalStorage user detected for Excel Upload, running in local mode:', this.currentUser.email, 'Role:', this.currentUser.role);
+                            this.updateUserInfo();
                             await this.loadAllPersons(); // Kişileri yükle
                             this.initializeEventListeners();
                         } else {
@@ -561,6 +581,21 @@
                     }
                 });
                 console.log('📤 Excel Yükleme Modülü başlatılıyor...');
+            }
+
+            updateUserInfo() {
+                // Header'daki kullanıcı bilgilerini güncellemek için (isteğe bağlı, genel header yapısı için)
+                const userNameEl = document.getElementById('userName'); // Eğer header'da bu ID varsa
+                const userRoleEl = document.getElementById('userRole'); // Eğer header'da bu ID varsa
+                const userAvatarEl = document.getElementById('userAvatar'); // Eğer header'da bu ID varsa
+
+                if (this.currentUser && userNameEl) {
+                    const userName = this.currentUser.displayName || this.currentUser.email.split('@')[0] || 'Kullanıcı';
+                    userNameEl.textContent = userName;
+                    if (userRoleEl) userRoleEl.textContent = this.currentUser.role === 'admin' ? 'Yönetici' :
+                                                              this.currentUser.role === 'superadmin' ? 'Süper Yönetici' : 'Kullanıcı';
+                    if (userAvatarEl) userAvatarEl.textContent = userName.charAt(0).toUpperCase();
+                }
             }
 
             async loadAllPersons() {
@@ -638,12 +673,9 @@
 
                 targetDiv.style.display = 'flex';
                 
-                // Belirli bir süre sonra mesajı otomatik gizle (isteğe bağlı)
-                if (type !== 'error') { // Hata mesajları kalıcı olabilir
-                    setTimeout(() => {
-                        targetDiv.style.display = 'none';
-                    }, 5000);
-                }
+                setTimeout(() => {
+                    targetDiv.style.display = 'none';
+                }, 5000);
             }
 
             setLoading(isLoading) {
@@ -658,7 +690,7 @@
 
             async handleFile(file) {
                 if (!file) {
-                    this.resetForm(); // Dosya seçilmezse formu sıfırla
+                    this.resetForm();
                     return;
                 }
 
@@ -672,7 +704,7 @@
                 this.selectedFile = file;
                 this.showNotification(`Dosya seçildi: ${file.name}. Okunuyor...`, 'info');
                 this.setLoading(true);
-                document.getElementById('uploadBtn').disabled = true; // Yükleme butonunu başlangıçta devre dışı bırak
+                document.getElementById('uploadBtn').disabled = true;
 
                 const reader = new FileReader();
                 reader.onload = (e) => {
@@ -681,9 +713,9 @@
                         this.workbook = XLSX.read(data, { type: 'array' });
                         this.populateSheetDropdown();
                         document.getElementById('sheetSelectionGroup').style.display = 'block';
-                        document.getElementById('headerRowGroup').style.display = 'block'; // Doğru ID kullanıldı
+                        document.getElementById('headerRowGroup').style.display = 'block';
 
-                        this.readSelectedSheet(); // İlk sayfayı otomatik oku
+                        this.readSelectedSheet();
                         this.setLoading(false);
                     } catch (error) {
                         console.error('Excel dosyası işlenirken hata:', error);
@@ -719,7 +751,6 @@
                 const hasHeader = document.getElementById('hasHeader').checked;
 
                 const worksheet = this.workbook.Sheets[sheetName];
-                // veriyi JSON formatına dönüştür
                 const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
                 if (jsonData.length === 0) {
@@ -734,7 +765,7 @@
 
                 this.dataRows = jsonData;
                 if (hasHeader) {
-                    this.columnHeaders = this.dataRows.shift(); // İlk satırı başlık olarak al
+                    this.columnHeaders = this.dataRows.shift();
                 } else {
                     this.columnHeaders = Array.from({ length: this.dataRows[0].length }, (_, i) => `Sütun ${i + 1}`);
                 }
@@ -742,7 +773,7 @@
                 this.renderPreviewTable();
                 this.populateColumnMapping();
                 document.getElementById('columnMappingSection').style.display = 'block';
-                document.getElementById('uploadBtn').disabled = false; // Yükleme butonunu etkinleştir
+                document.getElementById('uploadBtn').disabled = false;
             }
 
             renderPreviewTable() {
@@ -754,7 +785,6 @@
                 thead.innerHTML = '';
                 tbody.innerHTML = '';
 
-                // Başlık satırını oluştur
                 const headerRow = document.createElement('tr');
                 this.columnHeaders.forEach(header => {
                     const th = document.createElement('th');
@@ -763,7 +793,6 @@
                 });
                 thead.appendChild(headerRow);
 
-                // Veri satırlarını oluştur (ilk 10 satır önizleme için)
                 this.dataRows.slice(0, 10).forEach(row => {
                     const tr = document.createElement('tr');
                     row.forEach(cell => {
@@ -781,7 +810,7 @@
                 const mappingSelects = document.querySelectorAll('.column-mapping-section .mapping-select');
                 
                 mappingSelects.forEach(selectElement => {
-                    selectElement.innerHTML = '<option value="">Seçiniz</option>'; // Varsayılan boş seçenek
+                    selectElement.innerHTML = '<option value="">Seçiniz</option>';
                     this.columnHeaders.forEach(header => {
                         const option = document.createElement('option');
                         option.value = header;
@@ -798,7 +827,6 @@
                 const mappedColumns = {};
                 let isValidMapping = true;
 
-                // Zorunlu alanların eşleştirilmesini kontrol et
                 document.querySelectorAll('.required-mapping').forEach(selectElement => {
                     const dbField = selectElement.dataset.dbField;
                     const selectedExcelColumn = selectElement.value;
@@ -828,19 +856,16 @@
                         if (columnIndex !== undefined && row[columnIndex] !== undefined) {
                             record[dbField] = row[columnIndex];
                         } else {
-                            record[dbField] = null; // Eşleşmeyen veya boş hücreler için null
+                            record[dbField] = null;
                         }
                     }
                     
-                    // Veri dönüşümleri ve doğrulama
                     try {
                         const processedRecord = await this.processRecordForUpload(record);
                         if (processedRecord) {
                             recordsToUpload.push(processedRecord);
                         } else {
-                            // Hatalı satırı atla veya kaydet
                             console.warn('Hatalı satır atlandı:', row);
-                            // Sadece bilgi mesajı göster, hata değil, tüm satırları engellemesin
                             this.showNotification(`Bazı satırlar işlenirken hata oluştu ve atlandı. Detaylar konsolda.`, 'info');
                         }
                     } catch (error) {
@@ -884,84 +909,71 @@
                 }
 
                 this.setLoading(false);
-                this.resetForm(); // İşlem bittikten sonra formu sıfırla
+                this.resetForm();
             }
 
             async processRecordForUpload(rawRecord) {
                 const processedRecord = {};
 
-                // IP Türü kontrolü
                 const ipTypeMap = {
                     "patent": "patent", "marka": "trademark", "telif hakkı": "copyright", "tasarım": "design",
                     "patent ": "patent", "marka ": "trademark", "telif hakkı ": "copyright", "tasarım ": "design",
-                    // İngilizce karşılıkları da eklenebilir
                     "patent": "patent", "trademark": "trademark", "copyright": "copyright", "design": "design"
                 };
                 const rawType = String(rawRecord.type || '').toLowerCase().trim();
                 processedRecord.type = ipTypeMap[rawType] || null;
                 if (!processedRecord.type) {
-                    this.showNotification(`Geçersiz IP Türü: '${rawRecord.type}'. Satır atlandı.`, 'info');
                     return null;
                 }
 
-                // Başlık
                 processedRecord.title = String(rawRecord.title || '').trim();
                 if (!processedRecord.title) {
-                    this.showNotification(`Başlık boş. Satır atlandı.`, 'info');
                     return null;
                 }
 
-                // Durum kontrolü
                 const statusMap = {
                     "başvuru": "application", "beklemede": "pending", "onaylandı": "approved", "reddedildi": "rejected", "süresi doldu": "expired",
                     "yayınlandı": "published", "kısmi ret": "partial_refusal", "ret": "refused", "itiraz geldi": "opposition_received",
                     "itiraz edildi": "opposition_filed", "tescilli": "registered", "yenilenmedi": "not_renewed",
                     "başvuru geçersiz/hükümsüz": "invalid_void",
-                    // İngilizce karşılıkları
                     "application": "application", "pending": "pending", "approved": "approved", "rejected": "rejected", "expired": "expired",
                     "published": "published", "partial refusal": "partial_refusal", "refused": "refused", "opposition received": "opposition_received",
                     "opposition filed": "opposition_filed", "registered": "registered", "not renewed": "not_renewed",
                     "invalid/void": "invalid_void"
                 };
                 const rawStatus = String(rawRecord.status || '').toLowerCase().trim();
-                processedRecord.status = statusMap[rawStatus] || 'pending'; // Varsayılan olarak 'beklemede'
+                processedRecord.status = statusMap[rawStatus] || 'pending';
 
-                // Tarih dönüşümleri (Önemli: Excel tarihleri sayı olarak gelebilir)
                 processedRecord.applicationDate = this.excelDateToISO(rawRecord.applicationDate);
                 if (!processedRecord.applicationDate) {
-                    this.showNotification(`Başvuru Tarihi geçersiz veya boş. Satır atlandı.`, 'info');
                     return null;
                 }
 
-                // Açıklama
                 processedRecord.description = String(rawRecord.description || '').trim();
                 if (!processedRecord.description) {
-                    this.showNotification(`Açıklama boş. Satır atlandı.`, 'info');
                     return null;
                 }
 
-                // Hak Sahipleri - Excel'den gelen isimleri kullanarak var olan kişileri bul
                 processedRecord.owners = [];
                 const rawOwners = String(rawRecord.owners || '').split(',').map(name => name.trim()).filter(name => name);
                 for (const ownerName of rawOwners) {
-                    const foundPerson = this.allPersons.find(p => p.name.toLowerCase() === ownerName.toLowerCase());
+                    let foundPerson = this.allPersons.find(p => p.name.toLowerCase() === ownerName.toLowerCase());
                     if (foundPerson) {
-                        processedRecord.owners.push(foundPerson);
+                        processedRecord.owners.push({ id: foundPerson.id, name: foundPerson.name, type: foundPerson.type }); // Sadece gerekli alanları ekle
                     } else {
-                        // Yeni kişi oluşturma veya uyarı verme
                         console.warn(`Hak sahibi bulunamadı: '${ownerName}'. Yeni kişi olarak eklenecek.`);
                         const newPerson = {
                             name: ownerName,
-                            email: '', // Excel'de email/telefon yoksa boş bırak
+                            email: '',
                             phone: '',
-                            type: 'individual', // Varsayılan olarak Bireysel
+                            type: 'individual',
                             address: '',
                         };
                         try {
                             const addPersonResult = await personsService.addPerson(newPerson);
                             if (addPersonResult.success) {
-                                processedRecord.owners.push({ id: addPersonResult.id, ...newPerson });
-                                this.allPersons.push({ id: addPersonResult.id, ...newPerson }); // Yeni eklenen kişiyi listeye ekle
+                                processedRecord.owners.push({ id: addPersonResult.id, name: newPerson.name, type: newPerson.type });
+                                this.allPersons.push({ id: addPersonResult.id, ...newPerson });
                             } else {
                                 console.error(`Yeni hak sahibi '${ownerName}' eklenemedi:`, addPersonResult.error);
                             }
@@ -971,12 +983,10 @@
                     }
                 }
                 if (processedRecord.owners.length === 0) {
-                    this.showNotification(`Hak Sahibi bulunamadı veya oluşturulamadı. Satır atlandı.`, 'info');
                     return null;
                 }
 
 
-                // Diğer isteğe bağlı alanları ekle
                 processedRecord.applicationNumber = String(rawRecord.applicationNumber || '').trim();
                 processedRecord.registrationNumber = String(rawRecord.registrationNumber || '').trim();
                 processedRecord.renewalDate = this.excelDateToISO(rawRecord.renewalDate);
@@ -998,26 +1008,22 @@
                 processedRecord.designDate = this.excelDateToISO(rawRecord.designDate);
                 processedRecord.designFeatures = String(rawRecord.designFeatures || '').trim();
 
-                // Ortak alanlar
                 processedRecord.createdAt = new Date().toISOString();
                 processedRecord.updatedAt = new Date().toISOString();
                 processedRecord.userId = this.currentUser.uid;
                 processedRecord.userEmail = this.currentUser.email;
-                processedRecord.files = []; // Excel'den dosya yükleme desteklenmiyorsa boş bırak
+                processedRecord.files = [];
 
                 return processedRecord;
             }
 
             excelDateToISO(excelDate) {
                 if (typeof excelDate === 'number') {
-                    // Excel'deki 0. gün 30 Aralık 1899'dur. JavaScript tarihi 1 Ocak 1970'ten başlar.
-                    const date = new Date(Date.UTC(0, 0, excelDate - 1)); // -1 çünkü Excel 1900'ü artık yıl sanır.
+                    const date = new Date(Date.UTC(0, 0, excelDate - 1));
                     return date.toISOString().split('T')[0];
                 } else if (typeof excelDate === 'string' && excelDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                    // Zaten YYYY-MM-DD formatında ise direkt kullan
                     return excelDate;
                 } else if (excelDate) {
-                    // Diğer string formatları için deneme
                     try {
                         const date = new Date(excelDate);
                         if (!isNaN(date.getTime())) {
@@ -1038,7 +1044,7 @@
                 document.getElementById('excelFile').value = '';
                 document.getElementById('sheetSelectionGroup').style.display = 'none';
                 document.getElementById('hasHeader').checked = true;
-                document.getElementById('headerRowGroup').style.display = 'none'; // Bunu da resetle
+                document.getElementById('headerRowGroup').style.display = 'none';
                 document.getElementById('previewTableContainer').style.display = 'none';
                 document.getElementById('columnMappingSection').style.display = 'none';
                 document.getElementById('uploadBtn').disabled = true;
@@ -1049,10 +1055,21 @@
             }
         }
 
-        let excelUploadModule;
         auth.onAuthStateChanged((user) => {
-            if (!excelUploadModule) {
-                excelUploadModule = new ExcelUploadModule();
+            if (user) {
+                if (!excelUploadModule) {
+                    excelUploadModule = new ExcelUploadModule();
+                }
+            } else {
+                const localUser = authService.getCurrentUser();
+                if (localUser && localUser.uid) {
+                    if (!excelUploadModule) {
+                        excelUploadModule = new ExcelUploadModule();
+                    }
+                } else {
+                    console.log('❌ User not authenticated, redirecting to login page.');
+                    window.location.href = 'index.html';
+                }
             }
         });
     </script>
