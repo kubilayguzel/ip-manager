@@ -811,6 +811,16 @@
         .transaction-description {
             color: #333;
         }
+        .transaction-document-link {
+            font-size: 0.8em;
+            color: #007bff;
+            text-decoration: underline;
+            margin-top: 4px;
+            display: block;
+        }
+        .transaction-document-link:hover {
+            color: #0056b3;
+        }
 
         .transaction-meta {
             font-size: 0.8em;
@@ -1705,8 +1715,8 @@
                                     <div style="margin-bottom: 5px;">
                                         📄 <a href="${file.content}" download="${file.name}" class="file-link">${file.name}</a> 
                                         <span style="font-size: 0.8em; color: #888;">(${this.formatFileSize(file.size)})</span>
-                                        <span style="font-size: 0.8em; color: #555;"> - Tipi: ${file.documentType || 'Belirtilmedi'}</span>
-                                        ${file.documentDesignation ? `<span style="font-size: 0.8em; color: #555;"> (${file.documentDesignation})</span>` : ''}
+                                        <span style="font-size: 0.8em; color: #555;"> - Atama: ${file.documentDesignation || 'Belirtilmedi'}</span>
+                                        ${file.subDesignation ? `<span style="font-size: 0.8em; color: #555;"> (${file.subDesignation})</span>` : ''}
                                         <span style="font-size: 0.7em; color: #999;"> (${formatDate(file.uploadedAt)})</span>
                                     </div>
                                 `).join('')}
@@ -1723,11 +1733,12 @@
                 document.getElementById('detailModal').classList.add('show');
 
                 // İşlem Geçmişini Render Et
-                this.renderTransactionHistory(record.transactions);
+                this.renderTransactionHistory(record.transactions, record.files);
             }
 
             // YENİ METOT: renderTransactionHistory
-            renderTransactionHistory(transactions) {
+            // İkinci parametre olarak recordFiles eklenerek ilgili doküman bilgisine erişim sağlandı
+            renderTransactionHistory(transactions, recordFiles) {
                 const historyContainer = document.getElementById('transactionHistory');
                 if (!historyContainer) return;
 
@@ -1738,9 +1749,6 @@
                     return;
                 }
 
-                // İşlemleri timestamp'e göre sırala (en yeni en üstte)
-                // Ancak ağaç yapısını kurarken parent-child ilişkisini korumak daha önemli,
-                // bu yüzden önce veriyi Map'e dönüştürüp sonra root'tan başlayarak render edeceğiz.
                 const transactionsMap = new Map(transactions.map(tx => [tx.transactionId, tx]));
                 const childrenMap = new Map();
 
@@ -1767,17 +1775,30 @@
                         const hasChildren = childrenMap.has(tx.transactionId);
                         
                         let description = tx.description;
+                        let documentLinkHtml = '';
+
+                        if (tx.documentId && recordFiles) {
+                            const relatedFile = recordFiles.find(file => file.id === tx.documentId);
+                            if (relatedFile && relatedFile.content) {
+                                documentLinkHtml = `
+                                    <a href="${relatedFile.content}" download="${relatedFile.name}" class="transaction-document-link">
+                                        📄 ${relatedFile.name} (${this.formatFileSize(relatedFile.size)})
+                                    </a>
+                                `;
+                            }
+                        }
+
                         // Özel işlem tipleri için açıklama formatlaması
                         if (tx.type === "Document Indexed") {
-                            description = `'${tx.documentName}' (${tx.documentType || 'Belirtilmedi'}`;
-                            if(tx.documentDesignation) description += ` - ${tx.documentDesignation}`;
-                            description += `) belgesi eklendi.`;
+                            description = `'${tx.documentName}' belgesi eklendi.`;
+                            if(tx.documentDesignation) description += ` Atama: '${tx.documentDesignation}'`;
+                            if(tx.subDesignation) description += ` (${tx.subDesignation})`;
                         } else if (tx.type === "Document Updated") {
-                            description = `'${tx.documentName}' belgesi güncellendi (${tx.description.substring(tx.description.indexOf(':') + 1).trim()})`;
+                            description = `'${tx.documentName}' belgesi güncellendi: ${tx.description.substring(tx.description.indexOf(':') + 1).trim()}`;
                         } else if (tx.type === "Document Deleted") {
-                             description = `'${tx.documentName}' (${tx.documentType || 'Belirtilmedi'}`;
-                            if(tx.documentDesignation) description += ` - ${tx.documentDesignation}`;
-                            description += `) belgesi silindi.`;
+                            description = `'${tx.documentName}' belgesi silindi.`;
+                            if(tx.documentDesignation) description += ` Atama: '${tx.documentDesignation}'`;
+                            if(tx.subDesignation) description += ` (${tx.subDesignation})`;
                         } else if (tx.type === "Record Updated" && tx.description.startsWith("Kayıt verileri güncellendi:")) {
                             description = `Kayıt bilgileri güncellendi: ${tx.description.substring(tx.description.indexOf(':') + 1).trim()}`;
                         }
@@ -1792,6 +1813,7 @@
                                 <div class="transaction-item-content">
                                     <div class="transaction-type">${tx.type.replace(/([A-Z])/g, ' $1').trim()}</div>
                                     <div class="transaction-description">${description}</div>
+                                    ${documentLinkHtml}
                                     <div class="transaction-meta">
                                         ${new Date(tx.timestamp).toLocaleString('tr-TR')} - ${tx.userEmail}
                                     </div>
@@ -2000,7 +2022,8 @@
                         type: 'application/pdf',
                         size: 1024,
                         content: 'data:application/pdf;base64,... (dummy content)',
-                        documentType: 'Başvuru Formu',
+                        documentDesignation: 'Başvuru Ek Dokümanı', // Güncellendi
+                        subDesignation: '', // Yeni
                         uploadedAt: new Date().toISOString()
                     }],
                     transactions: [] // addRecord fonksiyonu ilk transaction'ı ekleyecek
