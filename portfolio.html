@@ -651,6 +651,64 @@
         .file-link:hover {
             text-decoration: underline;
         }
+
+        /* Tür filtreleme tabları */
+        .type-tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 5px;
+            margin-bottom: 20px;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .type-tab-item {
+            flex: 1;
+            padding: 10px 15px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: 500;
+            color: #666;
+            transition: all 0.3s ease;
+            border-radius: 8px;
+            margin: 0 2px; /* Aralıklar için */
+        }
+
+        .type-tab-item:hover {
+            background: #e9ecef;
+        }
+
+        .type-tab-item.active {
+            background: #1e3c72;
+            color: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        /* Marka önizleme stili */
+        .trademark-image-thumb-container {
+            position: relative;
+            display: inline-block; /* Konteyneri img boyutuna göre ayarla */
+        }
+
+        .trademark-image-preview-large {
+            position: absolute;
+            top: 50%; /* İmlecin ortasında göster */
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0); /* Başlangıçta gizli ve küçük */
+            max-width: 200px; /* Büyük önizleme boyutu */
+            max-height: 200px;
+            border: 2px solid #1e3c72;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            background: white; /* Resim şeffafsa arka plan */
+            z-index: 1000; /* Diğer her şeyin üzerinde */
+            transition: transform 0.2s ease-out; /* Yumuşak geçiş */
+            pointer-events: none; /* Üzerine tıklamayı engelle (sadece önizleme) */
+        }
+
+        .trademark-image-thumb-container:hover .trademark-image-preview-large {
+            transform: translate(-50%, -50%) scale(1); /* Hover'da büyüt */
+        }
     </style>
 </head>
 <body>
@@ -718,6 +776,14 @@
                 </div>
             </div>
 
+            <div class="type-tabs" id="typeTabs">
+                <div class="type-tab-item active" data-filter-type="all">Hepsi</div>
+                <div class="type-tab-item" data-filter-type="patent">Patent</div>
+                <div class="type-tab-item" data-filter-type="trademark">Marka</div>
+                <div class="type-tab-item" data-filter-type="copyright">Telif Hakkı</div>
+                <div class="type-tab-item" data-filter-type="design">Tasarım</div>
+            </div>
+
             <div class="filters-section">
                 <div class="filters-grid">
                     <div class="filter-group">
@@ -725,16 +791,6 @@
                         <div class="search-input">
                             <input type="text" id="searchInput" class="filter-input" placeholder="Başlık, numara veya açıklama ara...">
                         </div>
-                    </div>
-                    <div class="filter-group">
-                        <label class="filter-label">IP Türü</label>
-                        <select id="typeFilter" class="filter-select">
-                            <option value="">Tüm Türler</option>
-                            <option value="patent">Patent</option>
-                            <option value="trademark">Marka</option>
-                            <option value="copyright">Telif Hakkı</option>
-                            <option value="design">Tasarım</option>
-                        </select>
                     </div>
                     <div class="filter-group">
                         <label class="filter-label">Durum</label>
@@ -825,7 +881,7 @@
                 this.sortDirection = 'desc';
                 this.filters = {
                     search: '',
-                    type: '',
+                    type: 'all', // Varsayılan olarak tüm türler gösterilir
                     status: '',
                     period: 'all'
                 };
@@ -894,10 +950,11 @@
                     this.applyFilters();
                 });
 
-                document.getElementById('typeFilter').addEventListener('change', (e) => {
-                    this.filters.type = e.target.value;
-                    this.applyFilters();
-                });
+                // Type filter (dropdown, artık tablar tarafından kontrol ediliyor)
+                // document.getElementById('typeFilter').addEventListener('change', (e) => {
+                //     this.filters.type = e.target.value;
+                //     this.applyFilters();
+                // });
 
                 document.getElementById('statusFilter').addEventListener('change', (e) => {
                     this.filters.status = e.target.value;
@@ -910,6 +967,16 @@
                         document.querySelectorAll('.filter-buttons .filter-btn').forEach(b => b.classList.remove('active'));
                         e.target.classList.add('active');
                         this.filters.period = e.target.dataset.period;
+                        this.applyFilters();
+                    });
+                });
+
+                // Yeni tür filtreleme tabları
+                document.querySelectorAll('.type-tab-item').forEach(tab => {
+                    tab.addEventListener('click', (e) => {
+                        document.querySelectorAll('.type-tab-item').forEach(t => t.classList.remove('active'));
+                        e.target.classList.add('active');
+                        this.filters.type = e.target.dataset.filterType;
                         this.applyFilters();
                     });
                 });
@@ -1008,10 +1075,11 @@
 
             applyFilters() {
                 const search = document.getElementById('searchInput').value.toLowerCase();
-                const typeFilter = document.getElementById('typeFilter').value;
+                // const typeFilter = document.getElementById('typeFilter').value; // Artık dropdown kullanılmıyor
+                const typeFilter = this.filters.type; // Tablardan gelen filtre
+
                 const statusFilter = document.getElementById('statusFilter').value;
-                // dateFromFilter ve dateToFilter HTML'de tanımlı değil, bu yüzden değerleri null olacak
-                // ve filtreleme mantığına dahil edilmeyecek.
+                
                 const dateFrom = document.getElementById('dateFromFilter')?.value; 
                 const dateTo = document.getElementById('dateToFilter')?.value; 
                 const periodFilter = document.querySelector('.filter-buttons .filter-btn.active')?.dataset.period || 'all';
@@ -1021,7 +1089,8 @@
                         return false;
                     }
 
-                    if (typeFilter && record.type !== typeFilter) {
+                    // Type tab filtresi
+                    if (typeFilter && typeFilter !== 'all' && record.type !== typeFilter) {
                         return false;
                     }
 
@@ -1063,8 +1132,7 @@
                     record.description,
                     record.applicationNumber,
                     record.registrationNumber,
-                    // Eğer admin ise ve kayıt sahibi bilgisi varsa onu da aramaya dahil et
-                    record._ownerInfo
+                    record.userEmail // Super Admin için kullanıcı e-postası
                 ];
                 if (record.owners && record.owners.some(owner => owner.name.toLowerCase().includes(search))) {
                     return true;
@@ -1194,7 +1262,10 @@
                 if (record.type === 'trademark' && record.trademarkImage && record.trademarkImage.content) {
                     trademarkImageCellHtml = `
                         <td>
-                            <img src="${record.trademarkImage.content}" alt="Marka Örneği" class="trademark-image-thumb">
+                            <div class="trademark-image-thumb-container">
+                                <img src="${record.trademarkImage.content}" alt="Marka Örneği" class="trademark-image-thumb">
+                                <img src="${record.trademarkImage.content}" alt="Marka Önizleme" class="trademark-image-preview-large">
+                            </div>
                         </td>
                     `;
                 }
