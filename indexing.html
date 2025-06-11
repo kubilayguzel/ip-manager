@@ -637,9 +637,7 @@
                         targetDiv.style.opacity = '0';
                         targetDiv.style.transform = 'translateY(-20px)';
                         setTimeout(() => {
-                            if (document.body.contains(targetDiv)) {
-                                document.body.removeChild(targetDiv);
-                            }
+                            targetDiv.style.display = 'none'; // Just hide it again
                         }, 500);
                     }, 3000);
                 }
@@ -688,7 +686,7 @@
                         this.showNotification('Kayıtlar yüklenirken bir hata oluştu: ' + (result.error || 'Bilinmeyen Hata'), 'error');
                         this.allRecords = [];
                     }
-                } /* cite: 5 */ catch (error) {
+                } catch (error) {
                     console.error('Error loading all records:', error);
                     this.showNotification('Kayıtlar yüklenirken ağ hatası oluştu.', 'error');
                     this.allRecords = [];
@@ -913,7 +911,7 @@
                 // Doküman Ataması seçeneği için HTML oluştur
                 let docDesignationSelectHtml = `<select class="file-item-select" data-file-id="${file.id}" data-field="documentDesignation">`;
                 this.currentDocumentDesignations.forEach(designation => { // Filtrelenmiş listeyi kullan
-                    const selected = (file.documentDesignation === designation.value || (designation.value === '' && !file.documentDesignation)) ? 'selected' : '';
+                    const selected = (file.documentDesignation === designation.value || (designation.value === '' && !file.documentation)) ? 'selected' : '';
                     docDesignationSelectHtml += `<option value="${designation.value}" ${selected}>${designation.name}</option>`;
                 });
                 docDesignationSelectHtml += `</select>`;
@@ -1067,15 +1065,15 @@
                         // Değişmediyse orijinal değeri koru, undefined ise null yap
                         recordUpdates.notes = (originalNotes === undefined) ? null : originalNotes;
                     }
-                    /* cite: 5 */
-                    const result = await ipRecordsService.updateRecord(this.selectedRecord.id, recordUpdates); /* cite: 5 */
+                    
+                    const result = await ipRecordsService.updateRecord(this.selectedRecord.id, recordUpdates); 
 
-                    if (result.success) { /* cite: 5 */
-                        this.showNotification('Belgeler başarıyla indekslendi ve kayıt güncellendi!', 'success'); /* cite: 5 */
+                    if (result.success) { 
+                        this.showNotification('Belgeler başarıyla indekslendi ve kayıt güncellendi!', 'success'); 
                         this.resetForm(); // Formu sıfırla
                         await this.loadAllRecords(); // Kayıt listesini yenile
                     } else {
-                        throw new Error(result.error || 'İndeksleme sırasında bir hata oluştu.'); /* cite: 5 */
+                        throw new Error(result.error || 'İndeksleme sırasında bir hata oluştu.'); 
                     }
                 } catch (error) {
                     console.error('Indexing submit error:', error);
