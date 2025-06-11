@@ -781,6 +781,45 @@
             max-height: 300px; /* Belirli bir yükseklik sınırı */
             overflow-y: auto; /* Dikey kaydırma çubuğu */
         }
+        
+        /* Transaction Grid / Tek satır gösterimi için yeni stiller */
+        .transaction-grid {
+            display: grid;
+            grid-template-columns: 1fr auto auto; /* Açıklama, Tarih, Doküman için kolonlar */
+            gap: 10px;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px dashed #eee;
+        }
+
+        .transaction-grid:last-child {
+            border-bottom: none;
+        }
+
+        .transaction-description-col {
+            font-size: 0.9em;
+            color: #333;
+            word-break: break-word;
+        }
+
+        .transaction-date-col {
+            font-size: 0.8em;
+            color: #666;
+            white-space: nowrap; /* Tarihin tek satırda kalması için */
+        }
+
+        .transaction-document-col {
+            font-size: 0.8em;
+            white-space: nowrap;
+        }
+        .transaction-document-link {
+            color: #007bff;
+            text-decoration: underline;
+        }
+        .transaction-document-link:hover {
+            color: #0056b3;
+        }
+
 
         .transaction-item {
             display: flex;
@@ -807,16 +846,7 @@
             color: #1e3c72;
             margin-right: 8px;
         }
-        .transaction-document-link {
-            font-size: 0.8em;
-            color: #007bff;
-            text-decoration: underline;
-            margin-top: 4px;
-            display: block; /* Bağlantının kendi satırında olması için */
-        }
-        .transaction-document-link:hover {
-            color: #0056b3;
-        }
+        /* transaction-document-link style moved to .transaction-document-col */
 
 
         .transaction-description {
@@ -1731,9 +1761,6 @@
 
                 document.getElementById('modalBody').innerHTML = modalContentHtml;
                 document.getElementById('modalTitle').textContent = `"${record.title}" Detayları`; // Modal başlığını kaydın başlığı ile değiştir
-                // Yeni sekmede açmak için 'btn-view' butonuna 'target="_blank"' ve 'rel="noopener noreferrer"' eklememiz gerekir.
-                // Ancak bu, modalın kendisini değil, viewRecord fonksiyonunun çağrılmasını etkileyecektir.
-                // Modalın yeni sekmede açılması, mevcut yapıyla doğrudan desteklenmez, bu yüzden mevcut modal yapısını koruyoruz.
                 document.getElementById('detailModal').classList.add('show');
 
                 // İşlem Geçmişini Render Et
@@ -1741,118 +1768,47 @@
             }
 
             // YENİ METOT: renderTransactionHistory
-            // İkinci parametre olarak recordFiles eklenerek ilgili doküman bilgisine erişim sağlandı
+            // Artık sadece "Document Indexed" transaction'ları listelenecek ve doküman linki doğrudan gösterilecek.
             renderTransactionHistory(transactions, recordFiles) {
                 const historyContainer = document.getElementById('transactionHistory');
                 if (!historyContainer) return;
 
                 historyContainer.innerHTML = ''; // Önceki içeriği temizle
 
-                if (!transactions || transactions.length === 0) {
-                    historyContainer.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Bu kayda ait işlem geçmişi bulunmamaktadır.</p>';
+                const documentIndexedTransactions = transactions.filter(tx => tx.type === "Document Indexed")
+                                                               .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)); // En yeni en üstte
+
+                if (documentIndexedTransactions.length === 0) {
+                    historyContainer.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Bu kayda ait belge indeksleme geçmişi bulunmamaktadır.</p>';
                     return;
                 }
 
-                const transactionsMap = new Map(transactions.map(tx => [tx.transactionId, tx]));
-                const childrenMap = new Map();
+                documentIndexedTransactions.forEach(tx => {
+                    const transactionRow = document.createElement('div');
+                    transactionRow.className = 'transaction-grid'; // Yeni grid yapısı için sınıf
 
-                transactions.forEach(tx => {
-                    if (tx.parentId) {
-                        if (!childrenMap.has(tx.parentId)) {
-                            childrenMap.set(tx.parentId, []);
+                    let documentLinkHtml = '';
+                    if (tx.documentId && recordFiles) {
+                        const relatedFile = recordFiles.find(file => file.id === tx.documentId);
+                        if (relatedFile && relatedFile.content) {
+                            documentLinkHtml = `
+                                <a href="${relatedFile.content}" download="${relatedFile.name}" class="transaction-document-link" title="${relatedFile.name}">
+                                    ${relatedFile.name.length > 20 ? relatedFile.name.substring(0,17) + '...' : relatedFile.name}
+                                </a>
+                            `;
                         }
-                        childrenMap.get(tx.parentId).push(tx);
                     }
-                });
 
-                // Kök işlemleri bul (parentId null olanlar) ve kronolojik olarak sırala (en yeni en üstte)
-                const rootTransactions = transactions.filter(tx => !tx.parentId)
-                                                  .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                    // İşlem açıklamasını ve tarihini tek satırda göster
+                    const transactionDescription = tx.description;
+                    const formattedTimestamp = new Date(tx.timestamp).toLocaleString('tr-TR');
 
-                const buildTreeHtml = (transactionsToRender, currentParentId, level) => {
-                    let html = '';
-                    // Mevcut seviyedeki işlemleri bul ve kronolojik olarak sırala (en yeni en üstte)
-                    const transactionsAtCurrentLevel = transactionsToRender.filter(tx => tx.parentId === currentParentId)
-                                                                           .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-
-                    transactionsAtCurrentLevel.forEach(tx => {
-                        const hasChildren = childrenMap.has(tx.transactionId);
-                        
-                        let description = tx.description;
-                        let documentLinkHtml = '';
-
-                        if (tx.documentId && recordFiles) {
-                            const relatedFile = recordFiles.find(file => file.id === tx.documentId);
-                            if (relatedFile && relatedFile.content) {
-                                documentLinkHtml = `
-                                    <a href="${relatedFile.content}" download="${relatedFile.name}" class="transaction-document-link">
-                                        📄 ${relatedFile.name} (${this.formatFileSize(relatedFile.size)})
-                                    </a>
-                                `;
-                            }
-                        }
-
-                        // Özel işlem tipleri için açıklama formatlaması
-                        if (tx.type === "Document Indexed") {
-                            description = `'${tx.documentName}' belgesi eklendi.`;
-                            if(tx.documentDesignation) description += ` Atama: '${tx.documentDesignation}'`;
-                            if(tx.subDesignation) description += ` (${tx.subDesignation})`;
-                        } else if (tx.type === "Document Updated") {
-                            description = `'${tx.documentName}' belgesi güncellendi: ${tx.description.substring(tx.description.indexOf(':') + 1).trim()}`;
-                        } else if (tx.type === "Document Deleted") {
-                            description = `'${tx.documentName}' belgesi silindi.`;
-                            if(tx.documentDesignation) description += ` Atama: '${tx.documentDesignation}'`;
-                            if(tx.subDesignation) description += ` (${tx.subDesignation})`;
-                        } else if (tx.type === "Record Updated" && tx.description.startsWith("Kayıt verileri güncellendi:")) {
-                            description = `Kayıt bilgileri güncellendi: ${tx.description.substring(tx.description.indexOf(':') + 1).trim()}`;
-                        }
-                        // Diğer işlem tipleri için de benzer formatlamalar eklenebilir
-
-                        html += `
-                            <div class="transaction-item">
-                                ${hasChildren ? 
-                                    `<button class="transaction-toggle-btn" data-tx-id="${tx.transactionId}" data-expanded="false">+</button>` 
-                                    : `<button class="transaction-toggle-btn hidden-toggle"></button>` // Çocuk yoksa boş buton
-                                }
-                                <div class="transaction-item-content">
-                                    <div class="transaction-type">${tx.type.replace(/([A-Z])/g, ' $1').trim()}</div>
-                                    <div class="transaction-description">${description}</div>
-                                    ${documentLinkHtml}
-                                    <div class="transaction-meta">
-                                        ${new Date(tx.timestamp).toLocaleString('tr-TR')} - ${tx.userEmail}
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-
-                        if (hasChildren) {
-                            html += `<div id="children-${tx.transactionId}" class="transaction-indent" style="display:none;">`; // Başlangıçta gizli
-                            html += buildTreeHtml(transactionsToRender, tx.transactionId, level + 1);
-                            html += `</div>`;
-                        }
-                    });
-                    return html;
-                };
-
-                historyContainer.innerHTML = buildTreeHtml(transactions, null, 0); // Kökten başla
-
-                // Toggle butonları için olay dinleyicileri ekle
-                historyContainer.querySelectorAll('.transaction-toggle-btn:not(.hidden-toggle)').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        const txId = e.target.dataset.txId;
-                        const childrenDiv = document.getElementById(`children-${txId}`);
-                        if (childrenDiv) {
-                            if (childrenDiv.style.display === 'none') {
-                                childrenDiv.style.display = 'block';
-                                e.target.textContent = '−'; // Eksi işareti
-                                e.target.dataset.expanded = 'true';
-                            } else {
-                                childrenDiv.style.display = 'none';
-                                e.target.textContent = '+';
-                                e.target.dataset.expanded = 'false';
-                            }
-                        }
-                    });
+                    transactionRow.innerHTML = `
+                        <div class="transaction-description-col">${transactionDescription}</div>
+                        <div class="transaction-date-col">${formattedTimestamp}</div>
+                        <div class="transaction-document-col">${documentLinkHtml}</div>
+                    `;
+                    historyContainer.appendChild(transactionRow);
                 });
             }
 
