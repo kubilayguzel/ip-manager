@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IP Manager - Kişiler Yönetimi</title>
     <style>
+        /* Ortak stiller (header, main-container vb.) diğer HTML dosyalarınızdan alınmıştır. */
+        /* Eğer ortak bir CSS dosyanız varsa, linkini buraya ekleyebilirsiniz. */
         * {
             margin: 0;
             padding: 0;
@@ -61,6 +63,64 @@
             background: #1e3c72;
             color: white;
         }
+
+        /* Dropdown Menü Stilleri (Dashboard'dan kopyalandı) */
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: rgba(255, 255, 255, 0.98);
+            min-width: 180px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1;
+            border-radius: 8px;
+            padding: 10px 0;
+            top: 100%; /* Dropdown'ı butonun altına yerleştir */
+            left: 0;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            pointer-events: none; /* Başlangıçta etkileşimi kapat */
+        }
+
+        .dropdown-content a {
+            color: #333;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            font-weight: 400;
+            transition: background-color 0.2s ease;
+            white-space: nowrap; /* Menü öğeleri tek satırda kalsın */
+        }
+
+        .dropdown-content a:hover {
+            background-color: #f1f1f1;
+            color: #1e3c72;
+        }
+
+        .dropdown:hover .dropdown-content,
+        .dropdown.active .dropdown-content { /* JavaScript ile 'active' sınıfı eklenince de açılsın */
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto; /* Açıkken etkileşimi aç */
+        }
+
+        /* Dropdown başlığının stilini nav-item'a benzet */
+        .dropdown .nav-item {
+            cursor: pointer;
+            padding-right: 25px; /* Ok ikonu için boşluk */
+        }
+        .dropdown .nav-item::after {
+            content: ' ▼'; /* Küçük ok ikonu */
+            font-size: 0.8em;
+            vertical-align: middle;
+        }
+
 
         .user-section {
             display: flex;
@@ -616,9 +676,16 @@
                 <a href="dashboard.html" class="nav-item">Dashboard</a>
                 <a href="portfolio.html" class="nav-item">Portföy</a>
                 <a href="data-entry.html" class="nav-item">Yeni Kayıt</a>
-                <a href="#" class="nav-item active">Kişiler Yönetimi</a>
-                <a href="#" class="nav-item">Raporlar</a>
-                <a href="#" class="nav-item">Ayarlar</a>
+                
+                <div class="dropdown" id="managementDropdown">
+                    <a href="#" class="nav-item dropdown-toggle" onclick="toggleDropdown(event)">Yönetim</a>
+                    <div class="dropdown-content">
+                        <a href="persons.html">Kişiler Yönetimi</a>
+                        <a href="user-management.html">Kullanıcı Yönetimi</a>
+                    </div>
+                </div>
+
+                <a href="#" class="nav-item active">Raporlar</a> <a href="#" class="nav-item">Ayarlar</a>
             </nav>
             <div class="user-section">
                 <div class="user-avatar" id="userAvatar">D</div>
@@ -802,6 +869,24 @@
             auth 
         } from './firebase-config.js';
 
+        // Dropdown Menü Fonksiyonu (Dashboard'dan kopyalandı)
+        function toggleDropdown(event) {
+            event.preventDefault(); 
+            const dropdown = document.getElementById("managementDropdown");
+            dropdown.classList.toggle("active");
+            
+            window.onclick = function(e) {
+                if (!e.target.matches('.dropdown-toggle') && !e.target.closest('.dropdown-content')) {
+                    if (dropdown.classList.contains('active')) {
+                        dropdown.classList.remove('active');
+                        window.onclick = null;
+                    }
+                }
+            }
+        }
+        window.toggleDropdown = toggleDropdown;
+
+
         // Kişileri yöneten ana sınıf
         let personsModule; // Global olarak tanımlandı
 
@@ -821,11 +906,9 @@
             init() {
                 auth.onAuthStateChanged(async (user) => {
                     if (user) {
-                        this.currentUser = user;
-                        // Kullanıcı bilgilerini ve rolünü güncellemek için authService'ten al
                         this.currentUser = authService.getCurrentUser();
                         console.log('✅ User authenticated:', user.email, 'Role:', this.currentUser.role);
-                        this.updateUserInfo(); // Kullanıcı bilgisi ve rolü için
+                        this.updateUserInfo();
                         this.setupEventListeners();
                         await this.loadPersons(); 
                     } else {
@@ -833,7 +916,7 @@
                         if (localUser && localUser.uid) {
                             this.currentUser = localUser;
                             console.log('⚠️ LocalStorage user detected, running in local mode:', localUser.email, 'Role:', this.currentUser.role);
-                            this.updateUserInfo(); // Kullanıcı bilgisi ve rolü için
+                            this.updateUserInfo();
                             this.setupEventListeners();
                             await this.loadPersons(); 
                         } else {
@@ -911,13 +994,13 @@
                 const personsTable = document.getElementById('personsTable');
                 const noPersons = document.getElementById('noPersons');
                 const tableBody = document.getElementById('personsTableBody');
-                const ownerColumnHeader = document.getElementById('ownerColumn'); // Süper Admin için başlık
+                const ownerColumnHeader = document.getElementById('ownerColumn');
 
                 loadingIndicator.style.display = 'block';
                 personsTable.style.display = 'none';
                 noPersons.style.display = 'none';
                 tableBody.innerHTML = ''; 
-                ownerColumnHeader.style.display = 'none'; // Varsayılan olarak gizle
+                ownerColumnHeader.style.display = 'none';
 
                 try {
                     const result = await personsService.getPersons(); 
@@ -926,9 +1009,8 @@
                         this.updateStats();
                         this.applyFilters(); 
 
-                        // Süper Admin ise "Kayıt Sahibi" sütununu göster
                         if (authService.isSuperAdmin()) {
-                            ownerColumnHeader.style.display = 'table-cell'; // table-cell olarak göster
+                            ownerColumnHeader.style.display = 'table-cell';
                         } else {
                             ownerColumnHeader.style.display = 'none';
                         }
@@ -955,7 +1037,7 @@
                 document.getElementById('totalPersonsCount').textContent = stats.total;
                 document.getElementById('individualCount').textContent = stats.individual;
                 document.getElementById('companyCount').textContent = stats.company;
-                document.getElementById('institutionCount').textContent = stats.institution; // Kurum sayısı için istatistik
+                document.getElementById('institutionCount').textContent = stats.institution;
             }
 
             applyFilters() {
@@ -963,8 +1045,7 @@
                 const typeFilter = document.getElementById('typeFilter').value;
 
                 this.filteredPersons = this.allPersons.filter(person => {
-                    // Super Admin ise _ownerInfo'yu da aramaya dahil et
-                    const ownerInfoSearch = authService.isSuperAdmin() && person.userEmail ? person.userEmail.toLowerCase() : ''; // userEmail kullanıldı
+                    const ownerInfoSearch = authService.isSuperAdmin() && person.userEmail ? person.userEmail.toLowerCase() : '';
 
                     if (search && !(
                         String(person.name).toLowerCase().includes(search) ||
@@ -1003,7 +1084,6 @@
                     let aVal = a[this.sortColumn] || '';
                     let bVal = b[this.sortColumn] || '';
 
-                    // Eğer sortColumn 'userEmail' ise özel işlem yap
                     if (this.sortColumn === 'userEmail' && authService.isSuperAdmin()) {
                          aVal = a.userEmail ? a.userEmail.toLowerCase() : '';
                          bVal = b.userEmail ? b.userEmail.toLowerCase() : '';
@@ -1142,9 +1222,8 @@
                 this.currentPersonId = personId; 
 
                 form.reset();
-                this.clearModalErrors('personForm'); // Form hatalarını temizle
+                this.clearModalErrors('personForm');
 
-                // Tüm form elemanlarını varsayılan olarak düzenlenebilir yap
                 document.querySelectorAll('#personForm input, #personForm select, #personForm textarea').forEach(input => {
                     input.readOnly = false;
                     input.disabled = false;
@@ -1153,9 +1232,9 @@
                 if (mode === 'add') {
                     modalTitle.textContent = 'Yeni Kişi Ekle';
                     savePersonBtn.textContent = 'Kaydet';
-                    savePersonBtn.style.display = 'inline-block'; // Kaydet butonunu göster
-                    modalOwnerInfoGroup.style.display = 'none'; // Kayıt sahibi bilgisini gizle
-                    createUserAccountGroup.style.display = 'none'; // Kullanıcı oluşturma butonunu gizle
+                    savePersonBtn.style.display = 'inline-block';
+                    modalOwnerInfoGroup.style.display = 'none';
+                    createUserAccountGroup.style.display = 'none';
                 } else if (mode === 'edit' || mode === 'view') {
                     const person = this.allPersons.find(p => p.id === personId);
                     if (!person) {
@@ -1166,7 +1245,7 @@
 
                     modalTitle.textContent = mode === 'edit' ? 'Kişi Bilgilerini Düzenle' : 'Kişi Detayları';
                     savePersonBtn.textContent = 'Güncelle';
-                    savePersonBtn.style.display = mode === 'view' ? 'none' : 'inline-block'; // Görüntüleme modunda kaydet butonunu gizle
+                    savePersonBtn.style.display = mode === 'view' ? 'none' : 'inline-block';
 
                     document.getElementById('personName').value = person.name || '';
                     document.getElementById('personEmail').value = person.email || '';
@@ -1177,26 +1256,29 @@
                     document.getElementById('personUpdatedAt').value = person.updatedAt ? new Date(person.updatedAt).toLocaleString('tr-TR') : '-';
 
 
-                    // Süper Admin ise kayıt sahibini ve kullanıcı oluşturma butonunu göster
                     if (authService.isSuperAdmin()) {
                         modalOwnerInfoInput.value = person.userEmail || '-';
                         modalOwnerInfoGroup.style.display = 'block';
 
-                        // Eğer kişinin bir e-postası varsa ve bu e-postaya sahip bir kullanıcı ID'si yoksa
-                        // (yani Firebase'de bu e-posta ile bir kullanıcı kaydı yoksa)
-                        // veya bu kişinin kendi kaydı değilse (admin olarak başkası için oluşturuyorsa)
-                        // veya kişinin userId'si currentUser'ın userId'sinden farklıysa ve o userId'ye sahip bir kullanıcı Firebase'de yoksa (daha karmaşık kontrol)
-                        // Basitçe, e-posta varsa ve bu kişi henüz bir kullanıcı hesabıyla ilişkilendirilmemişse gösterelim.
-                        // Firebase Auth'ta bu e-posta ile bir kullanıcının varlığını kontrol etmek daha doğru olur ancak bu,
-                        // Auth modülünde ek bir fonk gerektirir. Şimdilik sadece e-posta varsa ve user ID farklıysa gösterelim.
-                        if (person.email && person.userId !== this.currentUser.uid && authService.isFirebaseAvailable) {
-                            createUserAccountGroup.style.display = 'block';
-                            // Butona tıklama olayı
-                            createUserAccountBtn.onclick = async () => {
-                                if (confirm(`"${person.name}" için bir kullanıcı hesabı oluşturmak istediğinizden emin misiniz?`)) {
-                                    await this.createUserAccountForPerson(person.id, person.name, person.email);
-                                }
-                            };
+                        // Sadece eğer e-posta varsa VE bu e-postaya ait henüz bir kullanıcı yoksa butonu göster
+                        // (Bu kontrol tam doğru olmayabilir, gerçekte Firebase Auth'ta kullanıcı varlığını sorgulamak gerekir)
+                        // Şimdilik, sadece e-posta varsa ve user ID farklıysa veya yoksa gösteriyoruz.
+                        if (person.email && authService.isFirebaseAvailable) {
+                            // Firebase Auth'ta bu e-postayla kayıtlı bir kullanıcı olup olmadığını kontrol et
+                            // Bu kontrol doğrudan client tarafında yapılamaz, bu yüzden basitleştiriyoruz.
+                            // İdealde, bu kişinin `userId` alanı Firebase Auth'taki UID ile eşleşmelidir.
+                            const isPersonAlreadyUser = person.userId && person.userId !== 'anonymous' && person.userId !== null; // Basit kontrol
+
+                            if (!isPersonAlreadyUser) { // Eğer kişi henüz bir kullanıcı hesabıyla ilişkilendirilmemişse
+                                createUserAccountGroup.style.display = 'block';
+                                createUserAccountBtn.onclick = async () => {
+                                    if (confirm(`"${person.name}" için bir kullanıcı hesabı oluşturmak istediğinizden emin misiniz?`)) {
+                                        await this.createUserAccountForPerson(person.id, person.name, person.email);
+                                    }
+                                };
+                            } else {
+                                createUserAccountGroup.style.display = 'none';
+                            }
                         } else {
                             createUserAccountGroup.style.display = 'none';
                         }
@@ -1206,15 +1288,13 @@
                         createUserAccountGroup.style.display = 'none';
                     }
 
-                    // Görüntüleme modunda veya admin olmayan kullanıcı için yetki kontrolü
                     document.querySelectorAll('#personForm input, #personForm select, #personForm textarea').forEach(input => {
                         let isReadOnly = mode === 'view';
-                        // Eğer admin değilse ve başkasına ait kaydı düzenlemeye çalışıyorsa
                         if (!authService.isSuperAdmin() && person.userId !== this.currentUser.uid) {
-                            isReadOnly = true; // Sadece okuma modunda kalsın
+                            isReadOnly = true;
                         }
                         input.readOnly = isReadOnly;
-                        input.disabled = isReadOnly; // Disabled da yap
+                        input.disabled = isReadOnly;
                     });
                 }
                 modal.classList.add('show');
@@ -1223,13 +1303,12 @@
             closePersonModal() {
                 const modal = document.getElementById('personModal');
                 modal.classList.remove('show');
-                // Form elemanlarını varsayılan hallerine döndür
                 document.querySelectorAll('#personForm input, #personForm select, #personForm textarea').forEach(input => {
                     input.readOnly = false;
                     input.disabled = false;
                 });
                 this.currentPersonId = null;
-                this.clearModalErrors('personForm'); // Modal kapatılırken hataları temizle
+                this.clearModalErrors('personForm');
             }
 
             async createUserAccountForPerson(personId, personName, personEmail) {
@@ -1248,16 +1327,17 @@
                 createUserAccountBtn.textContent = 'Oluşturuluyor...';
 
                 try {
-                    // Rastgele bir şifre oluştur (kullanıcı bunu ilk girişte değiştirmeli)
                     const tempPassword = Math.random().toString(36).slice(-8); // 8 karakterli rastgele şifre
                     
-                    const result = await authService.signUp(personEmail, tempPassword, personName, 'user'); // Varsayılan rol 'user'
+                    const result = await authService.signUp(personEmail, tempPassword, personName, 'user');
 
                     if (result.success) {
                         alert(`"${personName}" için kullanıcı hesabı başarıyla oluşturuldu!\nGeçici şifre: ${tempPassword}\nKullanıcı bu şifreyi kullanarak giriş yapmalı ve şifresini sıfırlamalıdır.`);
-                        // Oluşturulan kullanıcının UID'sini ilgili kişi kaydına bağlayabiliriz (isteğe bağlı)
-                        // Örneğin: await personsService.updatePerson(personId, { userId: result.user.uid });
-                        this.loadPersons(); // Listeyi yenile
+                        
+                        // Kişi kaydını, oluşturulan kullanıcının UID'si ile güncelle
+                        await personsService.updatePerson(personId, { userId: result.user.uid }); // userId alanını güncelle
+                        
+                        this.loadPersons();
                         this.closePersonModal();
                     } else {
                         throw new Error(result.error || 'Kullanıcı hesabı oluşturulurken bilinmeyen bir hata oluştu.');
@@ -1295,7 +1375,6 @@
                 }
 
                 if (!isValid) {
-                    // Hatalı alanlar varsa uyarıyı göstermeye gerek yok, fieldError zaten görünüyor
                     return;
                 }
 
@@ -1314,19 +1393,18 @@
                     let result;
                     if (this.currentPersonId) {
                         const personToUpdate = this.allPersons.find(p => p.id === this.currentPersonId);
-                        // Admin olmayan kullanıcı, başkasına ait kaydı güncelleyemesin
                         if (!authService.isSuperAdmin() && personToUpdate && personToUpdate.userId !== this.currentUser.uid) {
                              alert('Bu kaydı güncelleme yetkiniz yoktur.');
                              saveBtn.disabled = false;
                              return;
                         }
-                        personData.updatedAt = new Date().toISOString(); // Güncelleme tarihi ekle
+                        personData.updatedAt = new Date().toISOString();
                         result = await personsService.updatePerson(this.currentPersonId, personData);
                     } else {
-                        personData.createdAt = new Date().toISOString(); // Oluşturma tarihi ekle
-                        personData.updatedAt = new Date().toISOString(); // Güncelleme tarihi ekle
-                        personData.userId = this.currentUser.uid; // Kaydı oluşturan kullanıcı ID'si
-                        personData.userEmail = this.currentUser.email; // Kaydı oluşturan kullanıcı E-posta
+                        personData.createdAt = new Date().toISOString();
+                        personData.updatedAt = new Date().toISOString();
+                        personData.userId = this.currentUser.uid;
+                        personData.userEmail = this.currentUser.email;
                         result = await personsService.addPerson(personData);
                     }
 
@@ -1352,7 +1430,6 @@
                     return;
                 }
                 
-                // Admin olmayan kullanıcı, başkasına ait kaydı silemesin
                 if (!authService.isSuperAdmin() && personToDelete.userId !== this.currentUser.uid) {
                     alert('Bu kişiyi silme yetkiniz yoktur.');
                     return;
@@ -1409,19 +1486,18 @@
             }
         }
 
-        // personsModule nesnesini window global kapsamına atama
         auth.onAuthStateChanged((user) => {
             if (user) {
                 if (!personsModule) {
                     personsModule = new PersonsModule();
-                    window.personsModule = personsModule; // Global erişim için atama
+                    window.personsModule = personsModule;
                 }
             } else {
                 const localUser = authService.getCurrentUser();
                 if (localUser && localUser.uid) {
                     if (!personsModule) {
                         personsModule = new PersonsModule();
-                        window.personsModule = personsModule; // Global erişim için atama
+                        window.personsModule = personsModule;
                     }
                 } else {
                     console.log('❌ User not authenticated for Persons Management, redirecting to login page.');
@@ -1463,11 +1539,10 @@
                 if (confirm('TÜM KİŞİLERİ SİLMEK İSTEDİĞİNİZDEN EMİN MİSİNİZ? BU İŞLEM GERİ ALINAMAZ!')) {
                     const personsToDelete = [...personsModule.allPersons]; 
                     for (const person of personsToDelete) {
-                        // Silme işlemi için yetki kontrolü
                         if (!authService.isSuperAdmin() && person.userId !== personsModule.currentUser.uid) {
                             console.warn(`Yetkisiz silme girişimi: ${person.id} kişisi başka bir kullanıcıya ait.`);
                             alert(`"${person.name}" kişisi başka bir kullanıcıya ait olduğu için silinemedi.`);
-                            continue; // Bu kişiyi atla ve diğerlerine geç
+                            continue;
                         }
                         await personsService.deletePerson(person.id);
                     }
