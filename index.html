@@ -40,7 +40,6 @@
             font-size: 2.5em;
             font-weight: bold;
             color: #1e3c72;
-            margin-bottom: 10px;
         }
 
         .subtitle {
@@ -365,9 +364,7 @@
                     if (user) {
                         console.log('✅ User authenticated by Firebase:', user.email);
                         
-                        // authService.getCurrentUser() çağrısı, rol bilgisini de içerecek şekilde güncellendi.
-                        const userData = authService.getCurrentUser(); //
-                        
+                        const userData = authService.getCurrentUser(); 
                         localStorage.setItem('currentUser', JSON.stringify(userData));
                         console.log('💾 User data saved to localStorage:', userData);
                         
@@ -382,6 +379,16 @@
                         // Bu noktada, eğer localStorage'da geçerli bir kullanıcı yoksa
                         // ve sayfa index.html ise, hiçbir şey yapmamalıyız.
                         // Diğer sayfalardan buraya yönlendirme zaten yapılıyor.
+                        // Ancak, logout işlemi tetiklendiğinde buradaki localUser kontrolü önemlidir.
+                        const localUser = authService.getCurrentUser();
+                        if (localUser && localUser.uid) {
+                             // localStorage'da kullanıcı var ama Firebase'de yok. Bu durum local mod anlamına gelir.
+                             // Yönlendirme yapma, kullanıcının tekrar login olmasını bekle.
+                             console.log('⚠️ LocalStorage user found, but Firebase not authenticated. Staying on login page.');
+                        } else {
+                             // Ne Firebase ne de localStorage'da kullanıcı yok. Giriş sayfasında kal.
+                             console.log('❌ No authenticated user (Firebase or LocalStorage). Staying on login page.');
+                        }
                     }
                 });
             }
@@ -430,9 +437,8 @@
                     
                     if (result.success) {
                         console.log('✅ Sign in process successful');
-                        // Firebase auth.onAuthStateChanged listener'ı zaten yönlendirmeyi yapacak.
-                        // Burada ekstra bir şey yapmaya gerek yok, sadece başarılı mesajı gösterebiliriz.
-                        this.showSuccess(result.message);
+                        this.showSuccess(result.message); // Başarılı mesajı göster
+                        // onAuthStateChanged listener'ı zaten dashboard'a yönlendirecek
                     } else {
                         this.showError('signin', result.error);
                     }
@@ -461,16 +467,12 @@
                         this.showSuccess('Hesap oluşturuldu! Demo veriler yükleniyor...');
                         
                         setTimeout(async () => {
-                            // Demo verileri oluştururken `auth.currentUser`'ın dolu olduğundan emin olun.
-                            // `createDemoData` içinde zaten bu kontrol var.
                             await createDemoData();
-                            // createDemoData bittikten sonra tekrar yönlendirmeyi tetiklemeye gerek yok,
-                            // `onAuthStateChanged` zaten Firebase oturumu başarıyla oluştuğunda yönlendirme yapıyor.
-                            // Ancak local modda, `onAuthStateChanged` Firebase'e bağlı olmadığı için
-                            // local'a kayıt olduğunda manuel yönlendirme yapabiliriz.
+                            // Firebase bağlı değilse manuel yönlendirme
                             if (!authService.isFirebaseAvailable) {
                                 window.location.href = 'dashboard.html';
                             }
+                            // Firebase bağlıysa onAuthStateChanged zaten yönlendirecek
                         }, 2000);
                     } else {
                         this.showError('signup', result.error);
@@ -496,18 +498,13 @@
                     
                     if (result.success) {
                         this.showSuccess(`Demo hesap oluşturuldu: ${demoEmail}. Veriler yükleniyor...`);
-                        // Firebase onAuthStateChanged tetiklenecek.
-                        // Local modda isek:
-                        if (!authService.isFirebaseAvailable) {
-                            await createDemoData(); // Local demo data oluştur
-                            // `onAuthStateChanged` local modda Firebase gibi otomatik yönlendirme yapmayacağı için
-                            // burada manuel yönlendirme yapabiliriz.
-                            window.location.href = 'dashboard.html';
-                        } else {
-                            // Firebase bağlı ise, onAuthStateChanged zaten yönlendirecek.
-                            // Sadece demo verileri oluşturmasını tetikleyelim.
-                            await createDemoData();
-                        }
+                        
+                        setTimeout(async () => {
+                            await createDemoData(); 
+                            if (!authService.isFirebaseAvailable) {
+                                window.location.href = 'dashboard.html';
+                            }
+                        }, 2000);
                     } else {
                         this.showError(this.currentTab, result.error || 'Demo hesap oluşturulamadı.');
                     }
@@ -647,14 +644,20 @@
                 document.getElementById('successMessage').style.display = 'none';
             },
             getCurrentUser: () => {
-                const user = authService.getCurrentUser(); //
+                const user = authService.getCurrentUser(); 
                 return user;
             },
             signOut: async () => { 
                 console.log('Attempting sign out...');
                 await authService.signOut(); 
-                console.log('User signed out.');
+                // DÜZELTME: authService.signOut() artık localStorage'ı temizleyip yönlendirme yaptığı için
+                // burada ekstra window.location.href = 'index.html'; satırına gerek kalmıyor,
+                // veya dashboard.html'den gelen yönlendirmeyle çakışabilir.
+                // Eğer logout işlemi doğrudan index.html'den çağrılıyorsa, yönlendirme burada kalabilir.
+                // Genel tutarlılık için, tüm sayfalarda çıkışın aynı şekilde davranması önemlidir.
+                // dashboard.html'deki gibi burada da yönlendirme satırı tutulabilir.
                 window.location.href = 'index.html'; 
+                console.log('User signed out.');
             },
             forceDashboard: () => {
                 window.location.href = 'dashboard.html';
