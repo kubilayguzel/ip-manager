@@ -1775,6 +1775,7 @@
 
                 historyContainer.innerHTML = ''; // Önceki içeriği temizle
 
+                // Sadece "Document Indexed" transaction'larını filtrele
                 const documentIndexedTransactions = transactions.filter(tx => tx.type === "Document Indexed")
                                                                .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)); // En yeni en üstte
 
@@ -1793,14 +1794,47 @@
                         if (relatedFile && relatedFile.content) {
                             documentLinkHtml = `
                                 <a href="${relatedFile.content}" download="${relatedFile.name}" class="transaction-document-link" title="${relatedFile.name}">
-                                    ${relatedFile.name.length > 20 ? relatedFile.name.substring(0,17) + '...' : relatedFile.name}
+                                    📄 ${relatedFile.name.length > 25 ? relatedFile.name.substring(0,22) + '...' : relatedFile.name} (${this.formatFileSize(relatedFile.size)})
                                 </a>
                             `;
                         }
                     }
 
                     // İşlem açıklamasını ve tarihini tek satırda göster
-                    const transactionDescription = tx.description;
+                    let transactionDescription = "";
+                    const subDesignationTranslations = {
+                        'opposition_to_publication': 'Yayına İtiraz',
+                        'response_to_opposition': 'İtiraza Karşı Görüş',
+                        'opposition_decision_rejected': 'Yayına İtiraz Kararı - Ret',
+                        'opposition_decision_accepted': 'Yayına İtiraz Kararı - Kabul'
+                    };
+                    const documentDesignationTranslations = {
+                        'opposition_trademark_office': 'Yayına İtiraz - Markalar Dairesi',
+                        'Başvuru Ek Dokümanı': 'Başvuru Ek Dokümanı',
+                        'Resmi Yazışma': 'Resmi Yazışma',
+                        'Vekaletname': 'Vekaletname',
+                        'Teknik Çizim': 'Teknik Çizim',
+                        'Karar': 'Karar',
+                        'Finansal Belge': 'Finansal Belge',
+                        'Yayın Kararı': 'Yayın Kararı',
+                        'Ret Kararı': 'Ret Kararı',
+                        'Tescil Belgesi': 'Tescil Belgesi',
+                        'Araştırma Raporu': 'Araştırma Raporu',
+                        'İnceleme Raporu': 'İnceleme Raporu',
+                        'Diğer Belge': 'Diğer Belge',
+                        'Genel Not': 'Genel Not'
+                    };
+
+                    if (tx.subDesignation && subDesignationTranslations[tx.subDesignation]) {
+                        transactionDescription = subDesignationTranslations[tx.subDesignation];
+                    } else if (tx.documentDesignation && documentDesignationTranslations[tx.documentDesignation]) {
+                        transactionDescription = documentDesignationTranslations[tx.documentDesignation];
+                    } else {
+                        // Eğer atama/alt atama yoksa orijinal açıklamayı kullan (fallback)
+                        transactionDescription = tx.description; 
+                    }
+
+
                     const formattedTimestamp = new Date(tx.timestamp).toLocaleString('tr-TR');
 
                     transactionRow.innerHTML = `
@@ -1950,7 +1984,6 @@
                 if (localUser && localUser.uid) {
                     if (!portfolio) {
                         portfolio = new PortfolioModule();
-                        window.portfolio = portfolio; // Global erişim için atama
                     }
                 } else {
                     console.log('❌ User not authenticated, redirecting to login page.');
