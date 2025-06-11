@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IP Manager - Giriş</title>
     <style>
-        /* CSS kodlarınız burada olduğu gibi kalacaktır */
         * {
             margin: 0;
             padding: 0;
@@ -316,9 +315,9 @@
     <script type="module">
         import { 
             authService, 
-            ipRecordsService, // ipRecordsService artık import ediliyor
+            ipRecordsService, 
             createDemoData,
-            auth // Firebase auth objesi dışa aktarılıyor
+            auth
         } from './firebase-config.js';
 
         // UI Controller Class
@@ -330,8 +329,8 @@
 
             init() {
                 this.setupEventListeners();
-                this.setupAuthStateListener(); // Firebase oturum dinleyicisini başlat
-                this.checkFirebaseConnectionStatus(); // Firebase bağlantı durumunu kontrol et
+                this.setupAuthStateListener(); 
+                this.checkFirebaseConnectionStatus(); 
                 console.log('🔐 Auth Controller initialized');
             }
 
@@ -362,41 +361,36 @@
             }
 
             setupAuthStateListener() {
-                // onAuthStateChanged Firebase'in kimlik doğrulama durumunu izler
-                // Kullanıcı oturum açtığında veya kapattığında tetiklenir
-                authService.auth.onAuthStateChanged((user) => {
+                auth.onAuthStateChanged((user) => {
                     if (user) {
                         console.log('✅ User authenticated by Firebase:', user.email);
-                        // Firebase kullanıcısı oturum açtığında localStorage'a kaydet
+                        
                         const userData = {
                             uid: user.uid,
                             email: user.email,
                             displayName: user.displayName || 'Kullanıcı',
-                            role: 'user', // Firebase Auth rol bilgisini sağlamaz, varsayılan 'user'
+                            role: 'user', 
                             loginTime: new Date().toISOString()
                         };
+                        
                         localStorage.setItem('currentUser', JSON.stringify(userData));
                         console.log('💾 User data saved to localStorage:', userData);
                         
                         this.showSuccess('Giriş başarılı! Dashboard\'a yönlendiriliyorsunuz...');
                         
-                        // Dashboard'a yönlendir
                         setTimeout(() => {
                             console.log('🚀 Redirecting to dashboard...');
                             window.location.href = 'dashboard.html';
                         }, 1500);
                     } else {
-                        // Kullanıcı oturumu kapattığında veya hiç oturum açılmadığında
                         console.log('ℹ️ User is not authenticated by Firebase.');
-                        // localStorage'daki currentUser'ı temizleme işlemi logout butonunda yapılır
                     }
                 });
             }
 
-            // Firebase bağlantı durumunu anlık olarak kontrol etme
             checkFirebaseConnectionStatus() {
                 const statusDiv = document.getElementById('firebaseStatus');
-                if (authService.isFirebaseAvailable) { // firebase-config.js'den gelen durum
+                if (authService.isFirebaseAvailable) { 
                     statusDiv.textContent = '🔥 Firebase Bağlı';
                     statusDiv.className = 'firebase-status connected';
                 } else {
@@ -404,18 +398,16 @@
                     statusDiv.className = 'firebase-status error';
                 }
                 setTimeout(() => {
-                    statusDiv.style.display = 'none'; // 3 saniye sonra gizle
+                    statusDiv.style.display = 'none'; 
                 }, 3000);
             }
 
             switchTab(tabName) {
-                // Update tabs
                 document.querySelectorAll('.tab').forEach(tab => {
                     tab.classList.remove('active');
                 });
                 document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
 
-                // Update sections
                 document.querySelectorAll('.form-section').forEach(section => {
                     section.classList.remove('active');
                 });
@@ -423,6 +415,7 @@
 
                 this.currentTab = tabName;
                 this.clearErrors();
+                this.clearMessages();
             }
 
             async handleSignIn() {
@@ -432,18 +425,15 @@
                 if (!this.validateSignIn(email, password)) return;
 
                 this.setLoading('signin', true);
-                this.clearMessages(); // Başarılı/hata mesajlarını temizle
+                this.clearMessages(); 
 
                 try {
                     const result = await authService.signIn(email, password);
                     
                     if (result.success) {
                         console.log('✅ Sign in process successful');
-                        // onAuthStateChanged zaten yönlendirme yapacağı için burada sadece bilgi mesajı gösterilir
-                        // ve Firebase kullanıcısı için ayrıca localStorage'a manuel kaydetmeye gerek kalmaz.
                         this.showSuccess(result.message);
                     } else {
-                        // AuthService'den gelen hata mesajını göster
                         this.showError('signin', result.error);
                     }
                 } catch (error) {
@@ -462,16 +452,17 @@
                 if (!this.validateSignUp(name, email, password)) return;
 
                 this.setLoading('signup', true);
-                this.clearMessages(); // Başarılı/hata mesajlarını temizle
+                this.clearMessages(); 
 
                 try {
                     const result = await authService.signUp(email, password, name);
                     
                     if (result.success) {
-                        this.showSuccess('Hesap oluşturuldu! Dashboard\'a yönlendiriliyorsunuz...');
-                        // Yeni kayıt olan kullanıcı için otomatik olarak demo verileri oluştur (Firebase veya Local)
-                        await createDemoData(); // createDemoData'nın Firebase/Local ayrımını yapması beklenir
-                        // onAuthStateChanged zaten yönlendirme yapacağı için burada manuel bir yönlendirme yok.
+                        this.showSuccess('Hesap oluşturuldu! Demo veriler yükleniyor...');
+                        
+                        setTimeout(async () => {
+                            await createDemoData();
+                        }, 2000);
                     } else {
                         this.showError('signup', result.error);
                     }
@@ -484,24 +475,20 @@
             }
 
             async createDemoAccount() {
-                const demoEmail = `demo-${Date.now()}@ipmanager.com`; // Her zaman benzersiz bir e-posta
+                const demoEmail = `demo-${Date.now()}@ipmanager.com`; 
                 const demoPassword = 'demo123456';
                 const demoName = 'Demo Kullanıcı';
 
-                this.setLoading(this.currentTab, true); // Butonun ait olduğu sekmeyi yükle
-                this.clearMessages(); // Başarılı/hata mesajlarını temizle
+                this.setLoading(this.currentTab, true); 
+                this.clearMessages(); 
 
                 try {
-                    // Firebase ile demo hesap oluşturmayı dene
                     const result = await authService.signUp(demoEmail, demoPassword, demoName);
                     
                     if (result.success) {
                         this.showSuccess(`Demo hesap oluşturuldu: ${demoEmail}. Veriler yükleniyor...`);
-                        await createDemoData(); // Demo verileri oluştur
-                        // onAuthStateChanged yönlendirme yapacak
+                        await createDemoData(); 
                     } else {
-                        // Eğer Firebase'de hata olursa veya Firebase pasifse, local/fallback modda işlem AuthService tarafından yönetilir
-                        // result.success zaten false olacağı için bu blok çalışır
                         this.showError(this.currentTab, result.error || 'Demo hesap oluşturulamadı.');
                     }
                 } catch (error) {
@@ -573,20 +560,20 @@
 
             showError(form, message) {
                 console.error(`${form} error:`, message);
-                const successDiv = document.getElementById('successMessage'); // Başarı mesajı div'ini hata için kullan
-                successDiv.className = 'success-message error'; // CSS sınıfını değiştir
+                const successDiv = document.getElementById('successMessage'); 
+                successDiv.className = 'success-message error'; 
                 successDiv.textContent = message;
                 successDiv.style.display = 'block';
                 
                 setTimeout(() => {
                     successDiv.style.display = 'none';
-                    successDiv.classList.remove('error'); // Hata sınıfını kaldır
+                    successDiv.classList.remove('error'); 
                 }, 5000);
             }
 
             showSuccess(message) {
                 const successDiv = document.getElementById('successMessage');
-                successDiv.className = 'success-message'; // Normal başarı sınıfı
+                successDiv.className = 'success-message'; 
                 successDiv.textContent = message;
                 successDiv.style.display = 'block';
                 
@@ -605,7 +592,7 @@
                 });
             }
 
-            clearMessages() { // Yeni metod: başarı/hata mesajlarını temizle
+            clearMessages() { 
                 document.getElementById('successMessage').style.display = 'none';
             }
 
@@ -620,24 +607,22 @@
             }
         }
 
-        // Initialize when DOM is loaded
         document.addEventListener('DOMContentLoaded', () => {
             new AuthController();
         });
 
-        // 🔥 GELİŞTİRİLMİŞ: Test fonksiyonları
         window.testAuth = {
             fillDemoSignIn: () => {
                 document.getElementById('signin-email').value = 'demo@ipmanager.com';
                 document.getElementById('signin-password').value = 'demo123';
-                document.getElementById('signin-email-error').style.display = 'none'; // Hata mesajlarını temizle
+                document.getElementById('signin-email-error').style.display = 'none'; 
                 document.getElementById('signin-password-error').style.display = 'none';
                 document.getElementById('successMessage').style.display = 'none';
             },
             fillAdminSignIn: () => {
                 document.getElementById('signin-email').value = 'admin@ipmanager.com';
                 document.getElementById('signin-password').value = 'admin123';
-                document.getElementById('signin-email-error').style.display = 'none'; // Hata mesajlarını temizle
+                document.getElementById('signin-email-error').style.display = 'none'; 
                 document.getElementById('signin-password-error').style.display = 'none';
                 document.getElementById('successMessage').style.display = 'none';
             },
@@ -645,11 +630,11 @@
                 const user = localStorage.getItem('currentUser');
                 return user ? JSON.parse(user) : null;
             },
-            signOut: async () => { // Async olarak işaretlendi
+            signOut: async () => { 
                 console.log('Attempting sign out...');
-                await authService.signOut(); // Firebase signOut çağrısı
+                await authService.signOut(); 
                 console.log('User signed out.');
-                window.location.href = 'index.html'; // Yönlendirme
+                window.location.href = 'index.html'; 
             },
             forceDashboard: () => {
                 window.location.href = 'dashboard.html';
