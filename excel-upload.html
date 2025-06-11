@@ -658,7 +658,7 @@
 
             async handleFile(file) {
                 if (!file) {
-                    this.resetForm();
+                    this.resetForm(); // Dosya seçilmezse formu sıfırla
                     return;
                 }
 
@@ -681,7 +681,7 @@
                         this.workbook = XLSX.read(data, { type: 'array' });
                         this.populateSheetDropdown();
                         document.getElementById('sheetSelectionGroup').style.display = 'block';
-                        document.getElementById('hasHeaderGroup').style.display = 'block'; // Bu id yok, kontrol et
+                        document.getElementById('headerRowGroup').style.display = 'block'; // Doğru ID kullanıldı
 
                         this.readSelectedSheet(); // İlk sayfayı otomatik oku
                         this.setLoading(false);
@@ -840,10 +840,11 @@
                         } else {
                             // Hatalı satırı atla veya kaydet
                             console.warn('Hatalı satır atlandı:', row);
+                            // Sadece bilgi mesajı göster, hata değil, tüm satırları engellemesin
                             this.showNotification(`Bazı satırlar işlenirken hata oluştu ve atlandı. Detaylar konsolda.`, 'info');
                         }
                     } catch (error) {
-                        console.error('Kayıt işlenirken hata:', row, error);
+                        console.error('Kayıt işlenirken kritik hata:', row, error);
                         this.showNotification(`Bazı satırlar işlenirken kritik hata oluştu ve atlandı. Detaylar konsolda.`, 'error');
                     }
                 }
@@ -896,7 +897,7 @@
                     // İngilizce karşılıkları da eklenebilir
                     "patent": "patent", "trademark": "trademark", "copyright": "copyright", "design": "design"
                 };
-                const rawType = String(rawRecord.type).toLowerCase().trim();
+                const rawType = String(rawRecord.type || '').toLowerCase().trim();
                 processedRecord.type = ipTypeMap[rawType] || null;
                 if (!processedRecord.type) {
                     this.showNotification(`Geçersiz IP Türü: '${rawRecord.type}'. Satır atlandı.`, 'info');
@@ -954,7 +955,7 @@
                             email: '', // Excel'de email/telefon yoksa boş bırak
                             phone: '',
                             type: 'individual', // Varsayılan olarak Bireysel
-                            address: ''
+                            address: '',
                         };
                         try {
                             const addPersonResult = await personsService.addPerson(newPerson);
@@ -1037,6 +1038,7 @@
                 document.getElementById('excelFile').value = '';
                 document.getElementById('sheetSelectionGroup').style.display = 'none';
                 document.getElementById('hasHeader').checked = true;
+                document.getElementById('headerRowGroup').style.display = 'none'; // Bunu da resetle
                 document.getElementById('previewTableContainer').style.display = 'none';
                 document.getElementById('columnMappingSection').style.display = 'none';
                 document.getElementById('uploadBtn').disabled = true;
