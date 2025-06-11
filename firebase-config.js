@@ -338,7 +338,10 @@ export const ipRecordsService = {
                 files: record.files.map(file => ({
                     ...file,
                     id: file.id || generateUUID(),
-                    uploadedAt: file.uploadedAt || new Date().toISOString()
+                    uploadedAt: file.uploadedAt || new Date().toISOString(),
+                    // documentType kaldırıldı, subDesignation eklendi
+                    documentDesignation: file.documentDesignation || '',
+                    subDesignation: file.subDesignation || ''
                 }))
             };
 
@@ -463,7 +466,8 @@ export const ipRecordsService = {
                     throw new Error('Güncellenecek kayıt bulunamadı.');
                 }
             } else {
-                currentRecord = this.localGetRecords().find(r => r.id === recordId);
+                const localRecords = this.getLocalRecords();
+                currentRecord = localRecords.find(r => r.id === recordId);
                 if (!currentRecord) throw new Error('Güncellenecek kayıt yerel depoda bulunamadı.');
             }
 
@@ -477,13 +481,16 @@ export const ipRecordsService = {
                                      'trademarkType', 'niceClass', 'registrationNumber', 'renewalDate', 
                                      'goodsServices', 'bulletinDate', 'bulletinNumber', 'workType', 
                                      'creationDate', 'publicationDate', 'publisher', 'designType', 
-                                     'locarnoClass', 'designDate', 'designFeatures']; // Karşılaştırılacak alanlar
+                                     'locarnoClass', 'designDate', 'designFeatures', 'notes']; // Karşılaştırılacak alanlar
 
             fieldsToCompare.forEach(key => {
                 // Sadece güncellenen alanlar 'updates' içinde olur.
                 // Eğer key, updates içinde varsa ve değeri değişmişse
-                if (updates.hasOwnProperty(key) && String(currentRecord[key] || '').trim() !== String(updates[key] || '').trim()) {
-                    changedFields.push(`${key}: '${currentRecord[key] || '-'}' -> '${updates[key] || '-'}'`);
+                const oldValue = currentRecord[key] === undefined || currentRecord[key] === null ? '' : String(currentRecord[key]).trim();
+                const newValue = updates[key] === undefined || updates[key] === null ? '' : String(updates[key]).trim();
+                
+                if (updates.hasOwnProperty(key) && oldValue !== newValue) {
+                    changedFields.push(`${key}: '${oldValue}' -> '${newValue}'`);
                 }
             });
 
@@ -499,11 +506,11 @@ export const ipRecordsService = {
                     parentId: null // Bu işlem ana seviyede bir işlem
                 });
                 parentTxId = recordUpdateTxId; // Diğer işlemler bunun altında olabilir
-            } else if (this.currentRecordId && currentRecord.transactions && currentRecord.transactions.length > 0) {
+            } else if (currentRecord.transactions && currentRecord.transactions.length > 0) {
                  // Eğer kayıt güncelleniyor ama temel alanlarda değişiklik yoksa,
                  // son ana işlemi (Record Created veya Record Updated) parent olarak alabiliriz.
                  // Bu, transaction ağacını daha anlamlı kılar.
-                 const lastRootTransaction = currentRecord.transactions.find(tx => tx.parentId === null);
+                 const lastRootTransaction = newTransactions.find(tx => tx.parentId === null);
                  if (lastRootTransaction) {
                      parentTxId = lastRootTransaction.transactionId;
                  }
@@ -518,14 +525,23 @@ export const ipRecordsService = {
                 const existingFile = oldFiles.find(oldF => oldF.id === newFile.id);
                 if (!existingFile) {
                     // Yeni eklenen dosya
+                    let description = `'${newFile.name}' belgesi eklendi.`;
+                    if (newFile.documentDesignation) {
+                        description += ` Atama: '${newFile.documentDesignation}'`;
+                        if (newFile.subDesignation) {
+                            description += ` (${newFile.subDesignation})`;
+                        }
+                    }
+
                     const fileTxId = generateUUID();
                     newTransactions.unshift({
                         transactionId: fileTxId,
                         type: "Document Indexed",
-                        description: `'${newFile.name}' (${newFile.documentType || 'Belirtilmedi'}) belgesi eklendi.`,
+                        description: description,
                         documentId: newFile.id,
                         documentName: newFile.name,
-                        documentType: newFile.documentType,
+                        documentDesignation: newFile.documentDesignation, // Yeni
+                        subDesignation: newFile.subDesignation, // Yeni
                         timestamp: newFile.uploadedAt || updatedTimestamp, // Yükleme zamanı
                         userId: user.uid,
                         userEmail: user.email,
@@ -534,12 +550,16 @@ export const ipRecordsService = {
                 } else {
                     // 3. Mevcut dosyaların güncellenmesi için transaction
                     const fileChanges = [];
-                    // documentType değişti mi?
-                    if (existingFile.documentType !== newFile.documentType) {
-                        fileChanges.push(`tipi '${existingFile.documentType || '-'}' -> '${newFile.documentType || '-'}'`);
+                    
+                    // documentDesignation değişti mi?
+                    if (existingFile.documentDesignation !== newFile.documentDesignation) {
+                        fileChanges.push(`ataması '${existingFile.documentDesignation || '-'}' -> '${newFile.documentDesignation || '-'}'`);
+                    }
+                    // subDesignation değişti mi?
+                    if (existingFile.subDesignation !== newFile.subDesignation) {
+                        fileChanges.push(`alt ataması '${existingFile.subDesignation || '-'}' -> '${newFile.subDesignation || '-'}'`);
                     }
                     // content değişti mi? (Boyut veya içerik hash'i ile karşılaştırmak daha sağlam olur)
-                    // Basit bir kontrol olarak content'in değiştiğini varsayabiliriz
                     if (existingFile.content !== newFile.content) {
                         fileChanges.push(`içeriği güncellendi`);
                     }
@@ -552,7 +572,8 @@ export const ipRecordsService = {
                             description: `'${newFile.name}' belgesi güncellendi (${fileChanges.join(', ')}).`,
                             documentId: newFile.id,
                             documentName: newFile.name,
-                            documentType: newFile.documentType,
+                            documentDesignation: newFile.documentDesignation, // Yeni
+                            subDesignation: newFile.subDesignation, // Yeni
                             timestamp: updatedTimestamp,
                             userId: user.uid,
                             userEmail: user.email,
@@ -566,14 +587,23 @@ export const ipRecordsService = {
             oldFiles.forEach(oldFile => {
                 const stillExists = newFiles.some(newF => newF.id === oldFile.id);
                 if (!stillExists) {
+                    let description = `'${oldFile.name}' belgesi silindi.`;
+                     if (oldFile.documentDesignation) {
+                        description += ` Atama: '${oldFile.documentDesignation}'`;
+                        if (oldFile.subDesignation) {
+                            description += ` (${oldFile.subDesignation})`;
+                        }
+                    }
+
                     const fileTxId = generateUUID();
                     newTransactions.unshift({
                         transactionId: fileTxId,
                         type: "Document Deleted",
-                        description: `'${oldFile.name}' (${oldFile.documentType || 'Belirtilmedi'}) belgesi silindi.`,
+                        description: description,
                         documentId: oldFile.id,
                         documentName: oldFile.name,
-                        documentType: oldFile.documentType,
+                        documentDesignation: oldFile.documentDesignation, // Yeni
+                        subDesignation: oldFile.subDesignation, // Yeni
                         timestamp: updatedTimestamp,
                         userId: user.uid,
                         userEmail: user.email,
@@ -589,7 +619,9 @@ export const ipRecordsService = {
                 files: newFiles.map(file => ({ // Her dosya objesinin ID'si ve uploadedAt'i olduğundan emin ol
                     ...file,
                     id: file.id || generateUUID(),
-                    uploadedAt: file.uploadedAt || updatedTimestamp
+                    uploadedAt: file.uploadedAt || updatedTimestamp,
+                    documentDesignation: file.documentDesignation || '', // Atamayı koru
+                    subDesignation: file.subDesignation || '' // Alt atamayı koru
                 }))
             };
 
