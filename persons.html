@@ -80,6 +80,21 @@
             font-weight: bold;
         }
 
+        .user-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-name {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .user-role {
+            font-size: 0.8em;
+            color: #666;
+        }
+
         .logout-btn {
             background: #ff6b6b;
             color: white;
@@ -136,6 +151,32 @@
             align-items: center;
             flex-wrap: wrap;
             gap: 20px;
+        }
+
+        .persons-stats {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 10px 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            min-width: 80px;
+        }
+
+        .stat-number {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #1e3c72;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
         }
 
         .persons-actions {
@@ -564,6 +605,10 @@
             </nav>
             <div class="user-section">
                 <div class="user-avatar" id="userAvatar">D</div>
+                <div class="user-info">
+                    <div class="user-name" id="userNamePersons">Yükleniyor...</div>
+                    <div class="user-role" id="userRolePersons">Kullanıcı</div>
+                </div>
                 <button class="logout-btn" id="logoutBtn">Çıkış</button>
             </div>
         </div>
@@ -589,6 +634,10 @@
                     <div class="stat-item">
                         <div class="stat-number" id="companyCount">0</div>
                         <div class="stat-label">Şirket</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="institutionCount">0</div>
+                        <div class="stat-label">Kurum</div>
                     </div>
                 </div>
                 <div class="persons-actions">
@@ -639,7 +688,7 @@
                             <th class="sortable" data-sort="email">E-posta</th>
                             <th class="sortable" data-sort="phone">Telefon</th>
                             <th class="sortable" data-sort="type">Tür</th>
-                            <th>İşlemler</th>
+                            <th id="ownerColumn" style="display: none;" class="sortable" data-sort="_ownerInfo">Kayıt Sahibi</th> <th>İşlemler</th>
                         </tr>
                     </thead>
                     <tbody id="personsTableBody">
@@ -697,6 +746,9 @@
                         <label class="form-label" for="personAddress">Adres</label>
                         <textarea id="personAddress" class="filter-input" rows="3"></textarea>
                     </div>
+                    <div class="form-group" id="modalOwnerInfoGroup" style="display: none;"> <label class="form-label">Kayıt Sahibi (Kullanıcı)</label>
+                        <input type="text" id="modalOwnerInfo" class="filter-input" readonly>
+                    </div>
                 </div>
                 <div class="person-form-actions">
                     <button type="button" class="btn btn-secondary" id="cancelPersonFormBtn">İptal</button>
@@ -732,14 +784,18 @@
                 auth.onAuthStateChanged(async (user) => {
                     if (user) {
                         this.currentUser = user;
-                        console.log('✅ User authenticated:', user.email);
+                        // Kullanıcı bilgilerini ve rolünü güncellemek için authService'ten al
+                        this.currentUser = authService.getCurrentUser();
+                        console.log('✅ User authenticated:', user.email, 'Role:', this.currentUser.role);
+                        this.updateUserInfo(); // Kullanıcı bilgisi ve rolü için
                         this.setupEventListeners();
                         await this.loadPersons(); 
                     } else {
                         const localUser = authService.getCurrentUser();
                         if (localUser && localUser.uid) {
                             this.currentUser = localUser;
-                            console.log('⚠️ LocalStorage user detected, running in local mode:', localUser.email);
+                            console.log('⚠️ LocalStorage user detected, running in local mode:', localUser.email, 'Role:', this.currentUser.role);
+                            this.updateUserInfo(); // Kullanıcı bilgisi ve rolü için
                             this.setupEventListeners();
                             await this.loadPersons(); 
                         } else {
@@ -792,16 +848,37 @@
                 document.getElementById('nextBtn').addEventListener('click', () => this.changePage(1));
             }
 
+            updateUserInfo() {
+                if (this.currentUser) {
+                    const userName = this.currentUser.displayName || this.currentUser.email.split('@')[0] || 'Kullanıcı';
+                    const userAvatar = userName.charAt(0).toUpperCase();
+                    document.getElementById('userAvatar').textContent = userAvatar;
+                    const userNameEl = document.getElementById('userNamePersons');
+                    if (userNameEl) userNameEl.textContent = userName;
+                    const userRoleEl = document.getElementById('userRolePersons');
+                    if (userRoleEl) userRoleEl.textContent = this.currentUser.role === 'admin' ? 'Yönetici' : 'Kullanıcı';
+                } else {
+                    document.getElementById('userAvatar').textContent = 'D';
+                    const userNameEl = document.getElementById('userNamePersons');
+                    if (userNameEl) userNameEl.textContent = 'Misafir';
+                    const userRoleEl = document.getElementById('userRolePersons');
+                    if (userRoleEl) userRoleEl.textContent = 'N/A';
+                }
+            }
+
+
             async loadPersons() {
                 const loadingIndicator = document.getElementById('loadingIndicator');
                 const personsTable = document.getElementById('personsTable');
                 const noPersons = document.getElementById('noPersons');
                 const tableBody = document.getElementById('personsTableBody');
+                const ownerColumnHeader = document.getElementById('ownerColumn'); // Süper Admin için başlık
 
                 loadingIndicator.style.display = 'block';
                 personsTable.style.display = 'none';
                 noPersons.style.display = 'none';
                 tableBody.innerHTML = ''; 
+                ownerColumnHeader.style.display = 'none'; // Varsayılan olarak gizle
 
                 try {
                     const result = await personsService.getPersons(); 
@@ -809,6 +886,13 @@
                         this.allPersons = result.data;
                         this.updateStats();
                         this.applyFilters(); 
+
+                        // Süper Admin ise "Kayıt Sahibi" sütununu göster
+                        if (authService.isSuperAdmin()) {
+                            ownerColumnHeader.style.display = 'table-cell'; // table-cell olarak göster
+                        } else {
+                            ownerColumnHeader.style.display = 'none';
+                        }
                     } else {
                         console.error('Failed to load persons:', result.error);
                         this.showEmptyState();
@@ -832,6 +916,7 @@
                 document.getElementById('totalPersonsCount').textContent = stats.total;
                 document.getElementById('individualCount').textContent = stats.individual;
                 document.getElementById('companyCount').textContent = stats.company;
+                document.getElementById('institutionCount').textContent = stats.institution; // Kurum sayısı için istatistik
             }
 
             applyFilters() {
@@ -839,10 +924,14 @@
                 const typeFilter = document.getElementById('typeFilter').value;
 
                 this.filteredPersons = this.allPersons.filter(person => {
+                    // Super Admin ise _ownerInfo'yu da aramaya dahil et
+                    const ownerInfoSearch = authService.isSuperAdmin() && person._ownerInfo ? person._ownerInfo.toLowerCase() : '';
+
                     if (search && !(
                         String(person.name).toLowerCase().includes(search) ||
                         String(person.email || '').toLowerCase().includes(search) ||
-                        String(person.phone || '').toLowerCase().includes(search)
+                        String(person.phone || '').toLowerCase().includes(search) ||
+                        ownerInfoSearch.includes(search)
                     )) {
                         return false;
                     }
@@ -875,7 +964,11 @@
                     let aVal = a[this.sortColumn] || '';
                     let bVal = b[this.sortColumn] || '';
 
-                    if (typeof aVal === 'string') {
+                    // Eğer sortColumn '_ownerInfo' ise özel işlem yap
+                    if (this.sortColumn === '_ownerInfo' && authService.isSuperAdmin()) {
+                         aVal = a._ownerInfo ? a._ownerInfo.toLowerCase() : '';
+                         bVal = b._ownerInfo ? b._ownerInfo.toLowerCase() : '';
+                    } else if (typeof aVal === 'string') {
                         aVal = aVal.toLowerCase();
                         bVal = bVal.toLowerCase();
                     }
@@ -889,14 +982,14 @@
             updateSortIndicators() {
                 document.querySelectorAll('.persons-table th.sortable').forEach(th => {
                     th.classList.remove('sort-asc', 'sort-desc');
-                    const span = th.querySelector('.sort-icon');
+                    const span = th.querySelector('.sort-icon'); 
                     if (span) span.textContent = '↕️';
                 });
 
                 const activeTh = document.querySelector(`.persons-table th[data-sort="${this.sortColumn}"]`);
                 if (activeTh) {
                     activeTh.classList.add(`sort-${this.sortDirection}`);
-                    const span = activeTh.querySelector('.sort-icon');
+                    const span = activeTh.querySelector('.sort-icon'); 
                     if (span) span.textContent = this.sortDirection === 'asc' ? '↑' : '↓';
                 }
             }
@@ -952,6 +1045,12 @@
                     institution: '🏛️'
                 };
 
+                // Süper Admin ise _ownerInfo'yu göster
+                let ownerInfoCellHtml = '';
+                if (authService.isSuperAdmin()) {
+                    ownerInfoCellHtml = `<td>${person._ownerInfo || '-'}</td>`;
+                }
+
                 row.innerHTML = `
                     <td>
                         <div style="font-weight: 600;">${person.name}</div>
@@ -964,6 +1063,7 @@
                             ${typeIcons[person.type] || '👤'} ${typeNames[person.type] || person.type}
                         </span>
                     </td>
+                    ${ownerInfoCellHtml}
                     <td>
                         <div class="action-buttons">
                             <button class="table-action-btn btn-view" title="Görüntüle" 
@@ -994,6 +1094,7 @@
                 const modalTitle = document.getElementById('personModalTitle');
                 const savePersonBtn = document.getElementById('savePersonBtn');
                 const form = document.getElementById('personForm');
+                const modalOwnerInfoGroup = document.getElementById('modalOwnerInfoGroup');
 
                 this.currentPersonId = personId; 
 
@@ -1004,6 +1105,7 @@
                     modalTitle.textContent = 'Yeni Kişi Ekle';
                     savePersonBtn.textContent = 'Kaydet';
                     savePersonBtn.disabled = false;
+                    modalOwnerInfoGroup.style.display = 'none';
                 } else if (mode === 'edit' || mode === 'view') {
                     const person = this.allPersons.find(p => p.id === personId);
                     if (!person) {
@@ -1021,9 +1123,28 @@
                     document.getElementById('personType').value = person.type || '';
                     document.getElementById('personAddress').value = person.address || '';
 
+                    // Süper Admin ise kayıt sahibini göster
+                    if (authService.isSuperAdmin() && person._ownerInfo) {
+                        document.getElementById('modalOwnerInfo').value = person._ownerInfo;
+                        modalOwnerInfoGroup.style.display = 'block';
+                    } else {
+                        modalOwnerInfoGroup.style.display = 'none';
+                    }
+
                     document.querySelectorAll('#personForm input, #personForm select, #personForm textarea').forEach(input => {
-                        input.readOnly = mode === 'view';
-                        input.disabled = mode === 'view';
+                        // Admin olmayan kullanıcılar sadece kendi kayıtlarını görüntüleyebilir, başkasınınkini düzenleyemez
+                        if (!authService.isSuperAdmin()) {
+                            if (person.userId !== this.currentUser.uid) { // Eğer kendi kaydı değilse ve admin değilse
+                                input.readOnly = true;
+                                input.disabled = true;
+                            } else { // Kendi kaydıysa veya admin ise
+                                input.readOnly = mode === 'view';
+                                input.disabled = mode === 'view';
+                            }
+                        } else { // Admin ise her zaman düzenleme/görüntüleme moduna göre
+                            input.readOnly = mode === 'view';
+                            input.disabled = mode === 'view';
+                        }
                     });
                 }
                 modal.classList.add('show');
@@ -1062,6 +1183,13 @@
                 try {
                     let result;
                     if (this.currentPersonId) {
+                        const personToUpdate = this.allPersons.find(p => p.id === this.currentPersonId);
+                        // Admin olmayan kullanıcı, başkasına ait kaydı güncelleyemesin
+                        if (!authService.isSuperAdmin() && personToUpdate && personToUpdate.userId !== this.currentUser.uid) {
+                             alert('Bu kaydı güncelleme yetkiniz yoktur.');
+                             saveBtn.disabled = false;
+                             return;
+                        }
                         result = await personsService.updatePerson(this.currentPersonId, personData);
                     } else {
                         result = await personsService.addPerson(personData);
@@ -1083,6 +1211,18 @@
             }
 
             async deletePerson(personId) {
+                const personToDelete = this.allPersons.find(p => p.id === personId);
+                if (!personToDelete) {
+                    alert('Kişi bulunamadı.');
+                    return;
+                }
+                
+                // Admin olmayan kullanıcı, başkasına ait kaydı silemesin
+                if (!authService.isSuperAdmin() && personToDelete.userId !== this.currentUser.uid) {
+                    alert('Bu kişiyi silme yetkiniz yoktur.');
+                    return;
+                }
+
                 if (!confirm('Bu kişiyi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz!')) {
                     return;
                 }
@@ -1108,7 +1248,6 @@
             }
 
             showEmptyState() {
-                const tableContainer = document.getElementById('tableContainer');
                 const loadingIndicator = document.getElementById('loadingIndicator');
                 const personsTable = document.getElementById('personsTable');
                 const noPersons = document.getElementById('noPersons');
@@ -1118,6 +1257,10 @@
                 personsTable.style.display = 'none';
                 pagination.style.display = 'none';
                 noPersons.style.display = 'block';
+            }
+            
+            clearModalErrors() {
+                // Herhangi bir hata mesajı alanı varsa burada temizleyebilirsiniz.
             }
         }
 
@@ -1175,11 +1318,17 @@
                 if (confirm('TÜM KİŞİLERİ SİLMEK İSTEDİĞİNİZDEN EMİN MİSİNİZ? BU İŞLEM GERİ ALINAMAZ!')) {
                     const personsToDelete = [...personsModule.allPersons]; 
                     for (const person of personsToDelete) {
+                        // Silme işlemi için yetki kontrolü
+                        if (!authService.isSuperAdmin() && person.userId !== personsModule.currentUser.uid) {
+                            console.warn(`Yetkisiz silme girişimi: ${person.id} kişisi başka bir kullanıcıya ait.`);
+                            alert(`"${person.name}" kişisi başka bir kullanıcıya ait olduğu için silinemedi.`);
+                            continue; // Bu kişiyi atla ve diğerlerine geç
+                        }
                         await personsService.deletePerson(person.id);
                     }
                     await personsModule.loadPersons();
                     console.log('All persons cleared.');
-                    alert('Tüm kişiler başarıyla silindi.');
+                    alert('Tüm kişiler başarıyla silindi (yetkisi olmayanlar hariç).');
                 }
             },
             getPersons: () => personsModule?.allPersons,
