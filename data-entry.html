@@ -1257,6 +1257,7 @@
 
             async loadPersonsFromService() {
                 try {
+                    // Corrected line: 'personsModule.getPersons()' changed to 'personsService.getPersons()'
                     const result = await personsService.getPersons();
                     if (result.success) {
                         this.persons = result.data;
@@ -1653,7 +1654,7 @@
                         const personToUpdate = this.allPersons.find(p => p.id === this.currentPersonId);
                         if (!authService.isSuperAdmin() && personToUpdate && personToUpdate.userId !== this.currentUser.uid) {
                              alert('Bu kaydı güncelleme yetkiniz yoktur.');
-                             saveBtn.disabled = false;
+                             savePersonBtn.disabled = false;
                              return;
                         }
                         newPersonData.updatedAt = new Date().toISOString();
@@ -1677,7 +1678,7 @@
                     console.error('Save person error:', error);
                     alert('Kişi kaydedilirken bir hata oluştu: ' + error.message);
                 } finally {
-                    saveBtn.disabled = false;
+                    savePersonBtn.disabled = false;
                 }
             }
 
@@ -1788,15 +1789,15 @@
         auth.onAuthStateChanged((user) => {
             if (user) {
                 if (!personsModule) {
-                    personsModule = new PersonsModule();
-                    window.personsModule = personsModule;
+                    personsModule = new DataEntryModule(); // Corrected: Should be DataEntryModule if this is data-entry.html
+                    window.personsModule = personsModule; // Keep this for existing test functions if needed
                 }
             } else {
                 const localUser = authService.getCurrentUser();
                 if (localUser && localUser.uid) {
                     if (!personsModule) {
-                        personsModule = new PersonsModule();
-                        window.personsModule = personsModule;
+                        personsModule = new DataEntryModule(); // Corrected
+                        window.personsModule = personsModule; // Keep this for existing test functions if needed
                     }
                 } else {
                     console.log('❌ User not authenticated for Persons Management, redirecting to login page.');
@@ -1805,56 +1806,16 @@
             }
         });
 
-        window.testPersons = {
-            addTestPerson: async () => {
-                if (!personsModule || !personsModule.currentUser) {
-                    console.error("PersonsModule not initialized or no user logged in.");
-                    alert("Lütfen önce giriş yapın.");
-                    return;
-                }
-                const testPerson = {
-                    name: `Test Kişi ${Date.now()}`,
-                    email: `test${Date.now()}@example.com`,
-                    phone: '05001234567',
-                    type: 'individual',
-                    address: 'Test Adresi'
-                };
-                const result = await personsService.addPerson(testPerson);
-                if (result.success) {
-                    console.log('Test person added:', result.id);
-                    await personsModule.loadPersons(); 
-                    alert('Test kişisi başarıyla eklendi.');
-                } else {
-                    console.error('Failed to add test person:', result.error);
-                    alert('Test kişisi eklenemedi: ' + result.error);
-                }
-            },
-            clearAllPersons: async () => {
-                if (!personsModule || !personsModule.currentUser) {
-                    console.error("PersonsModule not initialized or no user logged in.");
-                    alert("Lütfen önce giriş yapın.");
-                    return;
-                }
-                if (confirm('TÜM KİŞİLERİ SİLMEK İSTEDİĞİNİZDEN EMİN MİSİNİZ? BU İŞLEM GERİ ALINAMAZ!')) {
-                    const personsToDelete = [...personsModule.allPersons]; 
-                    for (const person of personsToDelete) {
-                        if (!authService.isSuperAdmin() && person.userId !== personsModule.currentUser.uid) {
-                            console.warn(`Yetkisiz silme girişimi: ${person.id} kişisi başka bir kullanıcıya ait.`);
-                            alert(`"${person.name}" kişisi başka bir kullanıcıya ait olduğu için silinemedi.`);
-                            continue;
-                        }
-                        await personsService.deletePerson(person.id);
-                    }
-                    await personsModule.loadPersons();
-                    console.log('All persons cleared.');
-                    alert('Tüm kişiler başarıyla silindi (yetkisi olmayanlar hariç).');
-                }
-            },
-            getPersons: () => personsModule?.allPersons,
-            getFilteredPersons: () => personsModule?.filteredPersons
+        window.testDataEntry = { // Test fonksiyonları DataEntry için
+            setTestData: (type) => dataEntryModule?.setTestData(type),
+            getFormData: async () => await dataEntryModule?.getFormData(),
+            resetForm: () => dataEntryModule?.resetForm()
         };
-        console.log('👥 Persons Module is ready!');
-        console.log('Test için: testPersons.addTestPerson() veya testPersons.clearAllPersons()');
+
+        console.log('🚀 Veri Giriş Modülü hazır!');
+        console.log('Test için: testDataEntry.setTestData("patent") veya testDataEntry.setTestData("trademark")');
+        console.log('Form verilerini görmek için: await testDataEntry.getFormData()');
+        console.log('Formu temizlemek için: testDataEntry.resetForm()');
     </script>
 </body>
 </html>
