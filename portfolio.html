@@ -638,6 +638,7 @@
                 <a href="dashboard.html" class="nav-item">Dashboard</a>
                 <a href="#" class="nav-item active">Portföy</a>
                 <a href="data-entry.html" class="nav-item">Yeni Kayıt</a>
+                <a href="persons.html" class="nav-item">Kişiler Yönetimi</a>
                 <a href="#" class="nav-item">Raporlar</a>
                 <a href="#" class="nav-item">Ayarlar</a>
             </nav>
@@ -932,22 +933,20 @@
                 const loadingIndicator = document.getElementById('loadingIndicator');
                 const portfolioTable = document.getElementById('portfolioTable');
                 const noRecords = document.getElementById('noRecords');
-                const tableBody = document.getElementById('portfolioTableBody'); // Tablo body'sini de al
+                const tableBody = document.getElementById('portfolioTableBody'); 
 
-                // Yükleme durumunu göster
                 loadingIndicator.style.display = 'block';
                 portfolioTable.style.display = 'none';
                 noRecords.style.display = 'none';
-                tableBody.innerHTML = ''; // Önceki kayıtları temizle
+                tableBody.innerHTML = ''; 
 
                 try {
-                    // ipRecordsService'in getRecords metodu Firebase/localStorage ayrımını kendi içinde yapar
                     const result = await ipRecordsService.getRecords(); 
                     
                     if (result.success) {
                         this.records = result.data;
                         this.updateStats();
-                        this.applyFilters(); // Filtreleri ve tabloyu yeniden render et
+                        this.applyFilters(); 
                     } else {
                         console.error('Failed to load records:', result.error);
                         this.showEmptyState();
@@ -960,11 +959,9 @@
                 }
             }
 
-            // saveToStorage ve generateDemoRecords kaldırıldı, artık Firestore'dan yönetiliyor
-
             updateStats() {
                 const stats = {
-                    total: this.records.length, // this.records'tan al
+                    total: this.records.length, 
                     patent: this.records.filter(r => r.type === 'patent').length,
                     trademark: this.records.filter(r => r.type === 'trademark').length,
                     copyright: this.records.filter(r => r.type === 'copyright').length,
@@ -988,24 +985,19 @@
                 const dateTo = document.getElementById('dateToFilter').value;
                 const periodFilter = document.querySelector('.filter-buttons .filter-btn.active')?.dataset.period || 'all';
 
-
                 this.filteredRecords = this.records.filter(record => {
-                    // Search filter
                     if (search && !this.matchesSearch(record, search)) {
                         return false;
                     }
 
-                    // Type filter
                     if (typeFilter && record.type !== typeFilter) {
                         return false;
                     }
 
-                    // Status filter
                     if (statusFilter && record.status !== statusFilter) {
                         return false;
                     }
 
-                    // Date filters (Date range from and to take precedence over period)
                     if (dateFrom && record.applicationDate && record.applicationDate < dateFrom) {
                         return false;
                     }
@@ -1013,7 +1005,6 @@
                         return false;
                     }
 
-                    // Period filter (only if no specific dates are set)
                     if (!dateFrom && !dateTo && periodFilter !== 'all') {
                         const recordDate = new Date(record.applicationDate);
                         const now = new Date();
@@ -1030,6 +1021,7 @@
                     return true;
                 });
 
+                this.currentPage = 1; 
                 this.sortRecords();
                 this.renderTable();
             }
@@ -1038,11 +1030,9 @@
                 const searchFields = [
                     record.title,
                     record.description,
-                    record.applicant, // applicant alanı yok, owners kullanılıyor
                     record.applicationNumber,
                     record.registrationNumber
                 ];
-                // Hak sahipleri alanında arama yap
                 if (record.owners && record.owners.some(owner => owner.name.toLowerCase().includes(search))) {
                     return true;
                 }
@@ -1059,7 +1049,6 @@
                     this.sortColumn = column;
                     this.sortDirection = 'asc';
                 }
-
                 this.sortRecords();
                 this.updateSortIndicators();
                 this.renderTable();
@@ -1070,12 +1059,10 @@
                     let aValue = a[this.sortColumn];
                     let bValue = b[this.sortColumn];
 
-                    // Özel durumlar için değerleri normalize et
                     if (this.sortColumn === 'owners') {
                         aValue = a.owners ? a.owners.map(o => o.name).join(', ') : '';
                         bValue = b.owners ? b.owners.map(o => o.name).join(', ') : '';
                     } else if (this.sortColumn.includes('Date') || this.sortColumn.includes('At')) {
-                        // Geçersiz veya boş tarihleri en başa/sona almak için Date objesine çevir
                         aValue = aValue ? new Date(aValue) : (this.sortDirection === 'asc' ? new Date(0) : new Date());
                         bValue = bValue ? new Date(bValue) : (this.sortDirection === 'asc' ? new Date(0) : new Date());
                     } else if (typeof aValue === 'string') {
@@ -1083,7 +1070,6 @@
                         bValue = bValue.toLowerCase();
                     }
 
-                    // Karşılaştırma
                     if (aValue < bValue) return this.sortDirection === 'asc' ? -1 : 1;
                     if (aValue > bValue) return this.sortDirection === 'asc' ? 1 : -1;
                     return 0;
@@ -1108,7 +1094,7 @@
             renderTable() {
                 const tbody = document.getElementById('portfolioTableBody');
                 const pagination = document.getElementById('pagination');
-                const table = document.getElementById('portfolioTable');
+                const portfolioTable = document.getElementById('portfolioTable');
                 const noRecords = document.getElementById('noRecords');
                 
                 const totalPages = Math.ceil(this.filteredRecords.length / this.recordsPerPage);
@@ -1119,12 +1105,12 @@
                 tbody.innerHTML = '';
 
                 if (pageRecords.length === 0) {
-                    table.style.display = 'none';
+                    portfolioTable.style.display = 'none';
                     noRecords.style.display = 'block';
                     pagination.style.display = 'none';
                     return;
                 } else {
-                    table.style.display = 'table';
+                    portfolioTable.style.display = 'table';
                     noRecords.style.display = 'none';
                 }
 
@@ -1171,7 +1157,6 @@
                 const formattedDate = record.applicationDate ? new Date(record.applicationDate).toLocaleDateString('tr-TR') : '-';
                 const ownersText = record.owners && record.owners.length > 0 ? record.owners.map(owner => owner.name).join(', ') : '-';
 
-                // Marka görseli için HTML
                 let trademarkImageCellHtml = '<td>-</td>'; 
                 if (record.type === 'trademark' && record.trademarkImage && record.trademarkImage.content) {
                     trademarkImageCellHtml = `
@@ -1301,7 +1286,6 @@
             }
 
             editRecord(recordId) {
-                // Redirect to data-entry page with record ID
                 alert(`Düzenleme özelliği yakında eklenecek!\nKayıt ID: ${recordId}`);
             }
 
@@ -1315,7 +1299,7 @@
                         if (result.success) {
                             console.log('Record deleted from Firestore:', recordId);
                             this.records = this.records.filter(r => r.id !== recordId);
-                            this.applyFilters(); // Tabloyu ve istatistikleri güncelle
+                            this.applyFilters(); 
                             alert('Kayıt başarıyla silindi.');
                         } else {
                             throw new Error(result.error || 'Kayıt silinirken bilinmeyen bir hata oluştu.');
@@ -1357,7 +1341,7 @@
             generateCSV() {
                 const headers = ['ID', 'Tür', 'Başlık', 'Açıklama', 'Durum', 'Başvuru Tarihi',
                                  'Başvuru Numarası', 'Tescil Numarası', 'Hak Sahipleri', 'Oluşturulma Tarihi',
-                                 'Marka Görseli Var Mı', 'Notlar']; // Genişletilmiş başlıklar
+                                 'Marka Görseli Var Mı', 'Notlar']; 
 
                 const rows = this.filteredRecords.map(record => [
                     record.id,
@@ -1393,75 +1377,69 @@
             }
         }
 
-        // Initialize Portfolio Module ONLY after Firebase authentication state is known
         let portfolio;
         auth.onAuthStateChanged((user) => {
             if (user) {
-                // Sadece kullanıcı oturum açmışsa PortfolioModule'ü başlat
-                if (!portfolio) { // Birden fazla kez başlatmayı önle
+                if (!portfolio) { 
                     portfolio = new PortfolioModule();
                 }
             } else {
-                // Kullanıcı oturum açmamışsa veya oturum kapatılmışsa
-                // localStorage'daki kullanıcıyı kontrol et (fallback)
                 const localUser = authService.getCurrentUser();
                 if (localUser && localUser.uid) {
-                    // localStorage'da kullanıcı varsa ve henüz Firebase ile oturum açılmadıysa
                     if (!portfolio) {
                         portfolio = new PortfolioModule();
                     }
                 } else {
-                    // Ne Firebase ne de localStorage'da kullanıcı yoksa giriş sayfasına yönlendir
                     console.log('❌ User not authenticated, redirecting to login page.');
                     window.location.href = 'index.html';
                 }
             }
         });
 
-        // Global functions for modal (onclick'ten erişim için)
-        // Bu global fonksiyonlar artık portfolio objesi üzerinden çağrıldığı için
-        // doğrudan `window.closeModal = () => window.portfolio.closeModal();` gibi
-        // tanımlamalara gerek kalmayabilir, ancak eski HTML onclick'leri için tutulabilir.
-        // Daha iyi bir yaklaşım, `onclick` yerine JavaScript içinde `addEventListener` kullanmaktır.
-        // Mevcut onclick'ler için `portfolio.` ön eki eklenmiştir.
-
-        // Global test functions (konsoldan erişim için)
         window.testPortfolio = {
             addTestRecord: async () => {
+                if (!portfolio || !portfolio.currentUser) {
+                    console.error("Portfolio module not initialized or no user logged in.");
+                    alert("Lütfen önce giriş yapın.");
+                    return;
+                }
                 const testRecord = {
                     type: 'patent',
                     title: 'Test Patent ' + Date.now(),
                     description: 'Test açıklaması',
                     status: 'pending',
-                    owners: [{ name: 'Test User', type: 'individual' }], // Owners schema'ya uygun
+                    owners: [{ name: 'Test User', type: 'individual' }], 
                     applicationNumber: 'TEST-' + Date.now(),
                     createdAt: new Date().toISOString(),
                     trademarkImage: null
                 };
                 const result = await ipRecordsService.addRecord(testRecord);
                 if (result.success) {
-                    // Test kaydı eklendikten sonra portföyü yenile
-                    portfolio?.loadRecords(); // Eğer portfolio tanımlıysa
                     console.log('Test record added:', result.id);
+                    await portfolio.loadRecords(); 
+                    alert('Test kaydı başarıyla eklendi.');
                 } else {
                     console.error('Failed to add test record:', result.error);
+                    alert('Test kaydı eklenemedi: ' + result.error);
                 }
             },
             exportData: () => portfolio?.exportData(),
             getRecords: () => portfolio?.records,
             getFilteredRecords: () => portfolio?.filteredRecords,
             clearAllRecords: async () => {
+                if (!portfolio || !portfolio.currentUser) {
+                    console.error("Portfolio module not initialized or no user logged in.");
+                    alert("Lütfen önce giriş yapın.");
+                    return;
+                }
                 if (confirm('TÜM KAYITLARI SİLMEK İSTEDİĞİNİZDEN EMİN MİSİNİZ? BU İŞLEM GERİ ALINAMAZ!')) {
-                    if (portfolio && portfolio.records) {
-                        const recordsToDelete = [...portfolio.records]; // Döngü sırasında değişmemesi için kopya al
-                        for (const record of recordsToDelete) {
-                            await ipRecordsService.deleteRecord(record.id);
-                        }
-                        await portfolio.loadRecords(); // Verileri yeniden yükle
-                        console.log('All records cleared.');
-                    } else {
-                        console.warn('No portfolio records to clear.');
+                    const recordsToDelete = [...portfolio.records]; 
+                    for (const record of recordsToDelete) {
+                        await ipRecordsService.deleteRecord(record.id);
                     }
+                    await portfolio.loadRecords(); 
+                    console.log('All records cleared.');
+                    alert('Tüm kayıtlar başarıyla silindi.');
                 }
             }
         };
