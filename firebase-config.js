@@ -19,7 +19,7 @@ import {
     query,
     orderBy,
     where,
-    onSnapshot // Firestore değişikliklerini dinlemek için
+    onSnapshot
 } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
 // Firebase Config - Gerçek Proje Bilgileri
@@ -35,7 +35,7 @@ const firebaseConfig = {
 
 // Initialize Firebase
 let app, auth, db;
-let isFirebaseAvailable = false; // Modül kapsamında tutuluyor
+let isFirebaseAvailable = false;
 
 try {
     app = initializeApp(firebaseConfig);
@@ -51,13 +51,13 @@ try {
 
 // Authentication Service
 export const authService = {
-    auth: auth, // Firebase Auth objesini dışa aktar
-    isFirebaseAvailable: isFirebaseAvailable, // Dışa aktarılıyor
+    auth: auth,
+    isFirebaseAvailable: isFirebaseAvailable,
 
     async signIn(email, password) {
         console.log('🔐 Attempting sign in with:', email);
         
-        if (!this.isFirebaseAvailable) { // isFirebaseAvailable kontrolü
+        if (!this.isFirebaseAvailable) {
             return this.localSignIn(email, password);
         }
         
@@ -70,7 +70,6 @@ export const authService = {
             };
         } catch (error) {
             console.error('Firebase sign in error:', error);
-            // Firebase hatası durumunda yerel oturum açmayı deneme
             return this.localSignIn(email, password);
         }
     },
@@ -78,7 +77,7 @@ export const authService = {
     async signUp(email, password, displayName) {
         console.log('📝 Attempting sign up with:', email);
         
-        if (!this.isFirebaseAvailable) { // isFirebaseAvailable kontrolü
+        if (!this.isFirebaseAvailable) {
             return this.localSignUp(email, password, displayName);
         }
         
@@ -102,20 +101,20 @@ export const authService = {
 
     async signOut() {
         try {
-            if (this.isFirebaseAvailable && auth) { // isFirebaseAvailable kontrolü
+            if (this.isFirebaseAvailable && auth) {
                 await signOut(auth);
             }
-            localStorage.removeItem('currentUser'); // Yerel kullanıcıyı temizle
+            localStorage.removeItem('currentUser');
             return { success: true };
         } catch (error) {
             console.error('Sign out error:', error);
-            localStorage.removeItem('currentUser'); // Hata durumunda da temizle
+            localStorage.removeItem('currentUser');
             return { success: true };
         }
     },
 
     getCurrentUser() {
-        if (this.isFirebaseAvailable && auth && auth.currentUser) { // isFirebaseAvailable kontrolü
+        if (this.isFirebaseAvailable && auth && auth.currentUser) {
             return auth.currentUser;
         }
         
@@ -123,14 +122,44 @@ export const authService = {
         return localUser ? JSON.parse(localUser) : null;
     },
 
-    // Local authentication fallback methods (for development/demo)
+    // Check if current user is super admin
+    isSuperAdmin() {
+        const currentUser = this.getCurrentUser();
+        if (!currentUser) return false;
+        
+        const superAdminEmails = [
+            'superadmin@ipmanager.com',
+            'admin@ipmanager.com',
+            'debug@ipmanager.com'
+        ];
+        
+        return superAdminEmails.includes(currentUser.email?.toLowerCase());
+    },
+
+    // Local authentication fallback methods
     localSignIn(email, password) {
         console.log('🧪 Local sign in attempt (Firebase not available):', email, password);
         
         const demoAccounts = [
             { email: 'demo@ipmanager.com', password: 'demo123', name: 'Demo Kullanıcı', role: 'demo' },
             { email: 'admin@ipmanager.com', password: 'admin123', name: 'Admin Kullanıcı', role: 'admin' },
-            { email: 'test@example.com', password: 'test123', name: 'Test Kullanıcı', role: 'user' }
+            { email: 'test@example.com', password: 'test123', name: 'Test Kullanıcı', role: 'user' },
+            // 🔥 SÜPER ADMİN HESABI - TÜM VERİLERE ERİŞİM
+            { 
+                email: 'superadmin@ipmanager.com', 
+                password: 'superadmin123', 
+                name: 'Süper Admin', 
+                role: 'superadmin',
+                permissions: ['viewAllData', 'editAllData', 'deleteAllData', 'systemAdmin']
+            },
+            // Debug hesabı
+            { 
+                email: 'debug@ipmanager.com', 
+                password: 'debug123', 
+                name: 'Debug Kullanıcı', 
+                role: 'debug',
+                permissions: ['viewAllData', 'systemDebug']
+            }
         ];
 
         const account = demoAccounts.find(acc => 
@@ -144,7 +173,9 @@ export const authService = {
                 email: account.email,
                 displayName: account.name,
                 role: account.role,
-                loginTime: new Date().toISOString()
+                permissions: account.permissions || [],
+                loginTime: new Date().toISOString(),
+                isSuperAdmin: account.role === 'superadmin' || account.role === 'debug'
             };
             
             localStorage.setItem('currentUser', JSON.stringify(userData));
@@ -153,14 +184,25 @@ export const authService = {
             return {
                 success: true,
                 user: userData,
-                message: 'Demo hesapla giriş başarılı'
+                message: account.role === 'superadmin' ? 
+                    '🔥 Süper Admin olarak giriş başarılı - TÜM VERİLERE ERİŞİM' :
+                    account.role === 'debug' ?
+                    '🐛 Debug kullanıcısı olarak giriş başarılı' :
+                    'Demo hesapla giriş başarılı'
             };
         }
 
         console.error('❌ Local sign in failed - invalid credentials');
         return {
             success: false,
-            error: 'Geçersiz e-posta veya şifre. Demo hesaplar: demo@ipmanager.com/demo123, admin@ipmanager.com/admin123, test@example.com/test123'
+            error: `Geçersiz e-posta veya şifre. 
+            
+📧 Mevcut Hesaplar:
+• demo@ipmanager.com / demo123 (Demo)
+• admin@ipmanager.com / admin123 (Admin)  
+• test@example.com / test123 (Test)
+🔥 superadmin@ipmanager.com / superadmin123 (SÜPER ADMİN)
+🐛 debug@ipmanager.com / debug123 (Debug)`
         };
     },
 
@@ -170,7 +212,9 @@ export const authService = {
             email: email,
             displayName: displayName,
             role: 'user',
-            loginTime: new Date().toISOString()
+            permissions: [],
+            loginTime: new Date().toISOString(),
+            isSuperAdmin: false
         };
         
         localStorage.setItem('currentUser', JSON.stringify(userData));
@@ -182,19 +226,20 @@ export const authService = {
     }
 };
 
-// IP Records Service (Firestore veya localStorage)
+// IP Records Service (Firestore veya localStorage) - Super Admin desteği ile
 export const ipRecordsService = {
     async addRecord(record) {
         console.log('💾 Adding record:', record);
         
         try {
-            if (authService.isFirebaseAvailable && db) { // isFirebaseAvailable kontrolü
+            if (authService.isFirebaseAvailable && db) {
                 const user = authService.getCurrentUser();
                 if (!user || !user.uid) throw new Error('Kullanıcı oturumu bulunamadı');
 
                 const recordData = {
                     ...record,
                     userId: user.uid,
+                    userEmail: user.email,
                     createdAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString()
                 };
@@ -219,33 +264,64 @@ export const ipRecordsService = {
         console.log('📋 Getting records...');
         
         try {
-            if (authService.isFirebaseAvailable && db) { // isFirebaseAvailable kontrolü
+            if (authService.isFirebaseAvailable && db) {
                 const user = authService.getCurrentUser();
                 if (!user || !user.uid) {
                     console.warn('Firebase get records: No authenticated user. Returning local records.');
                     return this.localGetRecords();
                 }
 
-                const q = query(
-                    collection(db, 'ipRecords'),
-                    where('userId', '==', user.uid),
-                    orderBy('createdAt', 'desc')
-                );
+                // 🔥 SÜPER ADMİN KONTROLÜ - TÜM VERİLERİ GETİR
+                if (authService.isSuperAdmin()) {
+                    console.log('🔥 SÜPER ADMİN ERİŞİMİ - Tüm kullanıcıların verileri getiriliyor...');
+                    
+                    const q = query(
+                        collection(db, 'ipRecords'),
+                        orderBy('createdAt', 'desc')
+                    );
 
-                const querySnapshot = await getDocs(q);
-                const records = [];
-                
-                querySnapshot.forEach((doc) => {
-                    records.push({
-                        id: doc.id,
-                        ...doc.data()
+                    const querySnapshot = await getDocs(q);
+                    const records = [];
+                    
+                    querySnapshot.forEach((doc) => {
+                        const data = doc.data();
+                        records.push({
+                            id: doc.id,
+                            ...data,
+                            _ownerInfo: `👤 ${data.userEmail || 'Bilinmeyen'}` // Kayıt sahibi bilgisi
+                        });
                     });
-                });
-                console.log(`✅ Firebase records found: ${records.length}`);
-                return {
-                    success: true,
-                    data: records
-                };
+                    
+                    console.log(`🔥 SÜPER ADMİN: ${records.length} kayıt (tüm kullanıcılar) getirildi`);
+                    return {
+                        success: true,
+                        data: records,
+                        isAllUsersData: true
+                    };
+                } else {
+                    // Normal kullanıcı - sadece kendi verileri
+                    const q = query(
+                        collection(db, 'ipRecords'),
+                        where('userId', '==', user.uid),
+                        orderBy('createdAt', 'desc')
+                    );
+
+                    const querySnapshot = await getDocs(q);
+                    const records = [];
+                    
+                    querySnapshot.forEach((doc) => {
+                        records.push({
+                            id: doc.id,
+                            ...doc.data()
+                        });
+                    });
+                    console.log(`✅ Normal kullanıcı: ${records.length} kayıt getirildi`);
+                    return {
+                        success: true,
+                        data: records,
+                        isAllUsersData: false
+                    };
+                }
             } else {
                 return this.localGetRecords();
             }
@@ -258,7 +334,7 @@ export const ipRecordsService = {
     async updateRecord(recordId, updates) {
         console.log(`🔄 Updating record ${recordId}:`, updates);
         try {
-            if (authService.isFirebaseAvailable && db) { // isFirebaseAvailable kontrolü
+            if (authService.isFirebaseAvailable && db) {
                 const recordRef = doc(db, 'ipRecords', recordId);
                 const updateData = {
                     ...updates,
@@ -280,7 +356,7 @@ export const ipRecordsService = {
     async deleteRecord(recordId) {
         console.log(`🗑️ Deleting record: ${recordId}`);
         try {
-            if (authService.isFirebaseAvailable && db) { // isFirebaseAvailable kontrolü
+            if (authService.isFirebaseAvailable && db) {
                 await deleteDoc(doc(db, 'ipRecords', recordId));
                 console.log(`✅ Firebase record ${recordId} deleted.`);
                 return { success: true };
@@ -296,9 +372,13 @@ export const ipRecordsService = {
     // Local storage fallback methods
     localAddRecord(record) {
         const records = this.getLocalRecords();
+        const user = authService.getCurrentUser();
+        
         const newRecord = {
             id: 'local_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
             ...record,
+            userId: user?.uid || 'anonymous',
+            userEmail: user?.email || 'anonymous@localhost',
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
         };
@@ -317,12 +397,34 @@ export const ipRecordsService = {
 
     localGetRecords() {
         const records = this.getLocalRecords();
-        console.log('📋 Local records found:', records.length);
+        const user = authService.getCurrentUser();
         
-        return {
-            success: true,
-            data: records.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-        };
+        // 🔥 SÜPER ADMİN KONTROLÜ - TÜM VERİLERİ DÖNDÜR
+        if (authService.isSuperAdmin()) {
+            console.log('🔥 SÜPER ADMİN (LOCAL): Tüm kayıtlar döndürülüyor');
+            const allRecords = records.map(record => ({
+                ...record,
+                _ownerInfo: `👤 ${record.userEmail || 'Bilinmeyen'}`
+            }));
+            return {
+                success: true,
+                data: allRecords.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)),
+                isAllUsersData: true
+            };
+        } else {
+            // Normal kullanıcı - sadece kendi kayıtları
+            const userRecords = records.filter(record => 
+                record.userId === user?.uid || 
+                record.userEmail === user?.email
+            );
+            console.log('📋 Normal kullanıcı (local):', userRecords.length, 'kayıt bulundu');
+            
+            return {
+                success: true,
+                data: userRecords.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)),
+                isAllUsersData: false
+            };
+        }
     },
 
     localUpdateRecord(recordId, updates) {
@@ -363,18 +465,19 @@ export const ipRecordsService = {
     }
 };
 
-// **Yeni Kişi Servisi (Firebase Firestore veya localStorage)**
+// Persons Service (Super Admin desteği ile)
 export const personsService = {
     async addPerson(person) {
         console.log('👥 Adding person:', person);
         try {
-            if (authService.isFirebaseAvailable && db) { // isFirebaseAvailable kontrolü
+            if (authService.isFirebaseAvailable && db) {
                 const user = authService.getCurrentUser();
                 if (!user || !user.uid) throw new Error('Kullanıcı oturumu bulunamadı.');
 
                 const personData = {
                     ...person,
-                    userId: user.uid, // Kişiyi kullanıcıya bağla
+                    userId: user.uid,
+                    userEmail: user.email,
                     createdAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString()
                 };
@@ -393,24 +496,48 @@ export const personsService = {
     async getPersons() {
         console.log('👥 Getting persons...');
         try {
-            if (authService.isFirebaseAvailable && db) { // isFirebaseAvailable kontrolü
+            if (authService.isFirebaseAvailable && db) {
                 const user = authService.getCurrentUser();
                 if (!user || !user.uid) {
                     console.warn('Firebase get persons: No authenticated user. Returning local persons.');
                     return this.localGetPersons();
                 }
-                const q = query(
-                    collection(db, 'persons'),
-                    where('userId', '==', user.uid),
-                    orderBy('createdAt', 'desc')
-                );
-                const querySnapshot = await getDocs(q);
-                const persons = [];
-                querySnapshot.forEach((doc) => {
-                    persons.push({ id: doc.id, ...doc.data() });
-                });
-                console.log(`✅ Firebase persons found: ${persons.length}`);
-                return { success: true, data: persons };
+
+                // 🔥 SÜPER ADMİN KONTROLÜ
+                if (authService.isSuperAdmin()) {
+                    console.log('🔥 SÜPER ADMİN: Tüm kullanıcıların kişileri getiriliyor...');
+                    
+                    const q = query(
+                        collection(db, 'persons'),
+                        orderBy('createdAt', 'desc')
+                    );
+                    const querySnapshot = await getDocs(q);
+                    const persons = [];
+                    querySnapshot.forEach((doc) => {
+                        const data = doc.data();
+                        persons.push({ 
+                            id: doc.id, 
+                            ...data,
+                            _ownerInfo: `👤 ${data.userEmail || 'Bilinmeyen'}`
+                        });
+                    });
+                    console.log(`🔥 SÜPER ADMİN: ${persons.length} kişi (tüm kullanıcılar) getirildi`);
+                    return { success: true, data: persons };
+                } else {
+                    // Normal kullanıcı
+                    const q = query(
+                        collection(db, 'persons'),
+                        where('userId', '==', user.uid),
+                        orderBy('createdAt', 'desc')
+                    );
+                    const querySnapshot = await getDocs(q);
+                    const persons = [];
+                    querySnapshot.forEach((doc) => {
+                        persons.push({ id: doc.id, ...doc.data() });
+                    });
+                    console.log(`✅ Normal kullanıcı: ${persons.length} kişi getirildi`);
+                    return { success: true, data: persons };
+                }
             } else {
                 return this.localGetPersons();
             }
@@ -423,7 +550,7 @@ export const personsService = {
     async updatePerson(personId, updates) {
         console.log(`🔄 Updating person ${personId}:`, updates);
         try {
-            if (authService.isFirebaseAvailable && db) { // isFirebaseAvailable kontrolü
+            if (authService.isFirebaseAvailable && db) {
                 const personRef = doc(db, 'persons', personId);
                 const updateData = { ...updates, updatedAt: new Date().toISOString() };
                 await updateDoc(personRef, updateData);
@@ -441,7 +568,7 @@ export const personsService = {
     async deletePerson(personId) {
         console.log(`🗑️ Deleting person: ${personId}`);
         try {
-            if (authService.isFirebaseAvailable && db) { // isFirebaseAvailable kontrolü
+            if (authService.isFirebaseAvailable && db) {
                 await deleteDoc(doc(db, 'persons', personId));
                 console.log(`✅ Firebase person ${personId} deleted.`);
                 return { success: true };
@@ -457,22 +584,43 @@ export const personsService = {
     // Local storage fallback methods for persons
     localAddPerson(person) {
         const persons = this.getLocalPersons();
+        const user = authService.getCurrentUser();
+        
         const newPerson = {
             id: 'local_person_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
             ...person,
+            userId: user?.uid || 'anonymous',
+            userEmail: user?.email || 'anonymous@localhost',
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
         };
         persons.push(newPerson);
-        localStorage.setItem('persons', JSON.stringify(persons)); // 'persons' anahtarı kullanılıyor
+        localStorage.setItem('persons', JSON.stringify(persons));
         console.log('✅ Local person added:', newPerson);
         return { success: true, id: newPerson.id, data: newPerson };
     },
 
     localGetPersons() {
         const persons = this.getLocalPersons();
-        console.log('📋 Local persons found:', persons.length);
-        return { success: true, data: persons.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)) };
+        const user = authService.getCurrentUser();
+        
+        // 🔥 SÜPER ADMİN KONTROLÜ
+        if (authService.isSuperAdmin()) {
+            console.log('🔥 SÜPER ADMİN (LOCAL): Tüm kişiler döndürülüyor');
+            const allPersons = persons.map(person => ({
+                ...person,
+                _ownerInfo: `👤 ${person.userEmail || 'Bilinmeyen'}`
+            }));
+            return { success: true, data: allPersons.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)) };
+        } else {
+            // Normal kullanıcı
+            const userPersons = persons.filter(person => 
+                person.userId === user?.uid || 
+                person.userEmail === user?.email
+            );
+            console.log('📋 Normal kullanıcı (local persons):', userPersons.length);
+            return { success: true, data: userPersons.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)) };
+        }
     },
 
     localUpdatePerson(personId, updates) {
@@ -498,7 +646,7 @@ export const personsService = {
 
     getLocalPersons() {
         try {
-            const persons = localStorage.getItem('persons'); // 'persons' anahtarı kullanılıyor
+            const persons = localStorage.getItem('persons');
             return persons ? JSON.parse(persons) : [];
         } catch (error) {
             console.error('Error reading local persons:', error);
@@ -507,113 +655,82 @@ export const personsService = {
     }
 };
 
-// Create demo data (Firebase is active, so this will attempt to add to Firestore)
+// Create demo data with multiple users (Super Admin görür)
 export async function createDemoData() {
     console.log('🎯 Creating demo data...');
     
-    // IP kayıtları için demo veri kontrolü ve oluşturma
-    let ipRecordsExist = false;
-    try {
-        const ipRecordsResult = await ipRecordsService.getRecords();
-        if (ipRecordsResult.success && ipRecordsResult.data.length > 0) {
-            ipRecordsExist = true;
+    // Demo kayıtları farklı kullanıcılar adına oluştur
+    const demoRecords = [
+        {
+            type: 'patent',
+            title: 'Akıllı Enerji Yönetim Sistemi',
+            description: 'IoT tabanlı enerji tasarrufu sağlayan sistem',
+            status: 'pending',
+            applicationDate: '2024-01-15',
+            owners: [{ name: 'TechCorp A.Ş.', type: 'company' }],
+            applicationNumber: 'TR2024/001234',
+            userId: 'demo_user_1',
+            userEmail: 'demo@ipmanager.com'
+        },
+        {
+            type: 'trademark',
+            title: 'EcoSmart',
+            description: 'Çevre dostu teknoloji ürünleri markası',
+            status: 'approved',
+            applicationDate: '2023-11-20',
+            owners: [{ name: 'Green Tech Ltd.', type: 'company' }],
+            applicationNumber: 'TR2023/987654',
+            userId: 'admin_user_1',
+            userEmail: 'admin@ipmanager.com'
+        },
+        {
+            type: 'copyright',
+            title: 'Dijital Pazarlama Yazılımı',
+            description: 'E-ticaret platformları için analitik yazılım',
+            status: 'approved',
+            applicationDate: '2024-02-10',
+            owners: [{ name: 'Software Solutions Inc.', type: 'company' }],
+            applicationNumber: 'TR2024/555666',
+            userId: 'test_user_1',
+            userEmail: 'test@example.com'
+        },
+        {
+            type: 'design',
+            title: 'Modern Ofis Mobilyası Serisi',
+            description: 'Ergonomik tasarım prensipleriyle geliştirilmiş mobilya',
+            status: 'rejected',
+            applicationDate: '2023-12-05',
+            owners: [{ name: 'Design Studio X', type: 'company' }],
+            applicationNumber: 'TR2023/111222',
+            userId: 'another_user',
+            userEmail: 'designer@company.com'
+        },
+        {
+            type: 'patent',
+            title: 'Yapay Zeka Destekli Otomasyon',
+            description: 'Endüstriyel süreçler için AI algoritmaları',
+            status: 'pending',
+            applicationDate: '2024-03-01',
+            owners: [{ name: 'AI Innovations Ltd.', type: 'company' }],
+            applicationNumber: 'TR2024/789012',
+            userId: 'ai_company',
+            userEmail: 'ai@innovations.com'
         }
-    } catch (e) {
-        console.warn('Could not check IP records for demo data, assuming none or error:', e.message);
-    }
+    ];
 
-    if (ipRecordsExist) {
-        console.log('Skipping IP record demo data creation: Records already exist for this user.');
-    } else {
-        const demoRecords = [
-            {
-                type: 'patent',
-                title: 'Akıllı Enerji Yönetim Sistemi',
-                description: 'IoT tabanlı enerji tasarrufu sağlayan sistem',
-                status: 'pending',
-                applicationDate: '2024-01-15',
-                owners: [{ name: 'TechCorp A.Ş.', type: 'company' }],
-                applicationNumber: 'TR2024/001234',
-                trademarkImage: null
-            },
-            {
-                type: 'trademark',
-                title: 'EcoSmart',
-                description: 'Çevre dostu teknoloji ürünleri markası',
-                status: 'approved',
-                applicationDate: '2023-11-20',
-                owners: [{ name: 'Green Tech Ltd.', type: 'company' }],
-                applicationNumber: 'TR2023/987654',
-                trademarkImage: {
-                    name: 'ecosmart_logo.jpeg',
-                    type: 'image/jpeg',
-                    size: 15000,
-                    // Bu Base64 içeriği uzun olduğu için burada kısaltılmış bir örnek bırakıyorum.
-                    // Gerçek uygulamada tam Base64 stringini içermelidir.
-                    content: 'data:image/jpeg;base64,...(kısaltılmış Base64)' 
-                }
-            },
-            {
-                type: 'copyright',
-                title: 'Dijital Pazarlama Yazılımı',
-                description: 'E-ticaret platformları için analitik yazılım',
-                status: 'approved',
-                applicationDate: '2024-02-10',
-                owners: [{ name: 'Software Solutions Inc.', type: 'company' }],
-                applicationNumber: 'TR2024/555666',
-                trademarkImage: null
-            },
-            {
-                type: 'design',
-                title: 'Modern Ofis Mobilyası Serisi',
-                description: 'Ergonomik tasarım prensipleriyle geliştirilmiş mobilya',
-                status: 'rejected',
-                applicationDate: '2023-12-05',
-                owners: [{ name: 'Design Studio X', type: 'company' }],
-                applicationNumber: 'TR2023/111222',
-                trademarkImage: null
-            }
-        ];
-
-        for (const record of demoRecords) {
-            await ipRecordsService.addRecord(record);
-        }
-        console.log('✅ IP record demo data created successfully');
-    }
-
-    // Kişi kayıtları için demo veri kontrolü ve oluşturma
-    let personsExist = false;
-    try {
-        const personsResult = await personsService.getPersons();
-        if (personsResult.success && personsResult.data.length > 0) {
-            personsExist = true;
-        }
-    } catch (e) {
-        console.warn('Could not check persons for demo data, assuming none or error:', e.message);
-    }
-
-    if (personsExist) {
-        console.log('Skipping person demo data creation: Persons already exist for this user.');
-    } else {
-        const demoPersons = [
-            { name: 'Demo Kişi 1', email: 'demoperson1@example.com', phone: '05551112233', type: 'individual', address: 'Demo Adres 1' },
-            { name: 'Demo Şirket A.Ş.', email: 'info@demosirket.com', phone: '02129998877', type: 'company', address: 'Demo Merkez' },
-            { name: 'Demo Kurum', email: 'contact@demokurum.org', phone: '03121234567', type: 'institution', address: 'Demo Başkent' }
-        ];
-
-        for (const person of demoPersons) {
-            await personsService.addPerson(person);
-        }
-        console.log('✅ Demo persons created successfully');
-    }
-
-    console.log('All demo data operations finished.');
+    // LocalStorage'a demo veriler ekle
+    const existingRecords = JSON.parse(localStorage.getItem('ipRecords') || '[]');
+    const allRecords = [...existingRecords, ...demoRecords];
+    localStorage.setItem('ipRecords', JSON.stringify(allRecords));
+    
+    console.log('✅ Demo data oluşturuldu - Süper Admin tüm verileri görebilir');
+    console.log(`📊 Toplam ${allRecords.length} kayıt, ${demoRecords.length} yeni eklendi`);
 }
-
-// Authentication check utility (removed, onAuthStateChanged handles this more robustly)
 
 // Export auth for direct access
 export { auth };
 
-console.log('🔥 Firebase config loaded - REAL MODE ACTIVE');
+console.log('🔥 Firebase config loaded - SÜPER ADMİN DESTEĞİ AKTİF');
+console.log('🔥 Süper Admin Hesabı: superadmin@ipmanager.com / superadmin123');
+console.log('🐛 Debug Hesabı: debug@ipmanager.com / debug123');
 console.log('🧪 Available services: authService, ipRecordsService, personsService, createDemoData, auth');
