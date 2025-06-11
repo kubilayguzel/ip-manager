@@ -210,14 +210,16 @@
         
         .file-item-controls {
             display: flex;
-            align-items: center;
+            flex-direction: column; /* Changed to column for stacking dropdowns */
+            align-items: flex-start; /* Align dropdowns to the start */
             gap: 10px;
-            flex-wrap: wrap; /* Küçük ekranlarda sarmalama */
-            width: 100%; /* İçindeki elementlerin yerleşimi için */
+            flex-wrap: wrap; /* Small screens will wrap */
+            width: 100%; /* Ensure full width */
         }
         .file-item-select {
             flex-grow: 1; /* Dropdown'ın mümkün olduğunca genişlemesini sağla */
             min-width: 150px; /* Minimum genişlik */
+            width: 100%; /* Make dropdowns take full width in flex column */
             padding: 5px 8px;
             border: 1px solid #ccc;
             border-radius: 5px;
@@ -237,6 +239,7 @@
             justify-content: center;
             transition: background 0.3s ease;
             flex-shrink: 0; /* Küçülmesini engelle */
+            margin-top: 5px; /* Add some space below dropdowns */
         }
         .remove-file:hover {
             background: #c82333;
@@ -501,7 +504,7 @@
     </main>
 
     <script type="module">
-        import { authService, ipRecordsService, auth, generateUUID } from './firebase-config.js'; // generateUUID'yi burada import etmeye gerek yok
+        import { authService, ipRecordsService, auth, generateUUID } from './firebase-config.js';
 
         class IndexingModule {
             constructor() {
@@ -511,21 +514,9 @@
                 this.uploadedFiles = []; // Yüklenecek belgeler (yeni yapı)
                 this.originalRecordData = null; // Güncelleme için orijinal kayıt verisi
 
-                // 1. DOKÜMAN TİPLERİ (Genel Belge Niteliği)
-                this.allDocumentTypes = [
-                    { name: 'Belge Tipi Seçiniz', value: '', ipTypes: ['all'], required: true },
-                    { name: 'Başvuru Formu', value: 'Başvuru Formu', ipTypes: ['all'], required: false },
-                    { name: 'Resmi Yazışma', value: 'Resmi Yazışma', ipTypes: ['all'], required: false },
-                    { name: 'Vekaletname', value: 'Vekaletname', ipTypes: ['all'], required: false },
-                    { name: 'Teknik Çizim', value: 'Teknik Çizim', ipTypes: ['patent', 'design'], required: false },
-                    { name: 'Karar', value: 'Karar', ipTypes: ['all'], required: false },
-                    { name: 'Diğer Belge', value: 'Diğer Belge', ipTypes: ['all'], required: false }
-                ];
-                this.currentDocumentTypes = []; // Seçilen kayda göre filtrelenecek liste
-
-                // 2. DOKÜMAN ATAMALARI / KAYIT TİPLERİ (Belgenin IP Kaydındaki Anlamı)
+                // Sadece "Belge Atamaları" kalacak, "Belge Tipi" kaldırıldı
                 this.allDocumentDesignations = [
-                    { name: 'Atama Seçiniz', value: '', ipTypes: ['all'], required: true }, // 'all' için varsayılan zorunlu hale getirildi
+                    { name: 'Atama Seçiniz', value: '', ipTypes: ['all'], required: true },
                     { name: 'Başvuru Ek Dokümanı', value: 'Başvuru Ek Dokümanı', ipTypes: ['all'], required: false },
                     { name: 'Yasal Doküman', value: 'Yasal Doküman', ipTypes: ['all'], required: false },
                     { name: 'Finansal Belge', value: 'Finansal Belge', ipTypes: ['all'], required: false },
@@ -534,7 +525,20 @@
                     { name: 'Yayın Kararı', value: 'Yayın Kararı', ipTypes: ['trademark'], required: false },
                     { name: 'Ret Kararı', value: 'Ret Kararı', ipTypes: ['trademark'], required: false },
                     { name: 'Tescil Belgesi', value: 'Tescil Belgesi', ipTypes: ['trademark'], required: false },
-                    { name: 'Yayına İtiraz', value: 'Yayına İtiraz', ipTypes: ['trademark'], required: false },
+                    // Yeni eklenen ana atama ve alt seçenekleri
+                    { 
+                        name: 'Yayına İtiraz - Markalar Dairesi', 
+                        value: 'opposition_trademark_office', 
+                        ipTypes: ['trademark'], 
+                        required: false,
+                        subDesignations: [
+                            { name: 'Alt Atama Seçiniz', value: '', required: true },
+                            { name: 'Yayına İtiraz', value: 'opposition_to_publication' },
+                            { name: 'İtiraza Karşı Görüş', value: 'response_to_opposition' },
+                            { name: 'Yayına İtiraz Kararı - Ret', value: 'opposition_decision_rejected' },
+                            { name: 'Yayına İtiraz Kararı - Kabul', value: 'opposition_decision_accepted' }
+                        ]
+                    },
 
                     // Patent Özel Atamaları
                     { name: 'Araştırma Raporu', value: 'Araştırma Raporu', ipTypes: ['patent'], required: false },
@@ -772,34 +776,45 @@
                     this.updateStatusOptionsForRecord(record.type, record.status);
 
                     // Mevcut dosyaları yükle
-                    // Bu sayfada sadece yeni eklenen dosyaları indeksleyeceğiz.
                     this.uploadedFiles = []; 
+                    if (record.files) {
+                        // Orijinal dosyalardan sadece ID, name, type, size, content'i al (documentType ve Designation'ı yeniden seçecek)
+                        // veya orijinal documentType/Designation'ı koruyarak alt seçenekleri dinamik yükleyebiliriz.
+                        // Şimdilik sadece orijinal documentDesignation ve subDesignation'ı koruyalım, type'ı kaldıracağız.
+                         this.uploadedFiles = record.files.map(file => ({
+                            id: file.id || generateUUID(),
+                            name: file.name,
+                            type: file.type,
+                            size: file.size,
+                            content: file.content,
+                            documentDesignation: file.documentDesignation || '', // Orijinal atamayı koru
+                            subDesignation: file.subDesignation || '', // Orijinal alt atamayı koru
+                            uploadedAt: file.uploadedAt || new Date().toISOString()
+                        }));
+                    }
                     this.updateFileList();
-
-                    // İsteğe bağlı güncelleme alanlarını mevcut kayıt verisiyle doldur
-                    document.getElementById('updateRecordStatus').value = record.status || '';
-                    document.getElementById('updateRecordNotes').value = record.notes || ''; 
                     
-                    // Seçilen kayda göre belge tiplerini ve atamalarını filtrele ve güncelle
-                    this.filterDocumentTypesByRecordType(record.type);
+                    // Seçilen kayda göre belge atamalarını filtrele ve güncelle
                     this.filterDocumentDesignationsByRecordType(record.type);
                 }
             }
 
-            // YENİ METOT: filterDocumentTypesByRecordType (Document Type dropdown'ı için)
-            filterDocumentTypesByRecordType(ipType) {
-                this.currentDocumentTypes = this.allDocumentTypes.filter(docType => 
-                    docType.ipTypes.includes('all') || docType.ipTypes.includes(ipType)
-                );
-                this.updateFileList(); // Dosya listesini güncelleyerek dropdownları yeniden render et
-            }
+            // "Belge Tipi" kaldırıldığı için bu metot artık kullanılmayacak.
+            // filterDocumentTypesByRecordType(ipType) {
+            //     this.currentDocumentTypes = this.allDocumentTypes.filter(docType => 
+            //         docType.ipTypes.includes('all') || docType.ipTypes.includes(ipType)
+            //     );
+            //     this.updateFileList(); // Dosya listesini güncelleyerek dropdownları yeniden render et
+            // }
 
             // YENİ METOT: filterDocumentDesignationsByRecordType (Document Designation dropdown'ı için)
             filterDocumentDesignationsByRecordType(ipType) {
                 this.currentDocumentDesignations = this.allDocumentDesignations.filter(designation => 
                     designation.ipTypes.includes('all') || designation.ipTypes.includes(ipType)
                 );
-                this.updateFileList(); // Dosya listesini güncelleyerek dropdownları yeniden render et
+                // Mevcut yüklü dosyaların atanmış değerlerini koruyarak updateFileList çağrısı yapılmalı
+                // Aksi takdirde atanan değerler sıfırlanır. selectRecord içinde hallediliyor.
+                this.updateFileList(); 
             }
 
 
@@ -864,17 +879,16 @@
                             const newFileObj = {
                                 id: generateUUID(),
                                 name: file.name,
-                                type: file.type,
+                                type: file.type, // Mime type
                                 size: file.size,
-                                content: dataUrl,
-                                // documentType başlangıçta ilk seçenek (Belge Tipi Seçiniz) olacak
-                                documentType: this.currentDocumentTypes.length > 0 ? this.currentDocumentTypes[0].value : '', 
+                                content: dataUrl, // Base64 içeriği
                                 documentDesignation: this.currentDocumentDesignations.length > 0 ? this.currentDocumentDesignations[0].value : '', // İlk filtrelenmiş atama tipi
+                                subDesignation: '', // Yeni eklenen alt atama alanı
                                 uploadedAt: new Date().toISOString()
                             };
                             this.uploadedFiles.push(newFileObj);
                             this.updateFileList();
-                            this.showNotification(`Dosya yüklendi: ${file.name}. Lütfen tipini ve atamasını seçin.`, 'success');
+                            this.showNotification(`Dosya yüklendi: ${file.name}. Lütfen atamasını seçin.`, 'success');
                         }).catch(error => {
                             this.showNotification(`Dosya okuma hatası: ${file.name} - ${error.message}`, 'error');
                             console.error('File read error:', error);
@@ -893,52 +907,144 @@
                 return { isValid: true, message: '' };
             }
 
-            // addFileToList metodunu güncelliyoruz: iki dropdown'ı da içerecek
             addFileToList(file) {
                 const fileListElement = document.getElementById('fileList');
                 const fileItem = document.createElement('div');
                 fileItem.className = 'file-item';
                 fileItem.dataset.fileId = file.id;
 
-                // Doküman Tipi seçeneği için HTML oluştur
-                let docTypeSelectHtml = `<select class="file-item-select" data-file-id="${file.id}" data-field="documentType">`;
-                this.currentDocumentTypes.forEach(type => { // Filtrelenmiş listeyi kullan
-                    const selected = (file.documentType === type.value || (type.value === '' && !file.documentType)) ? 'selected' : '';
-                    docTypeSelectHtml += `<option value="${type.value}" ${selected}>${type.name}</option>`;
-                });
-                docTypeSelectHtml += `</select>`;
-
                 // Doküman Ataması seçeneği için HTML oluştur
                 let docDesignationSelectHtml = `<select class="file-item-select" data-file-id="${file.id}" data-field="documentDesignation">`;
-                this.currentDocumentDesignations.forEach(designation => { // Filtrelenmiş listeyi kullan
-                    const selected = (file.documentDesignation === designation.value || (designation.value === '' && !file.documentDesignation)) ? 'selected' : '';
+                let selectedDesignationDef;
+                this.currentDocumentDesignations.forEach(designation => { 
+                    const selected = (file.documentDesignation === designation.value) ? 'selected' : '';
                     docDesignationSelectHtml += `<option value="${designation.value}" ${selected}>${designation.name}</option>`;
+                    if (selected) selectedDesignationDef = designation;
                 });
                 docDesignationSelectHtml += `</select>`;
+
+                // Alt Atama (Sub-Designation) için HTML oluştur
+                let subDesignationSelectHtml = '';
+                const hasSubDesignations = selectedDesignationDef && selectedDesignationDef.subDesignations;
+                if (hasSubDesignations) {
+                    subDesignationSelectHtml = `<select class="file-item-select" data-file-id="${file.id}" data-field="subDesignation" style="margin-top: 5px;">`;
+                    selectedDesignationDef.subDesignations.forEach(subDesignation => {
+                        const selected = (file.subDesignation === subDesignation.value) ? 'selected' : '';
+                        subDesignationSelectHtml += `<option value="${subDesignation.value}" ${selected}>${subDesignation.name}</option>`;
+                    });
+                    subDesignationSelectHtml += `</select>`;
+                }
 
 
                 fileItem.innerHTML = `
                     <span>${file.name} (${this.formatFileSize(file.size)})</span>
                     <div class="file-item-controls">
-                        ${docTypeSelectHtml}
                         ${docDesignationSelectHtml}
+                        ${subDesignationSelectHtml}
                         <button type="button" class="remove-file" data-file-id="${file.id}">×</button>
                     </div>
                 `;
                 fileListElement.appendChild(fileItem);
 
-                // Olay dinleyicilerini her iki select için de ekle
-                fileItem.querySelectorAll(`.file-item-select[data-file-id="${file.id}"]`).forEach(selectElement => {
-                    selectElement.addEventListener('change', (e) => {
+                // Olay dinleyicileri
+                const docDesignationSelect = fileItem.querySelector(`.file-item-select[data-field="documentDesignation"]`);
+                if (docDesignationSelect) {
+                    docDesignationSelect.addEventListener('change', (e) => {
                         const updatedFile = this.uploadedFiles.find(f => f.id === file.id);
                         if (updatedFile) {
-                            const field = e.target.dataset.field;
-                            updatedFile[field] = e.target.value;
+                            updatedFile.documentDesignation = e.target.value;
+                            // Reset subDesignation if primary designation changes
+                            updatedFile.subDesignation = ''; 
+
+                            // Re-render this specific file item to show/hide sub-designation dropdown
+                            this.updateSpecificFileItem(file.id);
                         }
                     });
-                });
-                fileItem.querySelector(`.remove-file[data-file-id="${file.id}"]`).addEventListener('click', (e) => this.removeFile(e.target.dataset.fileId));
+                }
+                
+                const subDesignationSelect = fileItem.querySelector(`.file-item-select[data-field="subDesignation"]`);
+                if (subDesignationSelect) {
+                    subDesignationSelect.addEventListener('change', (e) => {
+                        const updatedFile = this.uploadedFiles.find(f => f.id === file.id);
+                        if (updatedFile) {
+                            updatedFile.subDesignation = e.target.value;
+                        }
+                    });
+                }
+
+                const removeBtn = fileItem.querySelector(`.remove-file[data-file-id="${file.id}"]`);
+                if (removeBtn) {
+                    removeBtn.addEventListener('click', (e) => this.removeFile(e.target.dataset.fileId));
+                }
             }
+
+            updateSpecificFileItem(fileId) {
+                const file = this.uploadedFiles.find(f => f.id === fileId);
+                if (!file) return;
+
+                const fileItemElement = document.querySelector(`.file-item[data-file-id="${fileId}"]`);
+                if (fileItemElement) {
+                    // Remove old controls
+                    const oldControls = fileItemElement.querySelector('.file-item-controls');
+                    if (oldControls) oldControls.remove();
+
+                    // Re-create controls based on current file data
+                    const newControlsDiv = document.createElement('div');
+                    newControlsDiv.className = 'file-item-controls';
+
+                    // Document Designation dropdown (re-creating for simplicity, could update existing)
+                    let docDesignationSelectHtml = `<select class="file-item-select" data-file-id="${file.id}" data-field="documentDesignation">`;
+                    let selectedDesignationDef;
+                    this.currentDocumentDesignations.forEach(designation => { 
+                        const selected = (file.documentDesignation === designation.value) ? 'selected' : '';
+                        docDesignationSelectHtml += `<option value="${designation.value}" ${selected}>${designation.name}</option>`;
+                        if (selected) selectedDesignationDef = designation;
+                    });
+                    docDesignationSelectHtml += `</select>`;
+                    newControlsDiv.innerHTML += docDesignationSelectHtml;
+
+
+                    // Alt Atama (Sub-Designation) için HTML oluştur
+                    if (selectedDesignationDef && selectedDesignationDef.subDesignations) {
+                        let subDesignationSelectHtml = `<select class="file-item-select" data-file-id="${file.id}" data-field="subDesignation" style="margin-top: 5px;">`;
+                        selectedDesignationDef.subDesignations.forEach(subDesignation => {
+                            const selected = (file.subDesignation === subDesignation.value) ? 'selected' : '';
+                            subDesignationSelectHtml += `<option value="${subDesignation.value}" ${selected}>${subDesignation.name}</option>`;
+                        });
+                        subDesignationSelectHtml += `</select>`;
+                        newControlsDiv.innerHTML += subDesignationSelectHtml;
+                    }
+                    
+                    // Add remove button
+                    newControlsDiv.innerHTML += `<button type="button" class="remove-file" data-file-id="${file.id}">×</button>`;
+
+                    fileItemElement.appendChild(newControlsDiv);
+
+                    // Re-attach event listeners for the newly created selects and button
+                    const docDesignationSelect = newControlsDiv.querySelector(`.file-item-select[data-field="documentDesignation"]`);
+                    if (docDesignationSelect) {
+                        docDesignationSelect.addEventListener('change', (e) => {
+                            const updatedFile = this.uploadedFiles.find(f => f.id === file.id);
+                            if (updatedFile) {
+                                updatedFile.documentDesignation = e.target.value;
+                                updatedFile.subDesignation = ''; // Reset subDesignation when main changes
+                                this.updateSpecificFileItem(file.id); // Re-render to update sub-dropdown
+                            }
+                        });
+                    }
+                    const subDesignationSelect = newControlsDiv.querySelector(`.file-item-select[data-field="subDesignation"]`);
+                    if (subDesignationSelect) {
+                        subDesignationSelect.addEventListener('change', (e) => {
+                            const updatedFile = this.uploadedFiles.find(f => f.id === file.id);
+                            if (updatedFile) {
+                                updatedFile.subDesignation = e.target.value;
+                            }
+                        });
+                    }
+                    newControlsDiv.querySelector(`.remove-file[data-file-id="${file.id}"]`).addEventListener('click', (e) => this.removeFile(e.target.dataset.fileId));
+                }
+            }
+
 
             removeFile(fileIdToRemove) {
                 this.uploadedFiles = this.uploadedFiles.filter(file => file.id !== fileIdToRemove);
@@ -977,26 +1083,24 @@
                     isValid = false;
                 }
 
-                // Yüklenen dosyalar için Document Type ve Document Designation seçimi zorunlu
+                // Yüklenen dosyalar için Document Designation ve SubDesignation seçimi zorunlu
                 this.uploadedFiles.forEach((file, index) => {
-                    // Document Type zorunlu kontrolü (sadece value boşsa)
-                    if (!file.documentType || file.documentType === '') {
+                    // Document Designation zorunlu kontrolü
+                    if (!file.documentDesignation || file.documentDesignation === '') {
                         isValid = false;
-                        this.showNotification(`'${file.name}' belgesi için tip seçmelisiniz.`, 'error');
+                        this.showNotification(`'${file.name}' belgesi için atama seçmelisiniz.`, 'error');
                     }
 
-                    // Document Designation zorunlu kontrolü (sadece `required: true` olan atamalar için)
-                    const docDesignationDef = this.allDocumentDesignations.find(dd => dd.value === file.documentDesignation);
-                    // Eğer atama tanımı varsa VE atama gerekli ise VE atama seçilmemişse hata ver
-                    if (docDesignationDef && docDesignationDef.required && (!file.documentDesignation || file.documentDesignation === '')) {
+                    // Eğer ana atama "Yayına İtiraz - Markalar Dairesi" ise alt atama zorunlu
+                    if (file.documentDesignation === 'opposition_trademark_office' && (!file.subDesignation || file.subDesignation === '')) {
                         isValid = false;
-                        this.showNotification(`'${file.name}' belgesi için atama seçmelisiniz. (Zorunlu Alan)`, 'error');
+                        this.showNotification(`'${file.name}' belgesi için alt atama seçmelisiniz (Yayına İtiraz - Markalar Dairesi için zorunlu).`, 'error');
                     }
                 });
 
 
                 if (!isValid) {
-                    this.showFieldError('fileInput', 'Yüklü tüm belgeler için geçerli tip ve atama seçmelisiniz.');
+                    this.showFieldError('fileInput', 'Yüklü tüm belgeler için geçerli atama(lar) seçmelisiniz.');
                 }
                 return isValid;
             }
@@ -1119,7 +1223,7 @@
                     <option value="expired">Süresi Doldu</option>
                 `;
                 // Belge tipi ve atama listelerini başlangıç durumuna getir
-                this.filterDocumentTypesByRecordType('all'); // 'all' ile çağırarak tüm tipleri yükle
+                // "Belge Tipi" kaldırıldığı için artık sadece filterDocumentDesignationsByRecordType çağırılacak
                 this.filterDocumentDesignationsByRecordType('all'); // 'all' ile çağırarak tüm atamaları yükle
             }
 
