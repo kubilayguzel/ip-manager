@@ -544,31 +544,31 @@
                     const statusDiv = document.getElementById('firebaseStatus');
 
                     if (user) {
-                        this.currentUser = user;
-                        // Kullanıcı bilgilerini ve rolünü güncellemek için authService'ten al
-                        this.currentUser = authService.getCurrentUser(); //
-                        this.updateUserInfo(this.currentUser); //
-                        statusDiv.textContent = '🔥 Firebase Bağlı'; //
-                        statusDiv.className = 'firebase-status connected'; //
-                        console.log('✅ User authenticated by Firebase:', user.email); //
+                        this.currentUser = authService.getCurrentUser(); // Kullanıcı bilgilerini ve rolünü güncellemek için authService'ten al
+                        this.updateUserInfo(this.currentUser); 
+                        statusDiv.textContent = '🔥 Firebase Bağlı'; 
+                        statusDiv.className = 'firebase-status connected'; 
+                        console.log('✅ User authenticated by Firebase:', user.email); 
                         
-                        await this.loadUserData(); //
+                        await this.loadUserData(); 
                         // localStorage'a kaydedilen kullanıcı verisi artık authService'den geliyor
-                        localStorage.setItem('currentUser', JSON.stringify(this.currentUser)); //
+                        // DÜZELTME: Bu satır duplicated olabilir, authService zaten handle ediyor.
+                        // Ancak fallback için tutulmasında sakınca yok.
+                        localStorage.setItem('currentUser', JSON.stringify(this.currentUser)); 
 
                     } else {
-                        console.log('ℹ️ User is not authenticated. Checking localStorage fallback.'); //
-                        const localUser = authService.getCurrentUser(); //
-                        if (localUser && localUser.uid) { //
-                            this.currentUser = localUser; //
-                            this.updateUserInfo(localUser); //
-                            statusDiv.textContent = '⚠️ Yerel Mod (Firebase bağlı değil)'; //
-                            statusDiv.className = 'firebase-status error'; //
-                            console.log('✅ LocalStorage user detected, running in local mode:', localUser.email); //
-                            await this.loadUserData(); //
+                        console.log('ℹ️ User is not authenticated. Checking localStorage fallback.'); 
+                        const localUser = authService.getCurrentUser(); 
+                        if (localUser && localUser.uid) { 
+                            this.currentUser = localUser; 
+                            this.updateUserInfo(localUser); 
+                            statusDiv.textContent = '⚠️ Yerel Mod (Firebase bağlı değil)'; 
+                            statusDiv.className = 'firebase-status error'; 
+                            console.log('✅ LocalStorage user detected, running in local mode:', localUser.email); 
+                            await this.loadUserData(); 
                         } else {
-                            console.log('❌ No authenticated user found, redirecting to login.'); //
-                            window.location.href = 'index.html'; //
+                            console.log('❌ No authenticated user found, redirecting to login.'); 
+                            window.location.href = 'index.html'; 
                         }
                     }
                     setTimeout(() => {
@@ -582,6 +582,13 @@
                     if (confirm('Çıkış yapmak istediğinizden emin misiniz?')) {
                         try {
                             await authService.signOut();
+                            // DÜZELTME: signOut() zaten yönlendirmeyi hallettiği için burada ekstra yönlendirmeye gerek yok.
+                            // EğersignOut() sadece localStorage'ı temizleyip yönlendirme yapmıyorsa, aşağıdaki satır kalsın.
+                            // Ancak mevcut firebase-config.js'de signOut() sonrasında yönlendirme yapılmıyor,
+                            // sadece localStorage temizleniyor. Bu durumda onAuthStateChanged handle etmeli.
+                            // Yine de, kesin yönlendirme için bu satırı ekleyebiliriz:
+                            window.location.href = 'index.html'; 
+
                         } catch (error) {
                             console.error('Logout error:', error);
                             alert('Çıkış yaparken bir hata oluştu.');
@@ -606,13 +613,12 @@
             }
 
             updateUserInfo(user) {
-                const userName = user.displayName || user.email.split('@')[0] || 'Kullanıcı'; //
-                const userAvatar = userName.charAt(0).toUpperCase(); //
+                const userName = user.displayName || user.email.split('@')[0] || 'Kullanıcı'; 
+                const userAvatar = userName.charAt(0).toUpperCase(); 
 
-                document.getElementById('userName').textContent = userName; //
-                document.getElementById('userAvatar').textContent = userAvatar; //
-                // user objesi authService.getCurrentUser() tarafından role ve isSuperAdmin bilgisiyle geliyor
-                document.getElementById('userRole').textContent = user.role === 'admin' ? 'Yönetici' : 'Kullanıcı'; //
+                document.getElementById('userName').textContent = userName; 
+                document.getElementById('userAvatar').textContent = userAvatar; 
+                document.getElementById('userRole').textContent = user.role === 'admin' ? 'Yönetici' : 'Kullanıcı'; 
             }
 
             async loadUserData() {
@@ -651,8 +657,10 @@
                     this.handleNoData();
                 } finally {
                     // Bu blokta loading indicator'ı gizlediğimizden emin olun
-                    activitiesListPlaceholder.innerHTML = activitiesListPlaceholder.innerHTML; // İçeriği koru, loading spinner'ı kaldır
-                    trendChartPlaceholder.innerHTML = trendChartPlaceholder.innerHTML; // İçeriği koru, loading spinner'ı kaldır
+                    // DÜZELTME: Bu satırlar aslında bir şey yapmıyor.
+                    // Placeholder'ların içeriği zaten değiştirildiği için, buraya bir şey yazmaya gerek yok.
+                    // activitiesListPlaceholder.innerHTML = activitiesListPlaceholder.innerHTML; 
+                    // trendChartPlaceholder.innerHTML = trendChartPlaceholder.innerHTML; 
                 }
             }
 
