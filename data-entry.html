@@ -1066,6 +1066,8 @@
         window.toggleDropdown = toggleDropdown;
 
 
+        let dataEntryModule; // Global olarak tanımlandı
+
         class DataEntryModule {
             constructor() {
                 this.selectedType = null;
@@ -1257,7 +1259,7 @@
 
             async loadPersonsFromService() {
                 try {
-                    // Corrected line: 'personsModule.getPersons()' changed to 'personsService.getPersons()'
+                    // Bu satırın düzeltildiğinden emin olun: personsService.getPersons() olmalı
                     const result = await personsService.getPersons();
                     if (result.success) {
                         this.persons = result.data;
@@ -1465,10 +1467,10 @@
                     ownerItem.dataset.personId = person.id;
                     
                     const typeIcon = {
-                        individual: '👤',
-                        company: '🏢',
-                        institution: '🏛️'
-                    };
+                            individual: '👤',
+                            company: '🏢',
+                            institution: '🏛️'
+                        };
 
                     ownerItem.innerHTML = `
                         <div class="owner-info">
@@ -1785,22 +1787,22 @@
             }
         }
 
-        // personsModule nesnesini window global kapsamına atama
+        // dataEntryModule nesnesini window global kapsamına atama
         auth.onAuthStateChanged((user) => {
             if (user) {
-                if (!personsModule) {
-                    personsModule = new DataEntryModule(); // Corrected: Should be DataEntryModule if this is data-entry.html
-                    window.personsModule = personsModule; // Keep this for existing test functions if needed
+                if (!dataEntryModule) { // personsModule yerine dataEntryModule olacak
+                    dataEntryModule = new DataEntryModule();
+                    window.dataEntryModule = dataEntryModule; // Global erişim için atama
                 }
             } else {
                 const localUser = authService.getCurrentUser();
                 if (localUser && localUser.uid) {
-                    if (!personsModule) {
-                        personsModule = new DataEntryModule(); // Corrected
-                        window.personsModule = personsModule; // Keep this for existing test functions if needed
+                    if (!dataEntryModule) { // personsModule yerine dataEntryModule olacak
+                        dataEntryModule = new DataEntryModule();
+                        window.dataEntryModule = dataEntryModule; // Global erişim için atama
                     }
                 } else {
-                    console.log('❌ User not authenticated for Persons Management, redirecting to login page.');
+                    console.log('❌ User not authenticated, redirecting to login page.');
                     window.location.href = 'index.html'; 
                 }
             }
