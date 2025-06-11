@@ -1048,6 +1048,26 @@
     <script type="module">
         import { authService, ipRecordsService, personsService, auth } from './firebase-config.js';
 
+        // Dropdown Menü Fonksiyonu (Data-Entry'ye de eklendi)
+        function toggleDropdown(event) {
+            event.preventDefault(); // Varsayılan bağlantı davranışını engelle
+            const dropdown = document.getElementById("managementDropdown");
+            dropdown.classList.toggle("active"); // 'active' sınıfını ekleyip/kaldırarak görünürlüğü kontrol et
+            
+            // Dropdown dışına tıklanınca kapanması için
+            window.onclick = function(e) {
+                if (!e.target.matches('.dropdown-toggle') && !e.target.closest('.dropdown-content')) {
+                    if (dropdown.classList.contains('active')) {
+                        dropdown.classList.remove('active');
+                        window.onclick = null; // Olay dinleyiciyi kaldır
+                    }
+                }
+            }
+        }
+        // Fonksiyonu global scope'a atayalım ki HTML'den erişilebilsin
+        window.toggleDropdown = toggleDropdown;
+
+
         class DataEntryModule {
             constructor() {
                 this.selectedType = null;
@@ -1622,7 +1642,7 @@
                 }
 
                 if (!isValid) {
-                    this.showNotification('Lütfen gerekli alanları doldurun ve hataları düzeltin.', 'error');
+                    // Hatalı alanlar varsa uyarıyı göstermeye gerek yok, fieldError zaten görünüyor
                     return;
                 }
 
@@ -1632,28 +1652,92 @@
                 savePersonBtn.disabled = true;
 
                 try {
-                    const result = await personsService.addPerson(newPersonData);
-                    if (result.success) {
-                        this.persons.push({ id: result.id, ...newPersonData }); 
-                        if (!this.selectedOwners.includes(result.id)) {
-                            this.selectedOwners.push(result.id);
+                    let result;
+                    if (this.currentPersonId) {
+                        const personToUpdate = this.allPersons.find(p => p.id === this.currentPersonId);
+                        // Admin olmayan kullanıcı, başkasına ait kaydı güncelleyemesin
+                        if (!authService.isSuperAdmin() && personToUpdate && personToUpdate.userId !== this.currentUser.uid) {
+                             alert('Bu kaydı güncelleme yetkiniz yoktur.');
+                             saveBtn.disabled = false;
+                             return;
                         }
-                        this.renderOwnerList();
-                        this.hideAddPersonModal();
-                        this.showNotification(`${newPersonData.name} başarıyla eklendi ve hak sahiplerine eklendi!`, 'success');
+                        newPersonData.updatedAt = new Date().toISOString(); // Güncelleme tarihi ekle
+                        result = await personsService.updatePerson(this.currentPersonId, newPersonData);
+                    } else {
+                        newPersonData.createdAt = new Date().toISOString(); // Oluşturma tarihi ekle
+                        newPersonData.updatedAt = new Date().toISOString(); // Güncelleme tarihi ekle
+                        newPersonData.userId = this.currentUser.uid; // Kaydı oluşturan kullanıcı ID'si
+                        newPersonData.userEmail = this.currentUser.email; // Kaydı oluşturan kullanıcı E-posta
+                        result = await personsService.addPerson(newPersonData);
+                    }
+
+                    if (result.success) {
+                        alert(`Kişi başarıyla ${this.currentPersonId ? 'güncellendi' : 'eklendi'}!`);
+                        this.closePersonModal();
+                        await this.loadPersons(); 
                     } else {
                         throw new Error(result.error || 'Kişi kaydedilirken bilinmeyen bir hata oluştu.');
                     }
                 } catch (error) {
                     console.error('Save person error:', error);
-                    this.showNotification('Kişi kaydedilirken bir hata oluştu: ' + error.message, 'error');
+                    alert('Kişi kaydedilirken bir hata oluştu: ' + error.message);
                 } finally {
-                    savePersonBtn.disabled = false;
+                    saveBtn.disabled = false; 
                 }
             }
 
+            async deletePerson(personId) {
+                const personToDelete = this.allPersons.find(p => p.id === personId);
+                if (!personToDelete) {
+                    alert('Kişi bulunamadı.');
+                    return;
+                }
+                
+                // Admin olmayan kullanıcı, başkasına ait kaydı silemesin
+                if (!authService.isSuperAdmin() && personToDelete.userId !== this.currentUser.uid) {
+                    alert('Bu kişiyi silme yetkiniz yoktur.');
+                    return;
+                }
+
+                if (!confirm('Bu kişiyi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz!')) {
+                    return;
+                }
+
+                try {
+                    const result = await personsService.deletePerson(personId);
+                    if (result.success) {
+                        alert('Kişi başarıyla silindi!');
+                        await this.loadPersons(); 
+                    } else {
+                        throw new Error(result.error || 'Kişi silinirken hata oluştu.');
+                    }
+                } catch (error) {
+                    console.error('Delete person error:', error);
+                    alert('Kişi silinirken bir hata oluştu: ' + error.message);
+                }
+            }
+
+            resetFilters() {
+                document.getElementById('searchInput').value = '';
+                document.getElementById('typeFilter').value = '';
+                this.applyFilters();
+            }
+
+            showEmptyState(message = 'Henüz kişi bulunamadı.') { // Varsayılan mesaj eklendi
+                const loadingIndicator = document.getElementById('loadingIndicator');
+                const personsTable = document.getElementById('personsTable');
+                const noPersons = document.getElementById('noPersons');
+                const pagination = document.getElementById('pagination');
+
+                loadingIndicator.style.display = 'none';
+                personsTable.style.display = 'none';
+                pagination.style.display = 'none';
+                noPersons.style.display = 'block';
+                noPersons.querySelector('h3').textContent = message; // Mesajı güncelle
+            }
+            
             clearModalErrors(formId) {
-                document.querySelectorAll(`#${formId} .form-input, #${formId} .form-select, #${formId} .form-textarea`).forEach(input => {
+                document.querySelectorAll(`#${formId} .filter-input`).forEach(input => {
                     input.classList.remove('error-field');
                 });
                 document.querySelectorAll(`#${formId} .error-message`).forEach(errorDiv => {
@@ -1665,522 +1749,80 @@
                 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                 return emailRegex.test(email);
             }
-
-            showNotification(message, type = 'info') {
-                const notification = document.createElement('div');
-                notification.className = `notification-message ${type}`;
-                notification.innerHTML = `<span>${type === 'success' ? '✅' : (type === 'error' ? '❌' : 'ℹ️')}</span><span>${message}</span>`;
-                
-                notification.style.position = 'fixed';
-                notification.style.top = '20px';
-                notification.style.right = '20px';
-                notification.style.zIndex = '1001';
-                notification.style.opacity = '0'; 
-                notification.style.transition = 'opacity 0.5s ease-in-out, transform 0.5s ease-in-out';
-                notification.style.transform = 'translateY(-20px)'; 
-                
-                document.body.appendChild(notification);
-                
-                setTimeout(() => {
-                    notification.style.opacity = '1';
-                    notification.style.transform = 'translateY(0)';
-                }, 10); 
-
-                setTimeout(() => {
-                    notification.style.opacity = '0';
-                    notification.style.transform = 'translateY(-20px)';
-                    setTimeout(() => {
-                        if (document.body.contains(notification)) {
-                            document.body.removeChild(notification);
-                        }
-                    }, 500); 
-                }, 3000);
-            }
-
-            setupFileUpload() {
-                const fileUpload = document.getElementById('fileUpload');
-                const fileInput = document.getElementById('fileInput');
-
-                if (fileUpload && fileInput) {
-                    fileUpload.addEventListener('click', () => fileInput.click());
-                    fileInput.addEventListener('change', (e) => this.handleFiles(e.target.files));
-
-                    fileUpload.addEventListener('dragover', (e) => {
-                        e.preventDefault();
-                        fileUpload.style.borderColor = '#1e3c72';
-                        fileUpload.style.background = '#f0f4f8';
-                    });
-                    fileUpload.addEventListener('dragleave', () => {
-                        fileUpload.style.borderColor = '#e1e8ed';
-                        fileUpload.style.background = 'transparent';
-                    });
-                    fileUpload.addEventListener('drop', (e) => {
-                        e.preventDefault();
-                        fileUpload.style.borderColor = '#e1e8ed';
-                        fileUpload.style.background = 'transparent';
-                        this.handleFiles(e.dataTransfer.files);
-                    });
-                }
-            }
-
-            async handleFiles(files) {
-                for (const file of Array.from(files)) {
-                    if (this.validateFile(file)) {
-                        try {
-                            const base64Content = await this.readFileAsDataURL(file);
-                            this.uploadedFiles.push({
-                                name: file.name,
-                                size: file.size,
-                                type: file.type,
-                                content: base64Content 
-                            });
-                            this.addFileToList(file);
-                        } catch (error) {
-                            console.error("Error reading file:", file.name, error);
-                            this.showNotification(`"${file.name}" dosyası okunurken bir hata oluştu.`, "error");
-                        }
-                    }
-                }
-            }
-
-            validateFile(file) {
-                const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'image/jpeg', 'image/png'];
-                const maxSize = 10 * 1024 * 1024; // 10MB
-                if (!allowedTypes.includes(file.type)) {
-                    this.showNotification('Desteklenmeyen dosya formatı: ' + file.name, 'error');
-                    return false;
-                }
-                if (file.size > maxSize) {
-                    this.showNotification('Dosya çok büyük: ' + file.name + ' (Maks. 10MB)', 'error');
-                    return false;
-                }
-                if (this.uploadedFiles.some(f => f.name === file.name)) {
-                    this.showNotification('Bu isimde bir dosya zaten eklenmiş: ' + file.name, 'info');
-                    return false;
-                }
-                return true;
-            }
-
-            addFileToList(file) {
-                const fileList = document.getElementById('fileList');
-                if (!fileList) return; 
-                const fileItem = document.createElement('div');
-                fileItem.className = 'file-item';
-                fileItem.dataset.fileName = file.name; 
-                fileItem.innerHTML = `
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <span>📄</span>
-                        <span>${file.name} (${this.formatFileSize(file.size)})</span>
-                    </div>
-                    <button class="remove-file" type="button">×</button>
-                `;
-                const removeBtn = fileItem.querySelector('.remove-file');
-                if (removeBtn) {
-                    removeBtn.addEventListener('click', () => {
-                        this.removeFile(file.name);
-                    });
-                }
-                fileList.appendChild(fileItem);
-            }
-
-            removeFile(fileName) {
-                this.uploadedFiles = this.uploadedFiles.filter(file => file.name !== fileName);
-                this.updateFileList();
-                this.showNotification(`${fileName} başarıyla kaldırıldı.`, 'info');
-            }
-
-            updateFileList() {
-                const fileList = document.getElementById('fileList');
-                if (fileList) {
-                    fileList.innerHTML = '';
-                    this.uploadedFiles.forEach(file => this.addFileToList(file));
-                }
-            }
-
-            setupTrademarkImageUpload() {
-                const trademarkImageUpload = document.getElementById('trademarkImageUpload');
-                const trademarkImageInput = document.getElementById('trademarkImageInput');
-                if (!trademarkImageUpload || !trademarkImageInput) return;
-
-                trademarkImageUpload.addEventListener('click', () => trademarkImageInput.click());
-                trademarkImageInput.addEventListener('change', (e) => this.handleTrademarkImage(e.target.files));
-
-                trademarkImageUpload.addEventListener('dragover', (e) => {
-                    e.preventDefault();
-                    trademarkImageUpload.style.borderColor = '#1e3c72';
-                    trademarkImageUpload.style.background = '#f0f4f8';
-                });
-                trademarkImageUpload.addEventListener('dragleave', () => {
-                    trademarkImageUpload.style.borderColor = '#e1e8ed';
-                    trademarkImageUpload.style.background = 'transparent';
-                });
-                trademarkImageUpload.addEventListener('drop', (e) => {
-                    e.preventDefault();
-                    trademarkImageUpload.style.borderColor = '#e1e8ed';
-                    trademarkImageUpload.style.background = 'transparent';
-                    this.handleTrademarkImage(e.dataTransfer.files);
-                });
-            }
-
-            async handleTrademarkImage(files) { 
-                this.clearFieldError('trademarkImage'); 
-
-                const file = files[0];
-                if (!file) {
-                    this.removeTrademarkImage(); 
-                    return;
-                }
-
-                if (file.type !== 'image/jpeg') {
-                    this.showNotification('Marka örneği için sadece JPEG formatında resim yükleyebilirsiniz.', 'error');
-                    this.removeTrademarkImage();
-                    return;
-                }
-                const maxSize = 5 * 1024 * 1024; // 5MB
-                if (file.size > maxSize) {
-                    this.showNotification('Marka görseli çok büyük: ' + file.name + ' (Maks. 5MB)', 'error');
-                    this.removeTrademarkImage();
-                    return;
-                }
-                try {
-                    const base64Content = await this.readFileAsDataURL(file);
-                    this.uploadedTrademarkImage = {
-                        name: file.name,
-                        size: file.size,
-                        type: file.type,
-                        content: base64Content 
-                    };
-                    this.renderTrademarkImagePreview();
-                } catch (error) {
-                    console.error("Error reading trademark image file:", error);
-                    this.showNotification("Marka görseli okunurken bir hata oluştu.", "error");
-                    this.removeTrademarkImage();
-                }
-            }
-
-            renderTrademarkImagePreview() {
-                const trademarkImagePreview = document.getElementById('trademarkImagePreview');
-                if (!trademarkImagePreview) return;
-                trademarkImagePreview.innerHTML = ''; 
-                if (this.uploadedTrademarkImage && this.uploadedTrademarkImage.content) {
-                    const previewItem = document.createElement('div');
-                    previewItem.className = 'image-preview-item';
-                    previewItem.innerHTML = `
-                        <img src="${this.uploadedTrademarkImage.content}" alt="Marka Örneği">
-                        <button type="button" class="image-preview-remove-btn">×</button>
-                    `;
-                    trademarkImagePreview.appendChild(previewItem);
-                    previewItem.querySelector('.image-preview-remove-btn').addEventListener('click', () => {
-                        this.removeTrademarkImage();
-                    });
-                }
-            }
-
-            removeTrademarkImage() {
-                this.uploadedTrademarkImage = null;
-                this.renderTrademarkImagePreview(); 
-                this.showNotification('Marka görseli kaldırıldı.', 'info');
-            }
-
-            toggleTrademarkImageUpload(show) {
-                const trademarkImageUploadGroup = document.getElementById('trademarkImageUploadGroup');
-                if (trademarkImageUploadGroup) {
-                    trademarkImageUploadGroup.style.display = show ? 'block' : 'none';
-                }
-                if (!show) {
-                    this.removeTrademarkImage(); 
-                    this.clearFieldError('trademarkImage'); 
-                }
-            }
-
-            formatFileSize(bytes) {
-                if (bytes === 0) return '0 Bytes';
-                const k = 1024;
-                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-                const i = Math.floor(Math.log(bytes) / Math.log(k));
-                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-            }
-
-            validateForm() {
-                this.clearAllFormErrors(); 
-                let isValid = true;
-
-                if (!this.selectedType) {
-                    this.showFieldError('type', 'Lütfen fikri mülkiyet türünü seçin.');
-                    isValid = false;
-                }
-
-                if (this.selectedOwners.length === 0) {
-                    this.showFieldError('owners', 'Lütfen en az bir hak sahibi seçin.');
-                    isValid = false;
-                }
-
-                const requiredFields = ['title', 'status', 'applicationDate', 'description'];
-                requiredFields.forEach(fieldId => {
-                    const field = document.getElementById(fieldId);
-                    if (field && !field.value.trim()) {
-                        this.showFieldError(fieldId, `${field.previousElementSibling?.textContent?.replace('*', '').trim()} alanı zorunludur.`);
-                        isValid = false;
-                    }
-                });
-
-                if (this.selectedType === 'trademark' && !this.uploadedTrademarkImage) {
-                     this.showFieldError('trademarkImage', 'Marka için marka örneği görseli yüklemeniz zorunludur.');
-                     isValid = false;
-                }
-
-                if (!isValid) {
-                    this.showNotification('Lütfen formdaki eksik veya hatalı alanları düzeltin.', 'error');
-                }
-                return isValid;
-            }
-
-            clearAllFormErrors() {
-                document.querySelectorAll('#ipForm .form-input, #ipForm .form-select, #ipForm .form-textarea').forEach(input => {
-                    input.classList.remove('error-field');
-                });
-                document.querySelectorAll('#ipForm .error-message').forEach(errorDiv => {
-                    errorDiv.style.display = 'none';
-                });
-                document.getElementById('typeError').style.display = 'none';
-                document.getElementById('ownersError').style.display = 'none';
-                document.getElementById('trademarkImageError').style.display = 'none';
-            }
-
-
-            async collectFormData() { 
-                const ownersFullData = this.selectedOwners
-                    .map(ownerId => this.persons.find(p => p.id === ownerId))
-                    .filter(Boolean); 
-
-                const formData = {
-                    type: this.selectedType,
-                    title: document.getElementById('title').value.trim(),
-                    status: document.getElementById('status').value,
-                    applicationNumber: document.getElementById('applicationNumber').value.trim(),
-                    applicationDate: document.getElementById('applicationDate').value,
-                    description: document.getElementById('description').value.trim(),
-                    owners: ownersFullData, 
-                    files: this.uploadedFiles.map(file => ({
-                        name: file.name,
-                        size: file.size,
-                        type: file.type,
-                        content: file.content 
-                    })),
-                    // createdAt ve updatedAt submitForm içinde eklenecek
-                };
-
-                // Ortak alanlar
-                if (document.getElementById('registrationDateGroup').style.display !== 'none') {
-                    formData.registrationDate = document.getElementById('registrationDate')?.value || '';
-                }
-
-                // Dynamic fields
-                if (this.selectedType === 'patent') {
-                    formData.patentClass = document.getElementById('patentClass')?.value || '';
-                    formData.expiryDate = document.getElementById('expiryDate')?.value || '';
-                    formData.priority = document.getElementById('priority')?.value || '';
-                    formData.claims = document.getElementById('claims')?.value || '';
-                } else if (this.selectedType === 'trademark') {
-                    formData.trademarkType = document.getElementById('trademarkType')?.value || '';
-                    formData.niceClass = document.getElementById('niceClass')?.value || '';
-                    formData.registrationNumber = document.getElementById('registrationNumber')?.value || '';
-                    formData.renewalDate = document.getElementById('renewalDate')?.value || '';
-                    formData.goodsServices = document.getElementById('goodsServices')?.value || '';
-                    formData.trademarkImage = this.uploadedTrademarkImage ? {
-                        name: this.uploadedTrademarkImage.name,
-                        size: this.uploadedTrademarkImage.size,
-                        type: this.uploadedTrademarkImage.type,
-                        content: this.uploadedTrademarkImage.content 
-                    } : null;
-                    formData.bulletinDate = document.getElementById('bulletinDate')?.value || ''; // Yeni alan
-                    formData.bulletinNumber = document.getElementById('bulletinNumber')?.value || ''; // Yeni alan
-                } else if (this.selectedType === 'copyright') {
-                    formData.workType = document.getElementById('workType')?.value || '';
-                    formData.creationDate = document.getElementById('creationDate')?.value || '';
-                    formData.publicationDate = document.getElementById('publicationDate')?.value || '';
-                    formData.publisher = document.getElementById('publisher')?.value || '';
-                } else if (this.selectedType === 'design') {
-                    formData.designType = document.getElementById('designType')?.value || '';
-                    formData.locarnoClass = document.getElementById('locarnoClass')?.value || '';
-                    formData.designDate = document.getElementById('designDate')?.value || '';
-                    formData.designFeatures = document.getElementById('designFeatures')?.value || '';
-                }
-
-                return formData;
-            }
-
-            readFileAsDataURL(file) {
-                return new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onload = (e) => resolve(e.target.result);
-                    reader.onerror = (e) => reject(e);
-                    reader.readAsDataURL(file);
-                });
-            }
-
-            async submitForm() {
-                if (!this.validateForm()) {
-                    return;
-                }
-
-                const submitBtn = document.getElementById('submitBtn');
-                const submitText = document.getElementById('submitText');
-                const submitLoading = document.getElementById('submitLoading');
-                const formSuccessMessage = document.getElementById('formSuccessMessage');
-                const formErrorMessage = document.getElementById('formErrorMessage');
-                const formInfoMessage = document.getElementById('formInfoMessage');
-
-                submitBtn.disabled = true;
-                submitText.style.display = 'none';
-                submitLoading.style.display = 'inline-block';
-                formSuccessMessage.style.display = 'none';
-                formErrorMessage.style.display = 'none';
-                formInfoMessage.style.display = 'none';
-
-
-                try {
-                    const formData = await this.collectFormData(); 
-                    console.log("Form verileri:", formData);
-                    
-                    let result;
-                    if (this.recordIdToEdit) {
-                        // Mevcut kaydı güncelle
-                        formData.updatedAt = new Date().toISOString(); // Güncelleme tarihi ekle
-                        result = await ipRecordsService.updateRecord(this.recordIdToEdit, formData);
-                    } else {
-                        // Yeni kayıt oluştur
-                        formData.createdAt = new Date().toISOString(); // Oluşturma tarihi ekle
-                        formData.updatedAt = new Date().toISOString(); // Oluşturma tarihi ile aynı yap
-                        result = await ipRecordsService.addRecord(formData);
-                    }
-                    
-                    if (result.success) {
-                        console.log('IP record saved:', result.id || this.recordIdToEdit);
-                        formSuccessMessage.style.display = 'flex';
-                        document.getElementById('formSuccessText').textContent = this.recordIdToEdit ? 'Kayıt başarıyla güncellendi!' : 'Kayıt başarıyla oluşturuldu!';
-                        
-                        setTimeout(() => {
-                            this.resetForm();
-                            formSuccessMessage.style.display = 'none';
-                            window.location.href = 'portfolio.html'; // Portföy sayfasına yönlendir
-                        }, 2000);
-                    } else {
-                        throw new Error(result.error || 'Kayıt oluşturulurken/güncellenirken bilinmeyen bir hata oluştu.');
-                    }
-                    
-                } catch (error) {
-                    console.error('Submission error:', error);
-                    formErrorMessage.style.display = 'flex';
-                    document.getElementById('formErrorText').textContent = 'Kayıt sırasında bir hata oluştu: ' + error.message; 
-                } finally {
-                    submitBtn.disabled = false;
-                    submitText.style.display = 'inline';
-                    submitLoading.style.display = 'none';
-                }
-            }
-
-            resetForm() {
-                this.selectedType = null;
-                this.selectedOwners = [];
-                this.uploadedFiles = [];
-                this.uploadedTrademarkImage = null; 
-                this.selectedPersonForSearch = null; 
-                this.recordIdToEdit = null; // Reset edit mode
-
-                document.querySelectorAll('.type-card').forEach(card => {
-                    card.classList.remove('selected', 'disabled'); // 'disabled' sınıfını da kaldır
-                    card.style.pointerEvents = 'auto'; // Tür seçimini tekrar etkinleştir
-                });
-
-                document.querySelectorAll('.dynamic-fields').forEach(field => {
-                    field.classList.remove('show');
-                });
-
-                const ipForm = document.getElementById('ipForm');
-                if (ipForm) ipForm.reset();
-
-                const fileList = document.getElementById('fileList');
-                if (fileList) fileList.innerHTML = '';
-                this.renderTrademarkImagePreview(); 
-                this.toggleTrademarkImageUpload(false); 
-                this.updateTitleLabel(''); 
-                this.renderOwnerList(); 
-                this.clearAllFormErrors(); 
-                this.updateStatusOptions(); // Durum seçeneklerini varsayılan hallerine döndür
-
-                document.getElementById('mainFormTitle').textContent = 'Yeni Fikri Mülkiyet Kaydı'; // Başlığı sıfırla
-                document.getElementById('submitText').textContent = 'Kaydet'; // Buton metnini sıfırla
-
-
-                console.log('Form reset');
-            }
-
-            handleBack() {
-                if (confirm('Değişiklikler kaybolacak. Devam etmek istiyor musunuz?')) {
-                    window.location.href = 'portfolio.html'; // Dashboard yerine portföye dön
-                }
-            }
-
-            setTestData(type = 'patent') {
-                this.resetForm(); 
-
-                this.selectType(type); 
-                
-                document.getElementById('title').value = `Test ${type.charAt(0).toUpperCase() + type.slice(1)} Kaydı`;
-                document.getElementById('status').value = 'application';
-                document.getElementById('applicationDate').value = '2024-01-15';
-                document.getElementById('description').value = 'Bu bir test kaydıdır.';
-                
-                if (this.persons.length > 0) {
-                    this.selectedOwners = [this.persons[0].id];
-                    this.renderOwnerList(); 
-                } else {
-                    console.warn("Test verisi eklenirken kişi bulunamadı. Lütfen önce Persons Management'tan kişi ekleyin.");
-                    this.showNotification("Test verisi eklenirken kişi bulunamadı. Lütfen önce Kişiler Yönetimi sayfasından kişi ekleyin.", "info");
-                }
-
-                if (type === 'trademark') {
-                    this.toggleTrademarkImageUpload(true); 
-                    document.getElementById('registrationDate').value = '2024-02-20'; // Tescil tarihi eklendi
-                    document.getElementById('bulletinDate').value = '2024-03-01'; // Bülten tarihi eklendi
-                    document.getElementById('bulletinNumber').value = '2024/123'; // Bülten numarası eklendi
-                    this.uploadedTrademarkImage = {
-                        name: 'demo-trademark.jpg',
-                        size: 1024 * 50, 
-                        type: 'image/jpeg',
-                        content: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wCEAAkGBxAQDxAQDxAQDxAQDxAQDxAQDxAQDxAQDxARExAQDxMYHSggGBolGxATITEhJSkrLi4uFx8zODMtNygtLisBCgoKDg0OGxAQGy0lICUtLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLf/AABEIAOEA4QMBIgACEQEDEQH/xAAZAAEBAQEBAQAAAAAAAAAAAAABAAIDBAX/xAAXAQEBAQEAAAAAAAAAAAAAAAAAAREC/8QAGAEBAQEBAAAAAAAAAAAAAAAAAAECAwT/xAAYEQEBAQEBAAAAAAAAAAAAAAAAAAAREjED/9oADAMQAAhMRAD8A+uAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAARrQAAAAAAAAAAACAAAAAAAAAAAZAAAAAAAAAAARgAAAAAAAAAARnAAAAAAArkAAAAAAAAAAARwAAAAAAAAAAEQAAAAAAAAAAEQAAAAAAAAAAEQAAAAAAAAAARpAAAAAAAAAAAIwAAAAAAAAAAEYAAAAAAAAAABGAAAAAAAAAAABGAAAAAAAAAAAAAAAEAAAAAAAAAAARnAAAEUAAAAAAARpAAAFUAAAAAAARkAAABBAAAAAAAQAAAAGUAAAAAAAEAAAAAzAAAAAAAAAAARmAAAAAARpAAAABBAAAAAAAQAAAEgAAAAAAADMAAAAAAAAAAAjAAAAAAAAAAAEcAAAAAAAARAAAAAAAAAAAEQAAAAAAAAAAEQAAAAAAAAAARHIAAAAAAAAAARwAAAAAAAAAAEYAAAAAAAAAAAjAAAAAAAAAAARAAAAAAAAAABHIAAAAAAAAAAjAAAAAAAAAAAEYAAAAAAAAAAARgAAAAAAAAAAEQAAAAAAAAAAEQAAAAAAAAAARyAAAAAAAAAAAYAAAAAAAAAAAEZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf/9k='
-                    };
-                    this.renderTrademarkImagePreview();
-                } else {
-                    this.removeTrademarkImage(); 
-                }
-                
-                console.log(`Test data set for ${type}`);
-            }
-
-            async getFormData() {
-                return await this.collectFormData(); 
-            }
         }
 
-        let dataEntryModule;
+        // personsModule nesnesini window global kapsamına atama
         auth.onAuthStateChanged((user) => {
-            if (!dataEntryModule) { 
-                dataEntryModule = new DataEntryModule();
+            if (user) {
+                if (!personsModule) {
+                    personsModule = new PersonsModule();
+                    window.personsModule = personsModule; // Global erişim için atama
+                }
+            } else {
+                const localUser = authService.getCurrentUser();
+                if (localUser && localUser.uid) {
+                    if (!personsModule) {
+                        personsModule = new PersonsModule();
+                        window.personsModule = personsModule; // Global erişim için atama
+                    }
+                } else {
+                    console.log('❌ User not authenticated for Persons Management, redirecting to login page.');
+                    window.location.href = 'index.html'; 
+                }
             }
         });
 
-        window.testDataEntry = {
-            setTestData: (type) => dataEntryModule?.setTestData(type),
-            getFormData: async () => await dataEntryModule?.getFormData(),
-            resetForm: () => dataEntryModule?.resetForm()
+        window.testPersons = {
+            addTestPerson: async () => {
+                if (!personsModule || !personsModule.currentUser) {
+                    console.error("PersonsModule not initialized or no user logged in.");
+                    alert("Lütfen önce giriş yapın.");
+                    return;
+                }
+                const testPerson = {
+                    name: `Test Kişi ${Date.now()}`,
+                    email: `test${Date.now()}@example.com`,
+                    phone: '05001234567',
+                    type: 'individual',
+                    address: 'Test Adresi'
+                };
+                const result = await personsService.addPerson(testPerson);
+                if (result.success) {
+                    console.log('Test person added:', result.id);
+                    await personsModule.loadPersons(); 
+                    alert('Test kişisi başarıyla eklendi.');
+                } else {
+                    console.error('Failed to add test person:', result.error);
+                    alert('Test kişisi eklenemedi: ' + result.error);
+                }
+            },
+            clearAllPersons: async () => {
+                if (!personsModule || !personsModule.currentUser) {
+                    console.error("PersonsModule not initialized or no user logged in.");
+                    alert("Lütfen önce giriş yapın.");
+                    return;
+                }
+                if (confirm('TÜM KİŞİLERİ SİLMEK İSTEDİĞİNİZDEN EMİN MİSİNİZ? BU İŞLEM GERİ ALINAMAZ!')) {
+                    const personsToDelete = [...personsModule.allPersons]; 
+                    for (const person of personsToDelete) {
+                        // Silme işlemi için yetki kontrolü
+                        if (!authService.isSuperAdmin() && person.userId !== personsModule.currentUser.uid) {
+                            console.warn(`Yetkisiz silme girişimi: ${person.id} kişisi başka bir kullanıcıya ait.`);
+                            alert(`"${person.name}" kişisi başka bir kullanıcıya ait olduğu için silinemedi.`);
+                            continue; // Bu kişiyi atla ve diğerlerine geç
+                        }
+                        await personsService.deletePerson(person.id);
+                    }
+                    await personsModule.loadPersons();
+                    console.log('All persons cleared.');
+                    alert('Tüm kişiler başarıyla silindi (yetkisi olmayanlar hariç).');
+                }
+            },
+            getPersons: () => personsModule?.allPersons,
+            getFilteredPersons: () => personsModule?.filteredPersons
         };
-
-        console.log('🚀 Veri Giriş Modülü hazır!');
-        console.log('Test için: testDataEntry.setTestData("patent") veya testDataEntry.setTestData("trademark")');
-        console.log('Form verilerini görmek için: await testDataEntry.getFormData()');
-        console.log('Formu temizlemek için: testDataEntry.resetForm()');
+        console.log('👥 Persons Module is ready!');
+        console.log('Test için: testPersons.addTestPerson() veya testPersons.clearAllPersons()');
     </script>
 </body>
 </html>
