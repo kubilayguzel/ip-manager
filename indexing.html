@@ -595,27 +595,54 @@
                 const errorDiv = document.getElementById('formErrorMessage');
                 const infoDiv = document.getElementById('formInfoMessage');
 
-                successDiv.style.display = 'none';
-                errorDiv.style.display = 'none';
-                infoDiv.style.display = 'none';
+                // Null check for the container divs before setting their display
+                if (successDiv) successDiv.style.display = 'none';
+                if (errorDiv) errorDiv.style.display = 'none';
+                if (infoDiv) infoDiv.style.display = 'none';
 
                 let targetDiv;
+                let targetTextSpan;
+
                 if (type === 'success') {
                     targetDiv = successDiv;
-                    document.getElementById('formSuccessText').textContent = message;
+                    targetTextSpan = document.getElementById('formSuccessText');
                 } else if (type === 'error') {
                     targetDiv = errorDiv;
-                    document.getElementById('errorText').textContent = message;
+                    targetTextSpan = document.getElementById('formErrorText');
                 } else {
                     targetDiv = infoDiv;
-                    document.getElementById('infoText').textContent = message;
+                    targetTextSpan = document.getElementById('formInfoText');
                 }
 
-                targetDiv.style.display = 'flex';
-                
-                setTimeout(() => {
-                    targetDiv.style.display = 'none';
-                }, 5000);
+                // Safely set textContent if the span element exists
+                if (targetTextSpan) {
+                    targetTextSpan.textContent = message;
+                }
+
+                // Safely set display style for the main notification div
+                if (targetDiv) {
+                    targetDiv.style.display = 'flex';
+                    
+                    // Add/remove error/info class (ensure it's not success class from previous use)
+                    targetDiv.classList.remove('success', 'error', 'info');
+                    targetDiv.classList.add(type);
+
+                    // Add transition logic here, but it's part of the original method.
+                    setTimeout(() => {
+                        targetDiv.style.opacity = '1';
+                        targetDiv.style.transform = 'translateY(0)';
+                    }, 10);
+
+                    setTimeout(() => {
+                        targetDiv.style.opacity = '0';
+                        targetDiv.style.transform = 'translateY(-20px)';
+                        setTimeout(() => {
+                            if (document.body.contains(targetDiv)) {
+                                document.body.removeChild(targetDiv);
+                            }
+                        }, 500);
+                    }, 3000);
+                }
             }
 
             setLoading(isLoading) {
@@ -995,8 +1022,6 @@
                 this.showNotification('Belgeler indeksleniyor ve kayıt güncelleniyor...', 'info');
 
                 try {
-                    // Mevcut kaydın orijinal dosyalarını al, yeni yüklenenleri üzerine ekleyeceğiz.
-                    // Bu, Firebase'deki `files` dizisinin son hali olacak.
                     const currentFilesOnRecord = this.originalRecordData.files || [];
                     
                     // `finalFilesForRecord` yeni ve güncellenmiş dosyaların son listesi olacak.
