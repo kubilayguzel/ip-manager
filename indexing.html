@@ -386,6 +386,39 @@
                 width: 100%;
             }
         }
+        /* Styles for transaction history in indexing.html */
+        .indexing-transaction-history {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #e1e8ed;
+            border-radius: 10px;
+            background-color: #f8f9fa;
+            max-height: 200px; /* Belirli bir yükseklik sınırı */
+            overflow-y: auto; /* Dikey kaydırma çubuğu */
+        }
+        .indexing-transaction-history .transaction-item {
+            margin-bottom: 5px;
+            padding: 5px 0;
+            border-bottom: 1px dashed #eee;
+        }
+        .indexing-transaction-history .transaction-item:last-child {
+            border-bottom: none;
+        }
+        .indexing-transaction-history .transaction-type {
+            font-weight: 600;
+            color: #1e3c72;
+            font-size: 0.85em;
+        }
+        .indexing-transaction-history .transaction-description,
+        .indexing-transaction-history .transaction-meta {
+            font-size: 0.8em;
+            color: #666;
+        }
+        .indexing-transaction-history .transaction-document-link {
+            font-size: 0.75em;
+            color: #007bff;
+        }
+
 
     </style>
 </head>
@@ -489,6 +522,16 @@
                     </div>
                 </div>
 
+                <div class="form-section transaction-history-indexing-section" id="indexingTransactionHistorySection" style="display: none;">
+                    <h2 class="section-title">
+                        <span class="section-icon">📜</span>
+                        4. Kayıt Geçmişi
+                    </h2>
+                    <div class="indexing-transaction-history" id="indexingTransactionHistory">
+                        <p style="text-align: center; color: #666;">İşlem geçmişi yükleniyor...</p>
+                    </div>
+                </div>
+
 
                 <div class="form-actions">
                     <button type="button" class="btn btn-secondary" id="resetIndexingFormBtn">
@@ -518,7 +561,10 @@
                 this.allDocumentDesignations = [
                     { name: 'Atama Seçiniz', value: '', ipTypes: ['all'], required: true },
                     { name: 'Başvuru Ek Dokümanı', value: 'Başvuru Ek Dokümanı', ipTypes: ['all'], required: false },
-                    { name: 'Yasal Doküman', value: 'Yasal Doküman', ipTypes: ['all'], required: false },
+                    { name: 'Resmi Yazışma', value: 'Resmi Yazışma', ipTypes: ['all'], required: false },
+                    { name: 'Vekaletname', value: 'Vekaletname', ipTypes: ['all'], required: false },
+                    { name: 'Teknik Çizim', value: 'Teknik Çizim', ipTypes: ['patent', 'design'], required: false },
+                    { name: 'Karar', value: 'Karar', ipTypes: ['all'], required: false },
                     { name: 'Finansal Belge', value: 'Finansal Belge', ipTypes: ['all'], required: false },
 
                     // Marka Özel Atamaları (Kayıt Türleri)
@@ -545,6 +591,7 @@
                     { name: 'İnceleme Raporu', value: 'İnceleme Raporu', ipTypes: ['patent'], required: false },
                     
                     // Diğer türler için özel atamalar buraya eklenebilir
+                    { name: 'Diğer Belge', value: 'Diğer Belge', ipTypes: ['all'], required: false }, // Genel bir "Diğer" seçeneği
                     { name: 'Genel Not', value: 'Genel Not', ipTypes: ['all'], required: false }
                 ];
                 this.currentDocumentDesignations = []; // Seçilen kayda göre filtrelenecek liste
@@ -559,7 +606,6 @@
                         console.log('✅ User authenticated for Indexing:', this.currentUser.email, 'Role:', this.currentUser.role);
                         await this.loadAllRecords(); // Tüm kayıtları yükle
                         this.initializeEventListeners();
-                        this.setupFileUpload();
                         this.resetForm(); // Formu başlangıçta temizle
                     } else {
                         const localUser = authService.getCurrentUser();
@@ -568,7 +614,6 @@
                             console.log('⚠️ LocalStorage user detected for Indexing, running in local mode:', this.currentUser.email, 'Role:', this.currentUser.role);
                             await this.loadAllRecords();
                             this.initializeEventListeners();
-                            this.setupFileUpload();
                             this.resetForm();
                         } else {
                             console.log('❌ User not authenticated, redirecting to login page.');
@@ -705,7 +750,7 @@
                 document.getElementById('selectedRecordDisplay').value = '';
                 document.getElementById('indexDocumentsBtn').disabled = true;
                 
-                // Set the display to 'none' for sections 2 and 3 when search input changes
+                // Set the display to 'none' for sections 2, 3 and the new transaction history section when search input changes
                 const documentUploadSection = document.getElementById('documentUploadSection');
                 if (documentUploadSection) { 
                     documentUploadSection.style.display = 'none';
@@ -714,6 +759,11 @@
                 if (recordUpdateSection) { 
                     recordUpdateSection.style.display = 'none';
                 }
+                const indexingTransactionHistorySection = document.getElementById('indexingTransactionHistorySection');
+                if (indexingTransactionHistorySection) {
+                    indexingTransactionHistorySection.style.display = 'none';
+                }
+
 
                 if (searchTerm.length < 2) {
                     searchResultsContainer.innerHTML = '<p class="no-results-message">Arama yapmak için en az 2 karakter girin.</p>';
@@ -769,30 +819,24 @@
                     const recordUpdateSection = document.getElementById('recordUpdateSection');
                     if (recordUpdateSection) recordUpdateSection.style.display = 'block';
 
+                    // Yeni transaction history bölümünü göster
+                    const indexingTransactionHistorySection = document.getElementById('indexingTransactionHistorySection');
+                    if (indexingTransactionHistorySection) {
+                        indexingTransactionHistorySection.style.display = 'block';
+                        this.renderIndexingTransactions(record.transactions, record.files);
+                    }
+
+
                     document.getElementById('indexDocumentsBtn').disabled = false;
                     this.clearFieldError('recordSelectError'); // Hata mesajını temizle
 
                     // Kayda özel durumları yükle (örneğin trademark için farklı durumlar)
                     this.updateStatusOptionsForRecord(record.type, record.status);
 
-                    // Mevcut dosyaları yükle
+                    // Mevcut dosyaları yükle (SADECE O AN YÜKLENECEK DOSYALAR İÇİN LİSTEYİ SIFIRLA)
                     this.uploadedFiles = []; 
-                    if (record.files) {
-                        // Orijinal dosyalardan sadece ID, name, type, size, content'i al (documentType ve Designation'ı yeniden seçecek)
-                        // veya orijinal documentType/Designation'ı koruyarak alt seçenekleri dinamik yükleyebiliriz.
-                        // Şimdilik sadece orijinal documentDesignation ve subDesignation'ı koruyalım, type'ı kaldıracağız.
-                         this.uploadedFiles = record.files.map(file => ({
-                            id: file.id || generateUUID(),
-                            name: file.name,
-                            type: file.type,
-                            size: file.size,
-                            content: file.content,
-                            documentDesignation: file.documentDesignation || '', // Orijinal atamayı koru
-                            subDesignation: file.subDesignation || '', // Orijinal alt atamayı koru
-                            uploadedAt: file.uploadedAt || new Date().toISOString()
-                        }));
-                    }
-                    this.updateFileList();
+                    // this.uploadedFiles = record.files.map(...); // BU SATIR KALDIRILDI
+                    this.updateFileList(); // Boş listeyi render et
                     
                     // Seçilen kayda göre belge atamalarını filtrele ve güncelle
                     this.filterDocumentDesignationsByRecordType(record.type);
@@ -812,9 +856,7 @@
                 this.currentDocumentDesignations = this.allDocumentDesignations.filter(designation => 
                     designation.ipTypes.includes('all') || designation.ipTypes.includes(ipType)
                 );
-                // Mevcut yüklü dosyaların atanmış değerlerini koruyarak updateFileList çağrısı yapılmalı
-                // Aksi takdirde atanan değerler sıfırlanır. selectRecord içinde hallediliyor.
-                this.updateFileList(); 
+                // NOT: updateFileList çağrısı selectRecord içinde veya ilgili yerde yapılıyor, burada sadece liste filtrelenir.
             }
 
 
@@ -1197,7 +1239,7 @@
                 document.getElementById('selectedRecordDisplay').value = '';
                 document.getElementById('searchResultsContainer').innerHTML = '<p class="no-results-message">Arama yapmak için yukarıya yazın.</p>';
                 
-                // Set the display to 'none' for sections 2 and 3 explicitly
+                // Set the display to 'none' for sections 2, 3 and the new transaction history section explicitly
                 const documentUploadSection = document.getElementById('documentUploadSection');
                 if (documentUploadSection) { 
                     documentUploadSection.style.display = 'none';
@@ -1205,6 +1247,13 @@
                 const recordUpdateSection = document.getElementById('recordUpdateSection');
                 if (recordUpdateSection) { 
                     recordUpdateSection.style.display = 'none';
+                }
+                const indexingTransactionHistorySection = document.getElementById('indexingTransactionHistorySection');
+                if (indexingTransactionHistorySection) {
+                    indexingTransactionHistorySection.style.display = 'none';
+                    // Clear history content
+                    const historyDiv = document.getElementById('indexingTransactionHistory');
+                    if (historyDiv) historyDiv.innerHTML = '<p style="text-align: center; color: #666;">İşlem geçmişi yükleniyor...</p>';
                 }
 
                 document.getElementById('indexDocumentsBtn').disabled = true;
@@ -1222,13 +1271,60 @@
                     <option value="rejected">Reddedildi</option>
                     <option value="expired">Süresi Doldu</option>
                 `;
-                // Belge tipi ve atama listelerini başlangıç durumuna getir
-                // "Belge Tipi" kaldırıldığı için artık sadece filterDocumentDesignationsByRecordType çağırılacak
+                // Belge atama listelerini başlangıç durumuna getir
                 this.filterDocumentDesignationsByRecordType('all'); // 'all' ile çağırarak tüm atamaları yükle
             }
 
             handleBack() {
                 window.location.href = 'portfolio.html';
+            }
+
+            // Yeni eklenen transaction geçmişi render fonksiyonu (basitleştirilmiş)
+            renderIndexingTransactions(transactions, recordFiles) {
+                const historyContainer = document.getElementById('indexingTransactionHistory');
+                if (!historyContainer) return;
+
+                historyContainer.innerHTML = ''; // Önceki içeriği temizle
+
+                if (!transactions || transactions.length === 0) {
+                    historyContainer.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Bu kayda ait işlem geçmişi bulunmamaktadır.</p>';
+                    return;
+                }
+                
+                // Sadece son 5 işlemi göster (veya hepsi, duruma göre ayarlanabilir)
+                const recentTransactions = transactions.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 5);
+
+                recentTransactions.forEach(tx => {
+                    const item = document.createElement('div');
+                    item.className = 'transaction-item';
+
+                    let description = tx.description;
+                    let documentLinkHtml = '';
+
+                    // Dokümanla ilgili transaction'lar için link ekle
+                    if (tx.documentId && recordFiles) {
+                        const relatedFile = recordFiles.find(file => file.id === tx.documentId);
+                        if (relatedFile && relatedFile.content) {
+                            documentLinkHtml = `
+                                <a href="${relatedFile.content}" download="${relatedFile.name}" class="transaction-document-link">
+                                    📄 ${relatedFile.name} (${this.formatFileSize(relatedFile.size)})
+                                </a>
+                            `;
+                        }
+                    }
+
+                    item.innerHTML = `
+                        <div class="transaction-content">
+                            <div class="transaction-type">${tx.type.replace(/([A-Z])/g, ' $1').trim()}</div>
+                            <div class="transaction-description">${description}</div>
+                            ${documentLinkHtml}
+                            <div class="transaction-meta">
+                                ${new Date(tx.timestamp).toLocaleString('tr-TR')} - ${tx.userEmail}
+                            </div>
+                        </div>
+                    `;
+                    historyContainer.appendChild(item);
+                });
             }
         }
 
