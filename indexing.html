@@ -446,7 +446,7 @@
                     </div>
                 </div>
 
-                <div class="form-section document-upload-section" style="display: none;">
+                <div class="form-section document-upload-section" id="documentUploadSection" style="display: none;">
                     <h2 class="section-title">
                         <span class="section-icon">📁</span>
                         2. Belgeleri Yükleyin ve İndeksleyin
@@ -462,7 +462,7 @@
                     </div>
                 </div>
 
-                <div class="form-section record-update-section" style="display: none;">
+                <div class="form-section record-update-section" id="recordUpdateSection" style="display: none;">
                     <h2 class="section-title">
                         <span class="section-icon">✏️</span>
                         3. Kayıt Bilgilerini Güncelle (İsteğe Bağlı)
@@ -701,7 +701,7 @@
                 document.getElementById('selectedRecordDisplay').value = '';
                 document.getElementById('indexDocumentsBtn').disabled = true;
                 
-                // Null kontrolü eklendi
+                // Set the display to 'none' for sections 2 and 3 when search input changes
                 const documentUploadSection = document.getElementById('documentUploadSection');
                 if (documentUploadSection) { 
                     documentUploadSection.style.display = 'none';
@@ -911,7 +911,7 @@
                 // Doküman Ataması seçeneği için HTML oluştur
                 let docDesignationSelectHtml = `<select class="file-item-select" data-file-id="${file.id}" data-field="documentDesignation">`;
                 this.currentDocumentDesignations.forEach(designation => { // Filtrelenmiş listeyi kullan
-                    const selected = (file.documentDesignation === designation.value || (designation.value === '' && !file.documentation)) ? 'selected' : '';
+                    const selected = (file.documentDesignation === designation.value || (designation.value === '' && !file.documentDesignation)) ? 'selected' : '';
                     docDesignationSelectHtml += `<option value="${designation.value}" ${selected}>${designation.name}</option>`;
                 });
                 docDesignationSelectHtml += `</select>`;
@@ -1093,7 +1093,7 @@
                 document.getElementById('selectedRecordDisplay').value = '';
                 document.getElementById('searchResultsContainer').innerHTML = '<p class="no-results-message">Arama yapmak için yukarıya yazın.</p>';
                 
-                // Null kontrolü eklendi
+                // Set the display to 'none' for sections 2 and 3 explicitly
                 const documentUploadSection = document.getElementById('documentUploadSection');
                 if (documentUploadSection) { 
                     documentUploadSection.style.display = 'none';
