@@ -661,8 +661,7 @@
                 <a href="dashboard.html" class="nav-item">Dashboard</a>
                 <a href="#" class="nav-item active">Portföy</a>
                 <a href="data-entry.html" class="nav-item">Yeni Kayıt</a>
-                <a href="persons.html" class="nav-item">Kişiler Yönetimi</a>
-                <a href="excel-upload.html" class="nav-item">Excel Yükle</a>
+                <a href="excel-upload.html" class="nav-item">Excel'den Yükle</a> <a href="persons.html" class="nav-item">Kişiler Yönetimi</a>
                 <a href="#" class="nav-item">Raporlar</a>
                 <a href="#" class="nav-item">Ayarlar</a>
             </nav>
@@ -706,6 +705,9 @@
                 <div class="portfolio-actions">
                     <a href="data-entry.html" class="action-btn">
                         + Yeni Kayıt
+                    </a>
+                    <a href="excel-upload.html" class="action-btn">
+                        📁 Excel'den Yükle
                     </a>
                     <button class="action-btn secondary" id="exportBtn">
                         📊 Dışa Aktar
@@ -1302,11 +1304,11 @@
                             <div class="detail-label">Başvuru Tarihi</div>
                             <div class="detail-value">${formatDate(record.applicationDate)}</div>
                         </div>
-                        <div class="detail-item">
+                        <div class="detail-item full-width">
                             <div class="detail-label">Açıklama</div>
                             <div class="detail-value">${record.description || '-'}</div>
                         </div>
-                        <div class="detail-item">
+                        <div class="detail-item full-width">
                             <div class="detail-label">Hak Sahipleri</div>
                             <div class="detail-value">
                                 ${record.owners && record.owners.length > 0 ? record.owners.map(owner => `
@@ -1458,6 +1460,7 @@
                 modalContentHtml += `</div>`; // .detail-grid kapanış etiketi
 
                 document.getElementById('modalBody').innerHTML = modalContentHtml;
+                document.getElementById('modalTitle').textContent = `"${record.title}" Detayları`; // Modal başlığını kaydın başlığı ile değiştir
                 document.getElementById('detailModal').classList.add('show');
             }
 
