@@ -63,6 +63,64 @@
             color: white;
         }
 
+        /* Dropdown Menü Stilleri */
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: rgba(255, 255, 255, 0.98);
+            min-width: 180px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1;
+            border-radius: 8px;
+            padding: 10px 0;
+            top: 100%; /* Dropdown'ı butonun altına yerleştir */
+            left: 0;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            pointer-events: none; /* Başlangıçta etkileşimi kapat */
+        }
+
+        .dropdown-content a {
+            color: #333;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            font-weight: 400;
+            transition: background-color 0.2s ease;
+            white-space: nowrap; /* Menü öğeleri tek satırda kalsın */
+        }
+
+        .dropdown-content a:hover {
+            background-color: #f1f1f1;
+            color: #1e3c72;
+        }
+
+        .dropdown:hover .dropdown-content,
+        .dropdown.active .dropdown-content { /* JavaScript ile 'active' sınıfı eklenince de açılsın */
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto; /* Açıkken etkileşimi aç */
+        }
+
+        /* Dropdown başlığının stilini nav-item'a benzet */
+        .dropdown .nav-item {
+            cursor: pointer;
+            padding-right: 25px; /* Ok ikonu için boşluk */
+        }
+        .dropdown .nav-item::after {
+            content: ' ▼'; /* Küçük ok ikonu */
+            font-size: 0.8em;
+            vertical-align: middle;
+        }
+
+
         .user-section {
             display: flex;
             align-items: center;
@@ -418,9 +476,16 @@
             <nav class="nav-menu">
                 <a href="#" class="nav-item active">Dashboard</a>
                 <a href="portfolio.html" class="nav-item">Portföy</a>
-                <a href="data-entry.html" class="nav-item">Yeni Kayıt</a>
-                <a href="persons.html" class="nav-item">Kişiler Yönetimi</a>
-                <a href="user-management.html" class="nav-item">Kullanıcı Yönetimi</a> <a href="#" class="nav-item">Raporlar</a>
+                
+                <div class="dropdown" id="managementDropdown">
+                    <a href="#" class="nav-item dropdown-toggle" onclick="toggleDropdown(event)">Yönetim</a>
+                    <div class="dropdown-content">
+                        <a href="persons.html">Kişiler Yönetimi</a>
+                        <a href="user-management.html">Kullanıcı Yönetimi</a>
+                    </div>
+                </div>
+
+                <a href="#" class="nav-item">Raporlar</a>
                 <a href="#" class="nav-item">Ayarlar</a>
             </nav>
             <div class="user-section">
@@ -519,6 +584,26 @@
             auth, 
             createDemoData 
         } from './firebase-config.js';
+
+        // Dropdown Menü Fonksiyonu
+        function toggleDropdown(event) {
+            event.preventDefault(); // Varsayılan bağlantı davranışını engelle
+            const dropdown = document.getElementById("managementDropdown");
+            dropdown.classList.toggle("active"); // 'active' sınıfını ekleyip/kaldırarak görünürlüğü kontrol et
+            
+            // Dropdown dışına tıklanınca kapanması için
+            window.onclick = function(e) {
+                if (!e.target.matches('.dropdown-toggle') && !e.target.closest('.dropdown-content')) {
+                    if (dropdown.classList.contains('active')) {
+                        dropdown.classList.remove('active');
+                        window.onclick = null; // Olay dinleyiciyi kaldır
+                    }
+                }
+            }
+        }
+        // Fonksiyonu global scope'a atayalım ki HTML'den erişilebilsin
+        window.toggleDropdown = toggleDropdown;
+
 
         // Dashboard Controller Class
         class DashboardController {
