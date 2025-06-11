@@ -870,8 +870,8 @@
                     </div>
                 </div>
 
-                <a href="excel-upload.html" class="nav-item">Excel'den Yükle</a>
-                <a href="indexing.html" class="nav-item">Belge İndeksle</a> <a href="#" class="nav-item">Raporlar</a>
+                <a href="indexing.html" class="nav-item">Belge İndeksle</a>
+                <a href="#" class="nav-item">Raporlar</a>
                 <a href="#" class="nav-item">Ayarlar</a>
             </nav>
             <div class="user-section">
@@ -915,9 +915,7 @@
                     <a href="data-entry.html" class="action-btn">
                         + Yeni Kayıt
                     </a>
-                    <a href="excel-upload.html" class="action-btn">
-                        📁 Excel'den Yükle
-                    </a>
+                    
                     <button class="action-btn secondary" id="exportBtn">
                         📊 Dışa Aktar
                     </button>
@@ -1477,7 +1475,6 @@
                             ${statusNames[record.status] || record.status}
                         </span>
                     </td>
-                    <td>${formattedDate}</td>
                     <td>${ownersText} ${ownerInfoHtml}</td> <td>
                         <div class="action-buttons">
                             <button class="table-action-btn btn-view" onclick="portfolio.viewRecord('${record.id}')" title="Görüntüle">
@@ -1776,7 +1773,7 @@
                             if(tx.documentDesignation) description += ` - ${tx.documentDesignation}`;
                             description += `) belgesi eklendi.`;
                         } else if (tx.type === "Document Updated") {
-                            description = `'${tx.documentName}' belgesi güncellendi: ${tx.description.substring(tx.description.indexOf(':') + 1).trim()}`;
+                            description = `'${tx.documentName}' belgesi güncellendi (${tx.description.substring(tx.description.indexOf(':') + 1).trim()})`;
                         } else if (tx.type === "Document Deleted") {
                              description = `'${tx.documentName}' (${tx.documentType || 'Belirtilmedi'}`;
                             if(tx.documentDesignation) description += ` - ${tx.documentDesignation}`;
