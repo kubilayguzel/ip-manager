@@ -696,7 +696,7 @@
                             <label class="form-label" for="status">
                                 Durum <span class="required">*</span>
                             </label>
-                            <select id="status" class="form-select" required>
+                            <select type="text" id="status" class="form-select" required>
                                 <option value="">Seçiniz</option>
                                 <option value="application">Başvuru</option>
                                 <option value="pending">Beklemede</option>
@@ -1464,7 +1464,7 @@
                 fileItem.innerHTML = `
                     <div style="display: flex; align-items: center; gap: 10px;">
                         <span>📄</span>
-                        <span>${file.name} (${this.formatFileSize(file.size)})</span>
+                        <span><span class="math-inline">\{file\.name\} \(</span>{this.formatFileSize(file.size)})</span>
                     </div>
                     <button class="remove-file" type="button">×</button>
                 `;
@@ -1777,32 +1777,4 @@
                 return this.collectFormData(); 
             }
 
-            getPersons() {
-                return this.persons;
-            }
-        }
-
-        let dataEntry; 
-        auth.onAuthStateChanged(async (user) => {
-            if (user) {
-                if (!dataEntry) { 
-                    dataEntry = new DataEntryModule();
-                }
-            } else {
-                console.log('❌ User not authenticated, redirecting to login page.');
-                window.location.href = 'index.html'; 
-            }
-        });
-
-        window.testDataEntry = {
-            setTestData: (type) => dataEntry?.setTestData(type),
-            getFormData: () => dataEntry?.collectFormData(), 
-            resetForm: () => dataEntry?.resetForm(),
-            getPersons: () => dataEntry?.getPersons()
-        };
-
-        console.log('📝 Veri Giriş Modülü V11 hazır (Firebase Firestore entegrasyonu ile)!');
-        console.log('Test için: testDataEntry.setTestData("trademark")');
-    </script>
-</body>
-</html>
+            get
