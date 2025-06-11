@@ -1449,7 +1449,7 @@
                 }
                 
                 // Başvuru Numarası için yeni URL'li link oluşturma
-                const baseUrl = "https://online.turkpatent.gov.tr/trademark/search/applicationNumber?"; 
+                const baseUrl = "https://www.turkpatent.gov.tr/arastirma-yap?form=trademark"; 
                 const applicationNumberLink = record.applicationNumber 
                     ? `<a href="${baseUrl}q=${encodeURIComponent(record.applicationNumber)}" target="_blank" title="TürkPatent web sitesinde ara">${record.applicationNumber}</a>`
                     : '-';
