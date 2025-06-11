@@ -767,6 +767,88 @@
         .trademark-image-thumb-container:hover .trademark-image-preview-large {
             transform: translate(-50%, -50%) scale(1); /* Hover'da büyüt */
         }
+
+        /* YENİ CSS STİLLERİ BAŞLANGICI: Transaction History */
+        .transaction-history {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #e1e8ed;
+            border-radius: 10px;
+            background-color: #f8f9fa;
+            max-height: 300px; /* Belirli bir yükseklik sınırı */
+            overflow-y: auto; /* Dikey kaydırma çubuğu */
+        }
+
+        .transaction-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+            position: relative; /* Expand/collapse butonu için */
+        }
+
+        .transaction-item-content {
+            flex-grow: 1;
+            background-color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid #eee;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            line-height: 1.4;
+            display: flex; /* İçeriği yatayda düzenlemek için */
+            flex-direction: column; /* İçeriği dikeyde düzenlemek için */
+        }
+
+        .transaction-type {
+            font-weight: bold;
+            color: #1e3c72;
+            margin-right: 8px;
+        }
+
+        .transaction-description {
+            color: #333;
+        }
+
+        .transaction-meta {
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 4px;
+        }
+
+        .transaction-indent {
+            padding-left: 20px; /* Her seviye için girinti */
+            border-left: 1px dashed #d0d0d0; /* Hiyerarşiyi göstermek için dikey çizgi */
+            margin-left: 10px;
+            padding-top: 5px;
+        }
+
+        .transaction-toggle-btn {
+            background: #e9ecef;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 0.8em;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 5px;
+            flex-shrink: 0;
+            transition: background 0.2s ease;
+            position: absolute; /* Toggle butonu için mutlak konumlandırma */
+            left: -10px; /* Kenara yakın */
+            top: 10px; /* Üstten hizala */
+            z-index: 2; /* İçeriğin üstünde dursun */
+        }
+        .transaction-toggle-btn:hover {
+            background: #d0d0d0;
+        }
+        .transaction-toggle-btn.hidden-toggle {
+            visibility: hidden; /* Çocuk yoksa gizle ama yer kaplasın */
+        }
+        /* YENİ CSS STİLLERİ SONU */
     </style>
 </head>
 <body>
@@ -928,11 +1010,15 @@
             </div>
             <div id="modalBody">
                 </div>
-        </div>
+            <h4 class="detail-section-title" style="margin-top: 30px;">İşlem Geçmişi</h4>
+            <div class="transaction-history" id="transactionHistory">
+                <p style="text-align: center; color: #666;">Yükleniyor...</p>
+            </div>
+            </div>
     </div>
 
     <script type="module">
-        import { authService, ipRecordsService, auth } from './firebase-config.js';
+        import { authService, ipRecordsService, auth } from './firebase-config.js'; // generateUUID'yi burada import etmeye gerek yok
 
         let portfolio; // Global olarak tanımlandı
 
@@ -1363,7 +1449,7 @@
                 }
                 
                 // Başvuru Numarası için yeni URL'li link oluşturma
-                const baseUrl = "https://www.turkpatent.gov.tr/arastirma-yap?form=trademark"; // Buraya istediğiniz URL'i girin
+                const baseUrl = "https://online.turkpatent.gov.tr/trademark/search/applicationNumber?"; 
                 const applicationNumberLink = record.applicationNumber 
                     ? `<a href="${baseUrl}q=${encodeURIComponent(record.applicationNumber)}" target="_blank" title="TürkPatent web sitesinde ara">${record.applicationNumber}</a>`
                     : '-';
@@ -1407,6 +1493,7 @@
                 return row;
             }
 
+            // viewRecord metodunu güncelliyoruz: Transaction geçmişini göstermek için
             viewRecord(recordId) {
                 console.log('Viewing record with ID:', recordId);
                 const record = this.records.find(r => r.id === recordId);
@@ -1441,6 +1528,8 @@
 
                 // Tarihleri düzgün formatla
                 const formatDate = (dateString) => dateString ? new Date(dateString).toLocaleDateString('tr-TR') : '-';
+                const formatDateTime = (dateString) => dateString ? new Date(dateString).toLocaleString('tr-TR') : '-';
+
 
                 let modalContentHtml = `
                     <div class="detail-grid">
@@ -1484,11 +1573,11 @@
                         </div>
                         <div class="detail-item">
                             <div class="detail-label">Oluşturma Tarihi</div>
-                            <div class="detail-value">${formatDate(record.createdAt)}</div>
+                            <div class="detail-value">${formatDateTime(record.createdAt)}</div>
                         </div>
                         <div class="detail-item">
                             <div class="detail-label">Son Güncelleme Tarihi</div>
-                            <div class="detail-value">${formatDate(record.updatedAt)}</div>
+                            <div class="detail-value">${formatDateTime(record.updatedAt)}</div>
                         </div>
                         ${authService.isSuperAdmin() && record.userEmail ? `
                         <div class="detail-item">
@@ -1605,15 +1694,19 @@
                     `;
                 }
 
-                // Belgeler ve Dosyalar
+                // Belgeler ve Dosyalar (güncellenmiş hali)
                 if (record.files && record.files.length > 0) {
                     modalContentHtml += `
-                        <h4 class="detail-section-title">Belgeler ve Dosyalar</h4>
+                        <h4 class="detail-section-title">Yüklü Belgeler</h4>
                         <div class="detail-item full-width">
-                            <div class="detail-label">Yüklü Belgeler</div>
                             <div class="detail-value">
                                 ${record.files.map(file => `
-                                    <a href="${file.content}" download="${file.name}" class="file-link">📄 ${file.name} (${this.formatFileSize(file.size)})</a>
+                                    <div style="margin-bottom: 5px;">
+                                        📄 <a href="${file.content}" download="${file.name}" class="file-link">${file.name}</a> 
+                                        <span style="font-size: 0.8em; color: #888;">(${this.formatFileSize(file.size)})</span>
+                                        <span style="font-size: 0.8em; color: #555;"> - Tipi: ${file.documentType || 'Belirtilmedi'}</span>
+                                        <span style="font-size: 0.7em; color: #999;"> (${formatDate(file.uploadedAt)})</span>
+                                    </div>
                                 `).join('')}
                             </div>
                         </div>
@@ -1626,7 +1719,111 @@
                 document.getElementById('modalBody').innerHTML = modalContentHtml;
                 document.getElementById('modalTitle').textContent = `"${record.title}" Detayları`; // Modal başlığını kaydın başlığı ile değiştir
                 document.getElementById('detailModal').classList.add('show');
+
+                // İşlem Geçmişini Render Et
+                this.renderTransactionHistory(record.transactions);
             }
+
+            // YENİ METOT: renderTransactionHistory
+            renderTransactionHistory(transactions) {
+                const historyContainer = document.getElementById('transactionHistory');
+                if (!historyContainer) return;
+
+                historyContainer.innerHTML = ''; // Önceki içeriği temizle
+
+                if (!transactions || transactions.length === 0) {
+                    historyContainer.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Bu kayda ait işlem geçmişi bulunmamaktadır.</p>';
+                    return;
+                }
+
+                // İşlemleri timestamp'e göre sırala (en yeni en üstte)
+                // Ancak ağaç yapısını kurarken parent-child ilişkisini korumak daha önemli,
+                // bu yüzden önce veriyi Map'e dönüştürüp sonra root'tan başlayarak render edeceğiz.
+                const transactionsMap = new Map(transactions.map(tx => [tx.transactionId, tx]));
+                const childrenMap = new Map();
+
+                transactions.forEach(tx => {
+                    if (tx.parentId) {
+                        if (!childrenMap.has(tx.parentId)) {
+                            childrenMap.set(tx.parentId, []);
+                        }
+                        childrenMap.get(tx.parentId).push(tx);
+                    }
+                });
+
+                // Kök işlemleri bul (parentId null olanlar) ve kronolojik olarak sırala (en yeni en üstte)
+                const rootTransactions = transactions.filter(tx => !tx.parentId)
+                                                  .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+                const buildTreeHtml = (transactionsToRender, currentParentId, level) => {
+                    let html = '';
+                    // Mevcut seviyedeki işlemleri bul ve kronolojik olarak sırala (en yeni en üstte)
+                    const transactionsAtCurrentLevel = transactionsToRender.filter(tx => tx.parentId === currentParentId)
+                                                                           .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+                    transactionsAtCurrentLevel.forEach(tx => {
+                        const hasChildren = childrenMap.has(tx.transactionId);
+                        
+                        let description = tx.description;
+                        // Özel işlem tipleri için açıklama formatlaması
+                        if (tx.type === "Document Indexed") {
+                            description = `'${tx.documentName}' (${tx.documentType || 'Belirtilmedi'}) belgesi eklendi.`;
+                        } else if (tx.type === "Document Updated") {
+                            description = `'${tx.documentName}' belgesi güncellendi: ${tx.description.substring(tx.description.indexOf(':') + 1).trim()}`;
+                        } else if (tx.type === "Document Deleted") {
+                            description = `'${tx.documentName}' (${tx.documentType || 'Belirtilmedi'}) belgesi silindi.`;
+                        } else if (tx.type === "Record Updated" && tx.description.startsWith("Kayıt verileri güncellendi:")) {
+                            description = `Kayıt bilgileri güncellendi: ${tx.description.substring(tx.description.indexOf(':') + 1).trim()}`;
+                        }
+                        // Diğer işlem tipleri için de benzer formatlamalar eklenebilir
+
+                        html += `
+                            <div class="transaction-item">
+                                ${hasChildren ? 
+                                    `<button class="transaction-toggle-btn" data-tx-id="${tx.transactionId}" data-expanded="false">+</button>` 
+                                    : `<button class="transaction-toggle-btn hidden-toggle"></button>` // Çocuk yoksa boş buton
+                                }
+                                <div class="transaction-item-content">
+                                    <div class="transaction-type">${tx.type.replace(/([A-Z])/g, ' $1').trim()}</div>
+                                    <div class="transaction-description">${description}</div>
+                                    <div class="transaction-meta">
+                                        ${new Date(tx.timestamp).toLocaleString('tr-TR')} - ${tx.userEmail}
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+
+                        if (hasChildren) {
+                            html += `<div id="children-${tx.transactionId}" class="transaction-indent" style="display:none;">`; // Başlangıçta gizli
+                            html += buildTreeHtml(transactionsToRender, tx.transactionId, level + 1);
+                            html += `</div>`;
+                        }
+                    });
+                    return html;
+                };
+
+                historyContainer.innerHTML = buildTreeHtml(transactions, null, 0); // Kökten başla
+
+                // Toggle butonları için olay dinleyicileri ekle
+                historyContainer.querySelectorAll('.transaction-toggle-btn:not(.hidden-toggle)').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const txId = e.target.dataset.txId;
+                        const childrenDiv = document.getElementById(`children-${txId}`);
+                        if (childrenDiv) {
+                            if (childrenDiv.style.display === 'none') {
+                                childrenDiv.style.display = 'block';
+                                e.target.textContent = '−'; // Eksi işareti
+                                e.target.dataset.expanded = 'true';
+                            } else {
+                                childrenDiv.style.display = 'none';
+                                e.target.textContent = '+';
+                                e.target.dataset.expanded = 'false';
+                            }
+                        }
+                    });
+                });
+            }
+
 
             // Dosya boyutunu formatlama yardımcı fonksiyonu (data-entry.html'den kopyalandı)
             formatFileSize(bytes) {
@@ -1790,7 +1987,17 @@
                     owners: [{ name: 'Test User', type: 'individual' }],
                     applicationNumber: 'TEST-' + Date.now(),
                     createdAt: new Date().toISOString(),
-                    trademarkImage: null
+                    trademarkImage: null,
+                    files: [{ // Dummy test dosyası
+                        id: generateUUID(), // generateUUID'yi burada tanımlı varsayıyoruz veya import etmeliyiz
+                        name: 'test_doc_1.pdf',
+                        type: 'application/pdf',
+                        size: 1024,
+                        content: 'data:application/pdf;base64,... (dummy content)',
+                        documentType: 'Başvuru Formu',
+                        uploadedAt: new Date().toISOString()
+                    }],
+                    transactions: [] // addRecord fonksiyonu ilk transaction'ı ekleyecek
                 };
                 const result = await ipRecordsService.addRecord(testRecord);
                 if (result.success) {
