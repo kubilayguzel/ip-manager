@@ -415,6 +415,14 @@
         .btn-delete:hover {
             background: #c82333;
         }
+        /* Yeni eklenen buton stili */
+        .btn-create-user {
+            background: #007bff;
+            color: white;
+        }
+        .btn-create-user:hover {
+            background: #0056b3;
+        }
 
         .no-persons {
             text-align: center;
@@ -588,7 +596,16 @@
             padding: 8px 16px;
             font-size: 0.9em;
         }
-
+        /* Yeni eklenen stiller */
+        .detail-section-title {
+            grid-column: 1 / -1; /* Tüm sütunları kapsa */
+            font-size: 1.1em;
+            color: #1e3c72;
+            margin-top: 20px;
+            margin-bottom: 15px;
+            padding-bottom: 5px;
+            border-bottom: 1px dashed #e1e8ed;
+        }
     </style>
 </head>
 <body>
@@ -688,7 +705,7 @@
                             <th class="sortable" data-sort="email">E-posta</th>
                             <th class="sortable" data-sort="phone">Telefon</th>
                             <th class="sortable" data-sort="type">Tür</th>
-                            <th id="ownerColumn" style="display: none;" class="sortable" data-sort="_ownerInfo">Kayıt Sahibi</th> <th>İşlemler</th>
+                            <th id="ownerColumn" style="display: none;" class="sortable" data-sort="userEmail">Kayıt Sahibi (Kullanıcı E-posta)</th> <th>İşlemler</th>
                         </tr>
                     </thead>
                     <tbody id="personsTableBody">
@@ -746,9 +763,28 @@
                         <label class="form-label" for="personAddress">Adres</label>
                         <textarea id="personAddress" class="filter-input" rows="3"></textarea>
                     </div>
-                    <div class="form-group" id="modalOwnerInfoGroup" style="display: none;"> <label class="form-label">Kayıt Sahibi (Kullanıcı)</label>
+                    
+                    <h4 class="detail-section-title">Oluşturma Bilgileri</h4>
+                    <div class="form-group">
+                        <label class="form-label">Oluşturulma Tarihi</label>
+                        <input type="text" id="personCreatedAt" class="filter-input" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Son Güncelleme Tarihi</label>
+                        <input type="text" id="personUpdatedAt" class="filter-input" readonly>
+                    </div>
+                    <div class="form-group" id="modalOwnerInfoGroup" style="display: none;">
+                        <label class="form-label">Kayıt Sahibi (Kullanıcı)</label>
                         <input type="text" id="modalOwnerInfo" class="filter-input" readonly>
                     </div>
+                    
+                    <div class="form-group" id="createUserAccountGroup" style="display: none; grid-column: 1 / -1;">
+                        <button type="button" class="btn btn-create-user" id="createUserAccountBtn">
+                            👤 Kullanıcı Hesabı Oluştur
+                        </button>
+                        <small style="display: block; margin-top: 5px; color: #666;">Bu kişi için uygulamada oturum açabileceği bir hesap oluşturur.</small>
+                    </div>
+
                 </div>
                 <div class="person-form-actions">
                     <button type="button" class="btn btn-secondary" id="cancelPersonFormBtn">İptal</button>
@@ -858,7 +894,8 @@
                     const userNameEl = document.getElementById('userNamePersons');
                     if (userNameEl) userNameEl.textContent = userName;
                     const userRoleEl = document.getElementById('userRolePersons');
-                    if (userRoleEl) userRoleEl.textContent = this.currentUser.role === 'admin' ? 'Yönetici' : 'Kullanıcı';
+                    if (userRoleEl) userRoleEl.textContent = this.currentUser.role === 'admin' ? 'Yönetici' : 
+                                                              this.currentUser.role === 'superadmin' ? 'Süper Yönetici' : 'Kullanıcı';
                 } else {
                     document.getElementById('userAvatar').textContent = 'D';
                     const userNameEl = document.getElementById('userNamePersons');
@@ -927,7 +964,7 @@
 
                 this.filteredPersons = this.allPersons.filter(person => {
                     // Super Admin ise _ownerInfo'yu da aramaya dahil et
-                    const ownerInfoSearch = authService.isSuperAdmin() && person._ownerInfo ? person._ownerInfo.toLowerCase() : '';
+                    const ownerInfoSearch = authService.isSuperAdmin() && person.userEmail ? person.userEmail.toLowerCase() : ''; // userEmail kullanıldı
 
                     if (search && !(
                         String(person.name).toLowerCase().includes(search) ||
@@ -966,10 +1003,10 @@
                     let aVal = a[this.sortColumn] || '';
                     let bVal = b[this.sortColumn] || '';
 
-                    // Eğer sortColumn '_ownerInfo' ise özel işlem yap
-                    if (this.sortColumn === '_ownerInfo' && authService.isSuperAdmin()) {
-                         aVal = a._ownerInfo ? a._ownerInfo.toLowerCase() : '';
-                         bVal = b._ownerInfo ? b._ownerInfo.toLowerCase() : '';
+                    // Eğer sortColumn 'userEmail' ise özel işlem yap
+                    if (this.sortColumn === 'userEmail' && authService.isSuperAdmin()) {
+                         aVal = a.userEmail ? a.userEmail.toLowerCase() : '';
+                         bVal = b.userEmail ? b.userEmail.toLowerCase() : '';
                     } else if (typeof aVal === 'string') {
                         aVal = aVal.toLowerCase();
                         bVal = bVal.toLowerCase();
@@ -1047,10 +1084,10 @@
                     institution: '🏛️'
                 };
 
-                // Süper Admin ise _ownerInfo'yu göster
+                // Süper Admin ise userEmail'i göster
                 let ownerInfoCellHtml = '';
                 if (authService.isSuperAdmin()) {
-                    ownerInfoCellHtml = `<td>${person.userEmail || '-'}</td>`; // _ownerInfo yerine userEmail kullanıldı
+                    ownerInfoCellHtml = `<td>${person.userEmail || '-'}</td>`;
                 }
 
                 row.innerHTML = `
@@ -1099,6 +1136,8 @@
                 const form = document.getElementById('personForm');
                 const modalOwnerInfoGroup = document.getElementById('modalOwnerInfoGroup');
                 const modalOwnerInfoInput = document.getElementById('modalOwnerInfo');
+                const createUserAccountGroup = document.getElementById('createUserAccountGroup');
+                const createUserAccountBtn = document.getElementById('createUserAccountBtn');
 
                 this.currentPersonId = personId; 
 
@@ -1116,6 +1155,7 @@
                     savePersonBtn.textContent = 'Kaydet';
                     savePersonBtn.style.display = 'inline-block'; // Kaydet butonunu göster
                     modalOwnerInfoGroup.style.display = 'none'; // Kayıt sahibi bilgisini gizle
+                    createUserAccountGroup.style.display = 'none'; // Kullanıcı oluşturma butonunu gizle
                 } else if (mode === 'edit' || mode === 'view') {
                     const person = this.allPersons.find(p => p.id === personId);
                     if (!person) {
@@ -1133,13 +1173,37 @@
                     document.getElementById('personPhone').value = person.phone || '';
                     document.getElementById('personType').value = person.type || '';
                     document.getElementById('personAddress').value = person.address || '';
+                    document.getElementById('personCreatedAt').value = person.createdAt ? new Date(person.createdAt).toLocaleString('tr-TR') : '-';
+                    document.getElementById('personUpdatedAt').value = person.updatedAt ? new Date(person.updatedAt).toLocaleString('tr-TR') : '-';
 
-                    // Süper Admin ise kayıt sahibini göster
-                    if (authService.isSuperAdmin() && person.userEmail) { // userEmail kullanıldı
-                        modalOwnerInfoInput.value = person.userEmail;
+
+                    // Süper Admin ise kayıt sahibini ve kullanıcı oluşturma butonunu göster
+                    if (authService.isSuperAdmin()) {
+                        modalOwnerInfoInput.value = person.userEmail || '-';
                         modalOwnerInfoGroup.style.display = 'block';
+
+                        // Eğer kişinin bir e-postası varsa ve bu e-postaya sahip bir kullanıcı ID'si yoksa
+                        // (yani Firebase'de bu e-posta ile bir kullanıcı kaydı yoksa)
+                        // veya bu kişinin kendi kaydı değilse (admin olarak başkası için oluşturuyorsa)
+                        // veya kişinin userId'si currentUser'ın userId'sinden farklıysa ve o userId'ye sahip bir kullanıcı Firebase'de yoksa (daha karmaşık kontrol)
+                        // Basitçe, e-posta varsa ve bu kişi henüz bir kullanıcı hesabıyla ilişkilendirilmemişse gösterelim.
+                        // Firebase Auth'ta bu e-posta ile bir kullanıcının varlığını kontrol etmek daha doğru olur ancak bu,
+                        // Auth modülünde ek bir fonk gerektirir. Şimdilik sadece e-posta varsa ve user ID farklıysa gösterelim.
+                        if (person.email && person.userId !== this.currentUser.uid && authService.isFirebaseAvailable) {
+                            createUserAccountGroup.style.display = 'block';
+                            // Butona tıklama olayı
+                            createUserAccountBtn.onclick = async () => {
+                                if (confirm(`"${person.name}" için bir kullanıcı hesabı oluşturmak istediğinizden emin misiniz?`)) {
+                                    await this.createUserAccountForPerson(person.id, person.name, person.email);
+                                }
+                            };
+                        } else {
+                            createUserAccountGroup.style.display = 'none';
+                        }
+
                     } else {
                         modalOwnerInfoGroup.style.display = 'none';
+                        createUserAccountGroup.style.display = 'none';
                     }
 
                     // Görüntüleme modunda veya admin olmayan kullanıcı için yetki kontrolü
@@ -1168,21 +1232,79 @@
                 this.clearModalErrors('personForm'); // Modal kapatılırken hataları temizle
             }
 
+            async createUserAccountForPerson(personId, personName, personEmail) {
+                if (!personEmail) {
+                    alert('Kullanıcı hesabı oluşturmak için kişinin bir e-posta adresi olmalıdır.');
+                    return;
+                }
+                if (!authService.isFirebaseAvailable) {
+                    alert('Firebase bağlantısı yok. Yerel modda kullanıcı hesabı oluşturulamaz.');
+                    return;
+                }
+
+                const createUserAccountBtn = document.getElementById('createUserAccountBtn');
+                createUserAccountBtn.disabled = true;
+                const originalText = createUserAccountBtn.textContent;
+                createUserAccountBtn.textContent = 'Oluşturuluyor...';
+
+                try {
+                    // Rastgele bir şifre oluştur (kullanıcı bunu ilk girişte değiştirmeli)
+                    const tempPassword = Math.random().toString(36).slice(-8); // 8 karakterli rastgele şifre
+                    
+                    const result = await authService.signUp(personEmail, tempPassword, personName, 'user'); // Varsayılan rol 'user'
+
+                    if (result.success) {
+                        alert(`"${personName}" için kullanıcı hesabı başarıyla oluşturuldu!\nGeçici şifre: ${tempPassword}\nKullanıcı bu şifreyi kullanarak giriş yapmalı ve şifresini sıfırlamalıdır.`);
+                        // Oluşturulan kullanıcının UID'sini ilgili kişi kaydına bağlayabiliriz (isteğe bağlı)
+                        // Örneğin: await personsService.updatePerson(personId, { userId: result.user.uid });
+                        this.loadPersons(); // Listeyi yenile
+                        this.closePersonModal();
+                    } else {
+                        throw new Error(result.error || 'Kullanıcı hesabı oluşturulurken bilinmeyen bir hata oluştu.');
+                    }
+                } catch (error) {
+                    console.error('Create user account error:', error);
+                    alert('Kullanıcı hesabı oluşturulurken bir hata oluştu: ' + error.message);
+                } finally {
+                    createUserAccountBtn.disabled = false;
+                    createUserAccountBtn.textContent = originalText;
+                }
+            }
+
             async savePerson() { 
                 const personName = document.getElementById('personName').value.trim();
+                const personEmail = document.getElementById('personEmail').value.trim();
+                const personPhone = document.getElementById('personPhone').value.trim();
                 const personType = document.getElementById('personType').value;
+                const personAddress = document.getElementById('personAddress').value.trim();
 
-                if (!personName || !personType) {
-                    alert('Ad Soyad ve Kişi Türü alanları zorunludur.');
+                let isValid = true;
+                this.clearModalErrors('personForm');
+
+                if (!personName) {
+                    this.showFieldError('personName', 'Ad Soyad alanı zorunludur.');
+                    isValid = false;
+                }
+                if (personEmail && !this.isValidEmail(personEmail)) {
+                    this.showFieldError('personEmail', 'Geçerli bir e-posta adresi girin.');
+                    isValid = false;
+                }
+                if (!personType) {
+                    this.showFieldError('personType', 'Kişi Türü alanı zorunludur.');
+                    isValid = false;
+                }
+
+                if (!isValid) {
+                    // Hatalı alanlar varsa uyarıyı göstermeye gerek yok, fieldError zaten görünüyor
                     return;
                 }
 
                 const personData = { 
                     name: personName, 
-                    email: document.getElementById('personEmail').value.trim(), 
-                    phone: document.getElementById('personPhone').value.trim(), 
+                    email: personEmail, 
+                    phone: personPhone, 
                     type: personType, 
-                    address: document.getElementById('personAddress').value.trim() 
+                    address: personAddress 
                 };
 
                 const saveBtn = document.getElementById('savePersonBtn');
@@ -1273,13 +1395,17 @@
             }
             
             clearModalErrors(formId) {
-                // Herhangi bir hata mesajı alanı varsa burada temizleyebilirsiniz.
                 document.querySelectorAll(`#${formId} .filter-input`).forEach(input => {
                     input.classList.remove('error-field');
                 });
                 document.querySelectorAll(`#${formId} .error-message`).forEach(errorDiv => {
                     errorDiv.style.display = 'none';
                 });
+            }
+
+            isValidEmail(email) {
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                return emailRegex.test(email);
             }
         }
 
