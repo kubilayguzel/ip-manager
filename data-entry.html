@@ -675,18 +675,22 @@
 
     <main class="main-container">
         <div class="form-header">
-            <h1 class="form-title">Yeni Fikri Mülkiyet Kaydı</h1>
+            <h1 class="form-title" id="mainFormTitle">Yeni Fikri Mülkiyet Kaydı</h1>
             <p class="form-subtitle">Tek sayfada tüm bilgileri girin ve kaydedin</p>
         </div>
 
         <div class="form-container">
-            <div class="notification-message success" id="formSuccessMessage">
+            <div class="notification-message success" id="formSuccessMessage" style="display: none;">
                 <span>✅</span>
                 <span id="formSuccessText">Kayıt başarıyla oluşturuldu!</span>
             </div>
-            <div class="notification-message error" id="formErrorMessage">
+            <div class="notification-message error" id="formErrorMessage" style="display: none;">
                 <span>❌</span>
                 <span id="formErrorText">Bir hata oluştu. Lütfen tekrar deneyin.</span>
+            </div>
+            <div class="notification-message info" id="formInfoMessage" style="display: none;">
+                <span>ℹ️</span>
+                <span id="formInfoText"></span>
             </div>
 
             <form id="ipForm" onsubmit="return false;">
@@ -1042,6 +1046,7 @@
                 this.uploadedTrademarkImage = null; 
                 this.selectedPersonForSearch = null; 
                 this.currentUser = null; 
+                this.recordIdToEdit = null; // Düzenlenecek kaydın ID'si
                 this.init();
             }
 
@@ -1059,10 +1064,20 @@
                         this.toggleTrademarkImageUpload(false); 
                         this.updateStatusOptions(); // İlk yüklemede durum seçeneklerini ayarla
                         
+                        // URL'den kayıt ID'sini kontrol et (Düzenleme modu)
                         const urlParams = new URLSearchParams(window.location.search);
-                        const typeFromUrl = urlParams.get('type');
-                        if (typeFromUrl) {
-                            this.selectType(typeFromUrl);
+                        this.recordIdToEdit = urlParams.get('recordId');
+
+                        if (this.recordIdToEdit) {
+                            console.log('Editing record with ID:', this.recordIdToEdit);
+                            document.getElementById('mainFormTitle').textContent = 'Fikri Mülkiyet Kaydını Düzenle';
+                            await this.loadRecordForEdit(this.recordIdToEdit);
+                        } else {
+                            console.log('Creating new record.');
+                            const typeFromUrl = urlParams.get('type');
+                            if (typeFromUrl) {
+                                this.selectType(typeFromUrl);
+                            }
                         }
 
                     } else {
@@ -1079,10 +1094,20 @@
                             this.toggleTrademarkImageUpload(false); 
                             this.updateStatusOptions(); // İlk yüklemede durum seçeneklerini ayarla
 
+                            // URL'den kayıt ID'sini kontrol et (Düzenleme modu)
                             const urlParams = new URLSearchParams(window.location.search);
-                            const typeFromUrl = urlParams.get('type');
-                            if (typeFromUrl) {
-                                this.selectType(typeFromUrl);
+                            this.recordIdToEdit = urlParams.get('recordId');
+
+                            if (this.recordIdToEdit) {
+                                console.log('Editing record with ID:', this.recordIdToEdit);
+                                document.getElementById('mainFormTitle').textContent = 'Fikri Mülkiyet Kaydını Düzenle';
+                                await this.loadRecordForEdit(this.recordIdToEdit);
+                            } else {
+                                console.log('Creating new record.');
+                                const typeFromUrl = urlParams.get('type');
+                                if (typeFromUrl) {
+                                    this.selectType(typeFromUrl);
+                                }
                             }
                         } else {
                             console.log('❌ No authenticated user found, redirecting to login.'); 
@@ -1093,6 +1118,99 @@
 
                 console.log('📝 Veri Giriş Modülü başlatılıyor...');
             }
+
+            async loadRecordForEdit(recordId) {
+                this.showNotification('Kayıt yükleniyor...', 'info');
+                try {
+                    // Tüm kayıtları alıp filtrelemek yerine, belirli bir kaydı alacak bir servis metodu daha verimli olabilir.
+                    // Şimdilik mevcut getRecords üzerinden filtreleme yapalım.
+                    const allRecordsResult = await ipRecordsService.getRecords();
+                    if (!allRecordsResult.success) {
+                        throw new Error(allRecordsResult.error || 'Kayıtlar yüklenemedi.');
+                    }
+                    const recordToEdit = allRecordsResult.data.find(r => r.id === recordId);
+
+                    if (!recordToEdit) {
+                        this.showNotification('Düzenlenecek kayıt bulunamadı!', 'error');
+                        return;
+                    }
+
+                    // Kayıt sahibinin kendi kaydı olup olmadığını kontrol et (admin değilse)
+                    if (!authService.isSuperAdmin() && recordToEdit.userId !== this.currentUser.uid) {
+                        this.showNotification('Bu kaydı düzenleme yetkiniz yoktur.', 'error');
+                        setTimeout(() => { window.location.href = 'portfolio.html'; }, 2000);
+                        return;
+                    }
+
+                    this.fillFormWithRecordData(recordToEdit);
+                    this.showNotification('Kayıt başarıyla yüklendi.', 'success');
+
+                } catch (error) {
+                    console.error('Error loading record for edit:', error);
+                    this.showNotification('Kayıt yüklenirken bir hata oluştu: ' + error.message, 'error');
+                }
+            }
+
+            fillFormWithRecordData(record) {
+                // Fikri Mülkiyet Türü
+                this.selectType(record.type);
+                document.querySelectorAll('.type-card').forEach(card => card.classList.add('selected')); // Tüm kartları seçili göster (sadece görüntüleme için)
+                document.querySelectorAll('.type-card').forEach(card => card.style.pointerEvents = 'none'); // Türü değiştirme
+
+                // Hak Sahipleri
+                this.selectedOwners = record.owners ? record.owners.map(o => o.id || o.name) : []; // ID veya isim ile eşleştir
+                this.renderOwnerList();
+
+                // Genel Bilgiler
+                document.getElementById('title').value = record.title || '';
+                document.getElementById('status').value = record.status || '';
+                document.getElementById('applicationNumber').value = record.applicationNumber || '';
+                document.getElementById('applicationDate').value = record.applicationDate || '';
+                document.getElementById('description').value = record.description || '';
+                
+                if (record.registrationDate) {
+                    document.getElementById('registrationDate').value = record.registrationDate;
+                }
+
+                // Dinamik Alanlar
+                if (record.type === 'patent') {
+                    document.getElementById('patentClass').value = record.patentClass || '';
+                    document.getElementById('expiryDate').value = record.expiryDate || '';
+                    document.getElementById('priority').value = record.priority || '';
+                    document.getElementById('claims').value = record.claims || '';
+                } else if (record.type === 'trademark') {
+                    document.getElementById('trademarkType').value = record.trademarkType || '';
+                    document.getElementById('niceClass').value = record.niceClass || '';
+                    document.getElementById('registrationNumber').value = record.registrationNumber || '';
+                    document.getElementById('renewalDate').value = record.renewalDate || '';
+                    document.getElementById('goodsServices').value = record.goodsServices || '';
+                    document.getElementById('bulletinDate').value = record.bulletinDate || '';
+                    document.getElementById('bulletinNumber').value = record.bulletinNumber || '';
+                    if (record.trademarkImage && record.trademarkImage.content) {
+                        this.uploadedTrademarkImage = record.trademarkImage;
+                        this.renderTrademarkImagePreview();
+                    }
+                } else if (record.type === 'copyright') {
+                    document.getElementById('workType').value = record.workType || '';
+                    document.getElementById('creationDate').value = record.creationDate || '';
+                    document.getElementById('publicationDate').value = record.publicationDate || '';
+                    document.getElementById('publisher').value = record.publisher || '';
+                } else if (record.type === 'design') {
+                    document.getElementById('designType').value = record.designType || '';
+                    document.getElementById('locarnoClass').value = record.locarnoClass || '';
+                    document.getElementById('designDate').value = record.designDate || '';
+                    document.getElementById('designFeatures').value = record.designFeatures || '';
+                }
+
+                // Yüklenmiş Dosyalar
+                this.uploadedFiles = record.files || [];
+                this.updateFileList();
+
+                // Form başlığını güncelle
+                document.getElementById('mainFormTitle').textContent = `"${record.title}" Kaydını Düzenle`;
+                document.getElementById('submitText').textContent = 'Güncelle';
+            }
+
 
             async loadPersonsFromService() {
                 try {
@@ -1115,7 +1233,12 @@
             initializeEventListeners() {
                 document.querySelectorAll('.type-card').forEach(card => {
                     card.addEventListener('click', () => {
-                        this.selectType(card.dataset.type);
+                        // Eğer düzenleme modundaysak türü değiştirmeyi engelle
+                        if (!this.recordIdToEdit) {
+                            this.selectType(card.dataset.type);
+                        } else {
+                            this.showNotification('Kayıt düzenleme modunda fikri mülkiyet türü değiştirilemez.', 'info');
+                        }
                     });
                 });
 
@@ -1816,7 +1939,7 @@
                         type: file.type,
                         content: file.content 
                     })),
-                    createdAt: new Date().toISOString()
+                    // createdAt: new Date().toISOString() // Sadece yeni kayıt için
                 };
 
                 // Ortak alanlar
@@ -1878,32 +2001,44 @@
                 const submitLoading = document.getElementById('submitLoading');
                 const formSuccessMessage = document.getElementById('formSuccessMessage');
                 const formErrorMessage = document.getElementById('formErrorMessage');
+                const formInfoMessage = document.getElementById('formInfoMessage'); // Yeni eklendi
 
                 submitBtn.disabled = true;
                 submitText.style.display = 'none';
                 submitLoading.style.display = 'inline-block';
                 formSuccessMessage.style.display = 'none';
                 formErrorMessage.style.display = 'none';
+                formInfoMessage.style.display = 'none'; // Yeni eklendi
 
 
                 try {
                     const formData = await this.collectFormData(); 
                     console.log("Form verileri:", formData);
                     
-                    const result = await ipRecordsService.addRecord(formData); 
+                    let result;
+                    if (this.recordIdToEdit) {
+                        // Mevcut kaydı güncelle
+                        formData.updatedAt = new Date().toISOString(); // Güncelleme tarihi ekle
+                        result = await ipRecordsService.updateRecord(this.recordIdToEdit, formData);
+                    } else {
+                        // Yeni kayıt oluştur
+                        formData.createdAt = new Date().toISOString(); // Oluşturma tarihi ekle
+                        formData.updatedAt = new Date().toISOString(); // Oluşturma tarihi ile aynı yap
+                        result = await ipRecordsService.addRecord(formData);
+                    }
                     
                     if (result.success) {
-                        console.log('IP record saved to Firestore:', result.id, result.data);
+                        console.log('IP record saved:', result.id || this.recordIdToEdit);
                         formSuccessMessage.style.display = 'flex';
-                        document.getElementById('formSuccessText').textContent = 'Kayıt başarıyla oluşturuldu!';
+                        document.getElementById('formSuccessText').textContent = this.recordIdToEdit ? 'Kayıt başarıyla güncellendi!' : 'Kayıt başarıyla oluşturuldu!';
                         
                         setTimeout(() => {
                             this.resetForm();
                             formSuccessMessage.style.display = 'none';
-                            window.location.href = 'portfolio.html'; 
+                            window.location.href = 'portfolio.html'; // Portföy sayfasına yönlendir
                         }, 2000);
                     } else {
-                        throw new Error(result.error || 'Kayıt oluşturulurken bilinmeyen bir hata oluştu.');
+                        throw new Error(result.error || 'Kayıt oluşturulurken/güncellenirken bilinmeyen bir hata oluştu.');
                     }
                     
                 } catch (error) {
@@ -1923,9 +2058,11 @@
                 this.uploadedFiles = [];
                 this.uploadedTrademarkImage = null; 
                 this.selectedPersonForSearch = null; 
+                this.recordIdToEdit = null; // Reset edit mode
 
                 document.querySelectorAll('.type-card').forEach(card => {
                     card.classList.remove('selected');
+                    card.style.pointerEvents = 'auto'; // Tür seçimini tekrar etkinleştir
                 });
 
                 document.querySelectorAll('.dynamic-fields').forEach(field => {
@@ -1944,12 +2081,16 @@
                 this.clearAllFormErrors(); 
                 this.updateStatusOptions(); // Durum seçeneklerini varsayılan hallerine döndür
 
+                document.getElementById('mainFormTitle').textContent = 'Yeni Fikri Mülkiyet Kaydı'; // Başlığı sıfırla
+                document.getElementById('submitText').textContent = 'Kaydet'; // Buton metnini sıfırla
+
+
                 console.log('Form reset');
             }
 
             handleBack() {
                 if (confirm('Değişiklikler kaybolacak. Devam etmek istiyor musunuz?')) {
-                    window.location.href = 'dashboard.html';
+                    window.location.href = 'portfolio.html'; // Dashboard yerine portföye dön
                 }
             }
 
@@ -1980,38 +2121,741 @@
                         name: 'demo-trademark.jpg',
                         size: 1024 * 50, 
                         type: 'image/jpeg',
-                        content: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wCEAAkGBxAQDxAQDxAQDxAQDxAQDxAQDxAQDxAQDxARExAQDxMYHSggGBolGxATITEhJSkrLi4uFx8zODMtNygtLisBCgoKDg0OGxAQGy0lICUtLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLf/AABEIAOEA4QMBIgACEQEDEQH/xAAZAAEBAQEBAQAAAAAAAAAAAAABAAIDBAX/xAAXAQEBAQEAAAAAAAAAAAAAAAAAAREC/8QAGAEBAQEBAAAAAAAAAAAAAAAAAAECAwT/xAAYEQEBAQEBAAAAAAAAAAAAAAAAAAAREjED/9oADAMBAAIRAxEiAAAB+uAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAARrQAAAAAAAAAAACAAAAAAAAAAAZAAAAAAAAAAARgAAAAAAAAAARnAAAAAAArkAAAAAAAAAAARwAAAAAAAAAAEQAAAAAAAAAAEQAAAAAAAAAAEQAAAAAAAAAARpAAAAAAAAAAAIwAAAAAAAAAAEYAAAAAAAAAABGAAAAAAAAAAABGAAAAAAAAAAAAAAAEAAAAAAAAAAARnAAAEUAAAAAAARpAAAFUAAAAAAARkAAABBAAAAAAAQAAAAGUAAAAAAAEAAAAAzAAAAAAAAAAARmAAAAAARpAAAABBAAAAAAAQAAAEgAAAAAAADMAAAAAAAAAAAjAAAAAAAAAAAEcAAAAAAAARAAAAAAAAAAAEQAAAAAAAAAAEQAAAAAAAAAARHIAAAAAAAAAARwAAAAAAAAAAEYAAAAAAAAAAAjAAAAAAAAAAARAAAAAAAAAABHIAAAAAAAAAAjAAAAAAAAAAAEYAAAAAAAAAAARgAAAAAAAAAAEQAAAAAAAAAAEQAAAAAAAAAARyAAAAAAAAAAAYAAAAAAAAAAAEZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf/9k='
-                    };
-                    this.renderTrademarkImagePreview();
-                } else {
-                    this.removeTrademarkImage(); 
-                }
-                
-                console.log(`Test data set for ${type}`);
+                        content: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wCEAAkGBxAQDxAQDxAQDxAQDxAQDxAQDxAQDxAQDxARExAQDxMYHSggGBolGxATITEhJSkrLi4uFx8zODMtNygtLisBCgoKDg0OGxAQGy0lICUtLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLf/AABEIAOEA4QMBIgACEQEDEQH/xAAZAAEBAQEBAQAAAAAAAAAAAAABAAIDBAX/xAAXAQEBAQEAAAAAAAAAAAAAAAAAAREC/8QAGAEBAQEBAAAAAAAAAAAAAAAAAAECAwT/xAAYEQEBAQEBAAAAAAAAAAAAAAAAAAAREjED/9oADAMBAA contemporary design; display: inline-flex;">
+                        + İlk Kaydınızı Oluşturun
+                    </a>
+                </div>
+            </div>
+
+            <div class="pagination" id="pagination" style="display: none;">
+                <button class="page-btn" id="prevBtn">‹ Önceki</button>
+                <div class="page-info" id="pageInfo">Sayfa 1 / 1</div>
+                <button class="page-btn" id="nextBtn">Sonraki ›</button>
+            </div>
+        </div>
+    </main>
+
+    <div class="modal" id="detailModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modalTitle">Kayıt Detayları</h3>
+                <button class="close-btn" id="closeModalBtn">&times;</button>
+            </div>
+            <div id="modalBody">
+                </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { authService, ipRecordsService, auth } from './firebase-config.js';
+
+        class PortfolioModule {
+            constructor() {
+                this.currentUser = null;
+                this.records = [];
+                this.filteredRecords = [];
+                this.currentPage = 1;
+                this.recordsPerPage = 10;
+                this.sortColumn = 'applicationDate';
+                this.sortDirection = 'desc';
+                this.filters = {
+                    search: '',
+                    type: '',
+                    status: '',
+                    period: 'all'
+                };
+                this.init();
             }
 
-            async getFormData() {
-                return await this.collectFormData(); 
+            init() {
+                // Firebase kimlik doğrulama durumunu dinle
+                auth.onAuthStateChanged(async (user) => {
+                    if (user) {
+                        this.currentUser = user;
+                        // Kullanıcı bilgilerini ve rolünü güncellemek için authService'ten al
+                        this.currentUser = authService.getCurrentUser();
+                        console.log('✅ User authenticated:', user.email, 'Role:', this.currentUser.role);
+                        // Kullanıcı oturum açtıysa verileri yükle
+                        this.loadUserData();
+                        this.initializeEventListeners();
+                        this.loadRecords(); // Verileri Firebase'den yükle
+                    } else {
+                        // Kullanıcı oturum açmamışsa veya oturum kapatılmışsa
+                        // localStorage'daki kullanıcıyı kontrol et (fallback)
+                        const localUser = authService.getCurrentUser();
+                        if (localUser && localUser.uid) {
+                            this.currentUser = localUser;
+                            console.log('⚠️ LocalStorage user detected, running in local mode:', localUser.email, 'Role:', this.currentUser.role);
+                            this.loadUserData();
+                            this.initializeEventListeners();
+                            this.loadRecords(); // Verileri localStorage'dan yükle
+                        } else {
+                            // Ne Firebase ne de localStorage'da kullanıcı yoksa giriş sayfasına yönlendir
+                            console.log('❌ User not authenticated, redirecting to login page.');
+                            window.location.href = 'index.html';
+                        }
+                    }
+                });
+                console.log('📊 Portfolio Modülü başlatılıyor...');
+            }
+
+            loadUserData() {
+                // Sadece kullanıcı avatarını güncellemek için kullanılıyor
+                if (this.currentUser) {
+                    const userName = this.currentUser.displayName || this.currentUser.email.split('@')[0] || 'Kullanıcı';
+                    document.getElementById('userAvatar').textContent = userName.charAt(0).toUpperCase();
+                } else {
+                    document.getElementById('userAvatar').textContent = 'D'; // Default avatar
+                }
+            }
+
+            initializeEventListeners() {
+                // Logout button
+                document.getElementById('logoutBtn').addEventListener('click', async () => {
+                    if (confirm('Çıkış yapmak istediğinizden emin misiniz?')) {
+                        try {
+                            await authService.signOut();
+                            // signOut metodu zaten index.html'ye yönlendirecek
+                        } catch (error) {
+                            console.error('Logout error:', error);
+                            alert('Çıkış yaparken bir hata oluştu.');
+                        }
+                    }
+                });
+
+                // Search and filters
+                document.getElementById('searchInput').addEventListener('input', (e) => {
+                    this.filters.search = e.target.value;
+                    this.applyFilters();
+                });
+
+                document.getElementById('typeFilter').addEventListener('change', (e) => {
+                    this.filters.type = e.target.value;
+                    this.applyFilters();
+                });
+
+                document.getElementById('statusFilter').addEventListener('change', (e) => {
+                    this.filters.status = e.target.value;
+                    this.applyFilters();
+                });
+
+                // Period filter buttons
+                document.querySelectorAll('.filter-buttons .filter-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        document.querySelectorAll('.filter-buttons .filter-btn').forEach(b => b.classList.remove('active'));
+                        e.target.classList.add('active');
+                        this.filters.period = e.target.dataset.period;
+                        this.applyFilters();
+                    });
+                });
+
+                // Table sorting
+                document.querySelectorAll('.portfolio-table th.sortable').forEach(th => {
+                    th.addEventListener('click', () => {
+                        this.handleSort(th.dataset.sort);
+                    });
+                });
+
+                // Action buttons
+                document.getElementById('refreshBtn').addEventListener('click', () => {
+                    this.loadRecords();
+                });
+
+                document.getElementById('exportBtn').addEventListener('click', () => {
+                    this.exportData();
+                });
+
+                // Modal
+                document.getElementById('closeModalBtn').addEventListener('click', () => {
+                    this.closeModal();
+                });
+
+                document.getElementById('detailModal').addEventListener('click', (e) => {
+                    if (e.target.id === 'detailModal') {
+                        this.closeModal();
+                    }
+                });
+
+                // Pagination
+                document.getElementById('prevBtn').addEventListener('click', () => {
+                    if (this.currentPage > 1) {
+                        this.currentPage--;
+                        this.renderTable();
+                    }
+                });
+
+                document.getElementById('nextBtn').addEventListener('click', () => {
+                    const totalPages = Math.ceil(this.filteredRecords.length / this.recordsPerPage);
+                    if (this.currentPage < totalPages) {
+                        this.currentPage++;
+                        this.renderTable();
+                    }
+                });
+            }
+
+            async loadRecords() {
+                const loadingIndicator = document.getElementById('loadingIndicator');
+                const portfolioTable = document.getElementById('portfolioTable');
+                const noRecords = document.getElementById('noRecords');
+                const tableBody = document.getElementById('portfolioTableBody'); 
+
+                loadingIndicator.style.display = 'block';
+                portfolioTable.style.display = 'none';
+                noRecords.style.display = 'none';
+                tableBody.innerHTML = ''; 
+
+                try {
+                    const result = await ipRecordsService.getRecords();
+                    
+                    if (result.success) {
+                        this.records = result.data;
+                        this.updateStats();
+                        this.applyFilters(); 
+                    } else {
+                        console.error('Failed to load records:', result.error);
+                        this.showEmptyState();
+                    }
+                } catch (error) {
+                    console.error('Error loading data:', error);
+                    this.showEmptyState();
+                } finally {
+                    loadingIndicator.style.display = 'none';
+                }
+            }
+
+            updateStats() {
+                const stats = {
+                    total: this.records.length, 
+                    patent: this.records.filter(r => r.type === 'patent').length,
+                    trademark: this.records.filter(r => r.type === 'trademark').length,
+                    copyright: this.records.filter(r => r.type === 'copyright').length,
+                    design: this.records.filter(r => r.type === 'design').length,
+                    approved: this.records.filter(r => r.status === 'approved').length
+                };
+
+                document.getElementById('totalRecords').textContent = stats.total;
+                document.getElementById('patentCount').textContent = stats.patent;
+                document.getElementById('trademarkCount').textContent = stats.trademark;
+                document.getElementById('copyrightCount').textContent = stats.copyright;
+                document.getElementById('designCount').textContent = stats.design;
+                document.getElementById('approvedCount').textContent = stats.approved;
+            }
+
+            applyFilters() {
+                const search = document.getElementById('searchInput').value.toLowerCase();
+                const typeFilter = document.getElementById('typeFilter').value;
+                const statusFilter = document.getElementById('statusFilter').value;
+                // dateFromFilter ve dateToFilter HTML'de tanımlı değil, bu yüzden değerleri null olacak
+                // ve filtreleme mantığına dahil edilmeyecek.
+                const dateFrom = document.getElementById('dateFromFilter')?.value; 
+                const dateTo = document.getElementById('dateToFilter')?.value; 
+                const periodFilter = document.querySelector('.filter-buttons .filter-btn.active')?.dataset.period || 'all';
+
+                this.filteredRecords = this.records.filter(record => {
+                    if (search && !this.matchesSearch(record, search)) {
+                        return false;
+                    }
+
+                    if (typeFilter && record.type !== typeFilter) {
+                        return false;
+                    }
+
+                    if (statusFilter && record.status !== statusFilter) {
+                        return false;
+                    }
+
+                    if (dateFrom && record.applicationDate && record.applicationDate < dateFrom) {
+                        return false;
+                    }
+                    if (dateTo && record.applicationDate && record.applicationDate > dateTo) {
+                        return false;
+                    }
+
+                    if (!dateFrom && !dateTo && periodFilter !== 'all') {
+                        const recordDate = new Date(record.applicationDate);
+                        const now = new Date();
+                        
+                        if (periodFilter === 'month') {
+                            const monthAgo = new Date(now.getFullYear(), now.getMonth(), 1);
+                            if (recordDate < monthAgo) return false;
+                        } else if (periodFilter === 'year') {
+                            const yearAgo = new Date(now.getFullYear(), 0, 1);
+                            if (recordDate < yearAgo) return false;
+                        }
+                    }
+
+                    return true;
+                });
+
+                this.currentPage = 1; 
+                this.sortRecords();
+                this.renderTable();
+            }
+
+            matchesSearch(record, search) {
+                const searchFields = [
+                    record.title,
+                    record.description,
+                    record.applicationNumber,
+                    record.registrationNumber,
+                    // Eğer admin ise ve kayıt sahibi bilgisi varsa onu da aramaya dahil et
+                    record._ownerInfo
+                ];
+                if (record.owners && record.owners.some(owner => owner.name.toLowerCase().includes(search))) {
+                    return true;
+                }
+
+                return searchFields.some(field => 
+                    field && String(field).toLowerCase().includes(search)
+                );
+            }
+
+            handleSort(column) {
+                if (this.sortColumn === column) {
+                    this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+                } else {
+                    this.sortColumn = column;
+                    this.sortDirection = 'asc';
+                }
+                this.sortRecords();
+                this.updateSortIndicators();
+                this.renderTable();
+            }
+
+            sortRecords() {
+                this.filteredRecords.sort((a, b) => {
+                    let aValue = a[this.sortColumn];
+                    let bValue = b[this.sortColumn];
+
+                    if (this.sortColumn === 'owners') {
+                        aValue = a.owners ? a.owners.map(o => o.name).join(', ') : '';
+                        bValue = b.owners ? b.owners.map(o => o.name).join(', ') : '';
+                    } else if (this.sortColumn.includes('Date') || this.sortColumn.includes('At')) {
+                        aValue = aValue ? new Date(aValue) : (this.sortDirection === 'asc' ? new Date(0) : new Date());
+                        bValue = bValue ? new Date(bValue) : (this.sortDirection === 'asc' ? new Date(0) : new Date());
+                    } else if (typeof aValue === 'string') {
+                        aValue = aValue.toLowerCase();
+                        bValue = bValue.toLowerCase();
+                    }
+
+                    if (aValue < bValue) return this.sortDirection === 'asc' ? -1 : 1;
+                    if (aValue > bValue) return this.sortDirection === 'asc' ? 1 : -1;
+                    return 0;
+                });
+            }
+
+            updateSortIndicators() {
+                document.querySelectorAll('.portfolio-table th.sortable').forEach(th => {
+                    th.classList.remove('sort-asc', 'sort-desc');
+                    const span = th.querySelector('.sort-icon');
+                    if (span) span.textContent = '↕️';
+                });
+
+                const activeTh = document.querySelector(`.portfolio-table th[data-sort="${this.sortColumn}"]`);
+                if (activeTh) {
+                    activeTh.classList.add(`sort-${this.sortDirection}`);
+                    const span = activeTh.querySelector('.sort-icon');
+                    if (span) span.textContent = this.sortDirection === 'asc' ? '↑' : '↓';
+                }
+            }
+
+            renderTable() {
+                const tbody = document.getElementById('portfolioTableBody');
+                const pagination = document.getElementById('pagination');
+                const portfolioTable = document.getElementById('portfolioTable');
+                const noRecords = document.getElementById('noRecords');
+                
+                const totalPages = Math.ceil(this.filteredRecords.length / this.recordsPerPage);
+                const startIndex = (this.currentPage - 1) * this.recordsPerPage;
+                const endIndex = startIndex + this.recordsPerPage;
+                const pageRecords = this.filteredRecords.slice(startIndex, endIndex);
+
+                tbody.innerHTML = '';
+
+                if (pageRecords.length === 0) {
+                    portfolioTable.style.display = 'none';
+                    noRecords.style.display = 'block';
+                    pagination.style.display = 'none';
+                    return;
+                } else {
+                    portfolioTable.style.display = 'table';
+                    noRecords.style.display = 'none';
+                }
+
+                pageRecords.forEach(record => {
+                    const row = this.createTableRow(record);
+                    tbody.appendChild(row);
+                });
+
+                if (totalPages > 1) {
+                    pagination.style.display = 'flex';
+                    document.getElementById('prevBtn').disabled = this.currentPage === 1;
+                    document.getElementById('nextBtn').disabled = this.currentPage === totalPages;
+                    document.getElementById('pageInfo').textContent = `Sayfa ${this.currentPage} / ${totalPages}`;
+                } else {
+                    pagination.style.display = 'none';
+                }
+            }
+
+            createTableRow(record) {
+                const row = document.createElement('tr');
+                
+                const typeIcons = {
+                    patent: '📋',
+                    trademark: '🏷️',
+                    copyright: '©',
+                    design: '🎨'
+                };
+
+                const typeNames = {
+                    patent: 'Patent',
+                    trademark: 'Marka',
+                    copyright: 'Telif Hakkı',
+                    design: 'Tasarım'
+                };
+
+                const statusNames = {
+                    application: 'Başvuru',
+                    pending: 'Beklemede',
+                    approved: 'Onaylandı',
+                    rejected: 'Reddedildi',
+                    expired: 'Süresi Doldu'
+                };
+
+                const formattedDate = record.applicationDate ? new Date(record.applicationDate).toLocaleDateString('tr-TR') : '-';
+                const ownersText = record.owners && record.owners.length > 0 ? record.owners.map(owner => owner.name).join(', ') : '-';
+
+                let trademarkImageCellHtml = '<td>-</td>'; 
+                if (record.type === 'trademark' && record.trademarkImage && record.trademarkImage.content) {
+                    trademarkImageCellHtml = `
+                        <td>
+                            <img src="${record.trademarkImage.content}" alt="Marka Örneği" class="trademark-image-thumb">
+                        </td>
+                    `;
+                }
+
+                // Eğer Süper Admin ise ve kayıt sahibi bilgisi varsa ekle
+                let ownerInfoHtml = ''; 
+                if (authService.isSuperAdmin()) {
+                    ownerInfoHtml = `<div style="font-size: 0.75em; color: #888; margin-top: 5px;">${record.userEmail || '-'}</div>`;
+                }
+
+                row.innerHTML = `
+                    <td>
+                        <div class="ip-type ${record.type}">
+                            ${typeIcons[record.type]} ${typeNames[record.type] || record.type}
+                        </div>
+                    </td>
+                    <td>
+                        <strong>${record.title}</strong>
+                        <div style="font-size: 0.8em; color: #666; margin-top: 2px;">
+                            ${record.description ? record.description.substring(0, 50) + (record.description.length > 50 ? '...' : '') : '-'}
+                        </div>
+                    </td>
+                    ${trademarkImageCellHtml}
+                    <td>${record.applicationNumber || '-'}</td>
+                    <td>
+                        <span class="status-badge ${record.status}">
+                            ${statusNames[record.status] || record.status}
+                        </span>
+                    </td>
+                    <td>${formattedDate}</td>
+                    <td>${ownersText} ${ownerInfoHtml}</td> <td>
+                        <div class="action-buttons">
+                            <button class="table-action-btn btn-view" onclick="portfolio.viewRecord('${record.id}')" title="Görüntüle">
+                                👁️
+                            </button>
+                            <button class="table-action-btn btn-edit" onclick="portfolio.editRecord('${record.id}')" title="Düzenle">
+                                ✏️
+                            </button>
+                            <button class="table-action-btn btn-delete" onclick="portfolio.deleteRecord('${record.id}')" title="Sil">
+                                🗑️
+                            </button>
+                        </div>
+                    </td>
+                `;
+
+                return row;
+            }
+
+            viewRecord(recordId) {
+                console.log('Viewing record with ID:', recordId); // Debugging: Kayıt ID'sini konsola yazdır
+                const record = this.records.find(r => r.id === recordId);
+                if (!record) {
+                    console.error('Record not found for ID:', recordId); // Debugging: Kayıt bulunamazsa hata yazdır
+                    return;
+                }
+                console.log('Record data:', record); // Debugging: Kayıt verisini konsola yazdır
+
+                const typeNames = {
+                    patent: 'Patent',
+                    trademark: 'Marka',
+                    copyright: 'Telif Hakkı',
+                    design: 'Tasarım'
+                };
+
+                const statusNames = {
+                    application: 'Başvuru',
+                    pending: 'Beklemede',
+                    approved: 'Onaylandı',
+                    rejected: 'Reddedildi',
+                    expired: 'Süresi Doldu'
+                };
+
+                document.getElementById('modalTitle').textContent = record.title;
+                
+                const modalBody = document.getElementById('modalBody');
+
+                let trademarkImageDetailHtml = '';
+                if (record.type === 'trademark' && record.trademarkImage && record.trademarkImage.content) {
+                    trademarkImageDetailHtml = `
+                        <div class="detail-item" style="grid-column: 1 / -1; text-align: center;">
+                            <div class="detail-label">Marka Örneği</div>
+                            <img src="${record.trademarkImage.content}" alt="Marka Örneği" style="max-width: 150px; max-height: 150px; border: 1px solid #e1e8ed; border-radius: 8px; margin-top: 10px;">
+                        </div>
+                    `;
+                }
+
+                modalBody.innerHTML = `
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <div class="detail-label">IP Türü</div>
+                            <div class="detail-value">${typeNames[record.type] || record.type}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Durum</div>
+                            <div class="detail-value">
+                                <span class="status-badge ${record.status}">
+                                    ${statusNames[record.status] || record.status}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Başvuru Numarası</div>
+                            <div class="detail-value">${record.applicationNumber || '-'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Başvuru Tarihi</div>
+                            <div class="detail-value">${record.applicationDate ? new Date(record.applicationDate).toLocaleDateString('tr-TR') : '-'}</div>
+                        </div>
+                        <div class="detail-item" style="grid-column: 1 / -1;">
+                            <div class="detail-label">Açıklama</div>
+                            <div class="detail-value">${record.description || '-'}</div>
+                        </div>
+                        <div class="detail-item" style="grid-column: 1 / -1;">
+                            <div class="detail-label">Hak Sahipleri</div>
+                            <div class="detail-value">
+                                ${record.owners && record.owners.length > 0 ? record.owners.map(owner => `
+                                    <div style="margin-bottom: 5px;">
+                                        ${owner.type === 'company' ? '🏢' : '👤'} ${owner.name}
+                                    </div>
+                                `).join('') : '-'}
+                            </div>
+                        </div>
+                        ${trademarkImageDetailHtml}
+                        <div class="detail-item">
+                            <div class="detail-label">Oluşturma Tarihi</div>
+                            <div class="detail-value">${record.createdAt ? new Date(record.createdAt).toLocaleDateString('tr-TR') : '-'}</div>
+                        </div>
+                        ${authService.isSuperAdmin() && record.userEmail ? ` <div class="detail-item">
+                                <div class="detail-label">Kayıt Sahibi (Kullanıcı)</div>
+                                <div class="detail-value">${record.userEmail}</div>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+
+                document.getElementById('detailModal').classList.add('show');
+            }
+
+            editRecord(recordId) {
+                // Yönlendirme yaparak data-entry.html sayfasında düzenleme modunu aç
+                console.log('Editing record with ID:', recordId); // Debugging
+                window.location.href = `data-entry.html?recordId=${recordId}`;
+            }
+
+            async deleteRecord(recordId) {
+                const record = this.records.find(r => r.id === recordId);
+                if (!record) {
+                    alert('Silinecek kayıt bulunamadı.');
+                    return;
+                }
+
+                if (confirm(`"${record.title}" kaydını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz!`)) {
+                    try {
+                        console.log('Attempting to delete record:', recordId); // Debugging
+                        const result = await ipRecordsService.deleteRecord(recordId);
+                        if (result.success) {
+                            console.log('Record deleted from Firestore (or LocalStorage):', recordId);
+                            this.records = this.records.filter(r => r.id !== recordId);
+                            this.applyFilters(); 
+                            alert('Kayıt başarıyla silindi.');
+                        } else {
+                            console.error('Failed to delete record:', result.error); // Debugging
+                            throw new Error(result.error || 'Kayıt silinirken bilinmeyen bir hata oluştu.');
+                        }
+                    } catch (error) {
+                        console.error('Delete error:', error); // Debugging
+                        alert('Kayıt silinirken bir hata oluştu: ' + error.message);
+                    }
+                }
+            }
+
+            closeModal() {
+                document.getElementById('detailModal').classList.remove('show');
+            }
+
+            exportData() {
+                try {
+                    const csvContent = this.generateCSV();
+                    const blob = new Blob(['\ufeff' + csvContent], { 
+                        type: 'text/csv;charset=utf-8;' 
+                    });
+                    
+                    const link = document.createElement('a');
+                    if (link.download !== undefined) {
+                        const url = URL.createObjectURL(blob);
+                        link.setAttribute('href', url);
+                        link.setAttribute('download', `ip_portfolio_${new Date().toISOString().split('T')[0]}.csv`);
+                        link.style.visibility = 'hidden';
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                    }
+                } catch (e) {
+                    alert('Dışa aktarma sırasında bir hata oluştu.');
+                    console.error('Export error:', e);
+                }
+            }
+
+            generateCSV() {
+                const headers = ['ID', 'Tür', 'Başlık', 'Açıklama', 'Durum', 'Başvuru Tarihi',
+                                 'Başvuru Numarası', 'Tescil Numarası', 'Hak Sahipleri', 'Oluşturulma Tarihi',
+                                 'Marka Görseli Var Mı', 'Notlar']; 
+                
+                // Eğer süper admin ise, "Kayıt Sahibi E-postası" kolonunu ekle
+                if (authService.isSuperAdmin()) {
+                    headers.push('Kayıt Sahibi E-postası');
+                }
+
+                const rows = this.filteredRecords.map(record => {
+                    const rowData = [
+                        record.id,
+                        record.type,
+                        `"${record.title || ''}"`,
+                        `"${(record.description || '').replace(/"/g, '""')}"`,
+                        record.status,
+                        record.applicationDate || '',
+                        record.applicationNumber || '',
+                        record.registrationNumber || '',
+                        record.owners && record.owners.length > 0 ? `"${record.owners.map(o => o.name).join('; ')}"` : '',
+                        record.createdAt ? new Date(record.createdAt).toISOString() : '',
+                        record.trademarkImage ? 'Evet' : 'Hayır',
+                        `"${(record.notes || '').replace(/"/g, '""')}"`
+                    ];
+                    
+                    if (authService.isSuperAdmin()) {
+                        rowData.push(record.userEmail || '');
+                    }
+                    return rowData;
+                });
+
+                return [headers, ...rows]
+                    .map(row => row.join(','))
+                    .join('\n');
+            }
+
+            showEmptyState() {
+                const tableContent = document.getElementById('table-container');
+                if (!tableContent) {
+                    console.error("Hata: 'table-container' elemanı bulunamadı. showEmptyState çalıştırılamıyor.");
+                    return;
+                }
+                tableContent.innerHTML = `
+                    <div class="no-records"> <div class="no-records-icon">📋</div>
+                        <h3>Henüz kayıt bulunmuyor</h3>
+                        <p>Yeni bir fikri mülkiyet kaydı oluşturmak için "Yeni Kayıt" butonunu kullanın.</p>
+                        <a href="data-entry.html" class="action-btn" style="margin-top: 20px; display: inline-flex;">
+                            + İlk Kaydınızı Oluşturun
+                        </a>
+                    </div>
+                `;
             }
         }
 
-        let dataEntryModule;
+        let portfolio;
         auth.onAuthStateChanged((user) => {
-            if (!dataEntryModule) { 
-                dataEntryModule = new DataEntryModule();
+            if (user) {
+                if (!portfolio) { 
+                    portfolio = new PortfolioModule();
+                }
+            } else {
+                const localUser = authService.getCurrentUser();
+                if (localUser && localUser.uid) {
+                    if (!portfolio) {
+                        portfolio = new PortfolioModule();
+                    }
+                } else {
+                    console.log('❌ User not authenticated, redirecting to login page.');
+                    window.location.href = 'index.html';
+                }
             }
         });
 
-        window.testDataEntry = {
-            setTestData: (type) => dataEntryModule?.setTestData(type),
-            getFormData: async () => await dataEntryModule?.getFormData(),
-            resetForm: () => dataEntryModule?.resetForm()
+        window.testPortfolio = {
+            addTestRecord: async () => {
+                if (!portfolio || !portfolio.currentUser) {
+                    console.error("Portfolio module not initialized or no user logged in.");
+                    alert("Lütfen önce giriş yapın.");
+                    return;
+                }
+                const testRecord = {
+                    type: 'patent',
+                    title: 'Test Patent ' + Date.now(),
+                    description: 'Test açıklaması',
+                    status: 'pending',
+                    owners: [{ name: 'Test User', type: 'individual' }],
+                    applicationNumber: 'TEST-' + Date.now(),
+                    createdAt: new Date().toISOString(),
+                    trademarkImage: null
+                };
+                const result = await ipRecordsService.addRecord(testRecord);
+                if (result.success) {
+                    console.log('Test record added:', result.id);
+                    await portfolio.loadRecords(); 
+                    alert('Test kaydı başarıyla eklendi.');
+                } else {
+                    console.error('Failed to add test record:', result.error);
+                    alert('Test kaydı eklenemedi: ' + result.error);
+                }
+            },
+            exportData: () => portfolio?.exportData(),
+            getRecords: () => portfolio?.records,
+            getFilteredRecords: () => portfolio?.filteredRecords,
+            clearAllRecords: async () => {
+                if (!portfolio || !portfolio.currentUser) {
+                    console.error("Portfolio module not initialized or no user logged in.");
+                    alert("Lütfen önce giriş yapın.");
+                    return;
+                }
+                if (confirm('TÜM KAYITLARI SİLMEK İSTEDİĞİNİZDEN EMİN MİSİNİZ? BU İŞLEM GERİ ALINAMAZ!')) {
+                    const recordsToDelete = [...portfolio.records]; 
+                    for (const record of recordsToDelete) {
+                        await ipRecordsService.deleteRecord(record.id);
+                    }
+                    await portfolio.loadRecords(); 
+                    console.log('All records cleared.');
+                    alert('Tüm kayıtlar başarıyla silindi.');
+                }
+            }
         };
 
-        console.log('🚀 Veri Giriş Modülü hazır!');
-        console.log('Test için: testDataEntry.setTestData("patent") veya testDataEntry.setTestData("trademark")');
-        console.log('Form verilerini görmek için: await testDataEntry.getFormData()');
-        console.log('Formu temizlemek için: testDataEntry.resetForm()');
+        console.log('📊 Portfolio module loaded!');
+        console.log('Test komutları:');
+        console.log('testPortfolio.addTestRecord() - Yeni test kaydı ekler.');
+        console.log('testPortfolio.exportData() - Filtrelenmiş kayıtları CSV olarak dışa aktarır.');
+        console.log('testPortfolio.getRecords() - Tüm kayıtları konsolda gösterir.');
+        console.log('testPortfolio.clearAllRecords() - Tüm kayıtları siler (DİKKAT: Geri alınamaz!).');
     </script>
 </body>
 </html>
