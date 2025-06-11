@@ -618,7 +618,8 @@
 
                 document.getElementById('userName').textContent = userName; 
                 document.getElementById('userAvatar').textContent = userAvatar; 
-                document.getElementById('userRole').textContent = user.role === 'admin' ? 'Yönetici' : 'Kullanıcı'; 
+                document.getElementById('userRole').textContent = user.role === 'admin' ? 'Yönetici' : 
+                                                              user.role === 'superadmin' ? 'Süper Yönetici' : 'Kullanıcı'; // Rol bilgisini göster
             }
 
             async loadUserData() {
@@ -657,8 +658,6 @@
                     this.handleNoData();
                 } finally {
                     // Bu blokta loading indicator'ı gizlediğimizden emin olun
-                    // DÜZELTME: Bu satırlar aslında bir şey yapmıyor.
-                    // Placeholder'ların içeriği zaten değiştirildiği için, buraya bir şey yazmaya gerek yok.
                     // activitiesListPlaceholder.innerHTML = activitiesListPlaceholder.innerHTML; 
                     // trendChartPlaceholder.innerHTML = trendChartPlaceholder.innerHTML; 
                 }
