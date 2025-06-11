@@ -511,19 +511,39 @@
                 this.uploadedFiles = []; // Yüklenecek belgeler (yeni yapı)
                 this.originalRecordData = null; // Güncelleme için orijinal kayıt verisi
 
-                this.documentTypes = [
-                    'Belge Tipi Seçiniz',
-                    'Başvuru Formu',
-                    'Patent Belgesi',
-                    'Marka Tescil Belgesi',
-                    'Telif Hakkı Tescil Belgesi',
-                    'Tasarım Tescil Belgesi',
-                    'Resmi Yazışma',
-                    'Vekaletname',
-                    'Teknik Çizim',
-                    'Karar',
-                    'Diğer'
+                // 1. DOKÜMAN TİPLERİ (Genel Belge Niteliği)
+                this.allDocumentTypes = [
+                    { name: 'Belge Tipi Seçiniz', value: '', ipTypes: ['all'], required: true },
+                    { name: 'Başvuru Formu', value: 'Başvuru Formu', ipTypes: ['all'], required: false },
+                    { name: 'Resmi Yazışma', value: 'Resmi Yazışma', ipTypes: ['all'], required: false },
+                    { name: 'Vekaletname', value: 'Vekaletname', ipTypes: ['all'], required: false },
+                    { name: 'Teknik Çizim', value: 'Teknik Çizim', ipTypes: ['patent', 'design'], required: false },
+                    { name: 'Karar', value: 'Karar', ipTypes: ['all'], required: false },
+                    { name: 'Diğer Belge', value: 'Diğer Belge', ipTypes: ['all'], required: false }
                 ];
+                this.currentDocumentTypes = []; // Seçilen kayda göre filtrelenecek liste
+
+                // 2. DOKÜMAN ATAMALARI / KAYIT TİPLERİ (Belgenin IP Kaydındaki Anlamı)
+                this.allDocumentDesignations = [
+                    { name: 'Atama Seçiniz', value: '', ipTypes: ['all'], required: false }, // required: false means optional
+                    { name: 'Başvuru Ek Dokümanı', value: 'Başvuru Ek Dokümanı', ipTypes: ['all'], required: false },
+                    { name: 'Yasal Doküman', value: 'Yasal Doküman', ipTypes: ['all'], required: false },
+                    { name: 'Finansal Belge', value: 'Finansal Belge', ipTypes: ['all'], required: false },
+
+                    // Marka Özel Atamaları
+                    { name: 'Yayın Kararı', value: 'Yayın Kararı', ipTypes: ['trademark'], required: false },
+                    { name: 'Ret Kararı', value: 'Ret Kararı', ipTypes: ['trademark'], required: false },
+                    { name: 'Tescil Belgesi', value: 'Tescil Belgesi', ipTypes: ['trademark'], required: false },
+                    { name: 'Yayına İtiraz', value: 'Yayına İtiraz', ipTypes: ['trademark'], required: false },
+
+                    // Patent Özel Atamaları
+                    { name: 'Araştırma Raporu', value: 'Araştırma Raporu', ipTypes: ['patent'], required: false },
+                    { name: 'İnceleme Raporu', value: 'İnceleme Raporu', ipTypes: ['patent'], required: false },
+                    
+                    // Diğer türler için özel atamalar buraya eklenebilir
+                    { name: 'Genel Not', value: 'Genel Not', ipTypes: ['all'], required: false }
+                ];
+                this.currentDocumentDesignations = []; // Seçilen kayda göre filtrelenecek liste
 
                 this.init();
             }
@@ -708,23 +728,45 @@
                     document.getElementById('documentUploadSection').style.display = 'block';
                     document.getElementById('recordUpdateSection').style.display = 'block';
                     document.getElementById('indexDocumentsBtn').disabled = false;
-                    this.clearFieldError('recordSelect'); // Hata mesajını temizle
+                    this.clearFieldError('recordSelectError'); // Hata mesajını temizle
 
                     // Kayda özel durumları yükle (örneğin trademark için farklı durumlar)
                     this.updateStatusOptionsForRecord(record.type, record.status);
 
                     // Mevcut dosyaları yükle
-                    this.uploadedFiles = record.files ? record.files.map(file => ({
-                        ...file,
-                        documentType: file.documentType || 'Diğer'
-                    })) : [];
+                    // Buraya dikkat: selectedRecord'dan gelen 'files' orijinal dosyalarıdır.
+                    // uploadedFiles, sadece bu oturumda eklenen veya değiştirilen dosyaları tutacak.
+                    // Bu yüzden başlangıçta uploadedFiles'ı sıfırlıyoruz. Eğer mevcut dosyaları da düzenlemeye izin vereceksek,
+                    // onları da buraya yüklememiz gerekirdi. Şu an sadece YENİ eklenenleri işlemeye odaklanalım.
+                    this.uploadedFiles = []; // Bu sayfada sadece yeni eklenen dosyaları indeksleyeceğiz
                     this.updateFileList();
 
                     // İsteğe bağlı güncelleme alanlarını mevcut kayıt verisiyle doldur
                     document.getElementById('updateRecordStatus').value = record.status || '';
                     document.getElementById('updateRecordNotes').value = record.notes || ''; // Notlar alanı da varsa
+                    
+                    // Seçilen kayda göre belge tiplerini ve atamalarını filtrele ve güncelle
+                    this.filterDocumentTypesByRecordType(record.type);
+                    this.filterDocumentDesignationsByRecordType(record.type);
                 }
             }
+
+            // YENİ METOT: filterDocumentTypesByRecordType (Document Type dropdown'ı için)
+            filterDocumentTypesByRecordType(ipType) {
+                this.currentDocumentTypes = this.allDocumentTypes.filter(docType => 
+                    docType.ipTypes.includes('all') || docType.ipTypes.includes(ipType)
+                );
+                this.updateFileList(); // Dosya listesini güncelleyerek dropdownları yeniden render et
+            }
+
+            // YENİ METOT: filterDocumentDesignationsByRecordType (Document Designation dropdown'ı için)
+            filterDocumentDesignationsByRecordType(ipType) {
+                this.currentDocumentDesignations = this.allDocumentDesignations.filter(designation => 
+                    designation.ipTypes.includes('all') || designation.ipTypes.includes(ipType)
+                );
+                this.updateFileList(); // Dosya listesini güncelleyerek dropdownları yeniden render et
+            }
+
 
             updateStatusOptionsForRecord(recordType, currentStatus) {
                 const statusSelect = document.getElementById('updateRecordStatus');
@@ -789,12 +831,13 @@
                                 type: file.type,
                                 size: file.size,
                                 content: dataUrl,
-                                documentType: this.documentTypes[0], // Varsayılan: "Belge Tipi Seçiniz"
+                                documentType: this.currentDocumentTypes.length > 0 ? this.currentDocumentTypes[0].value : '', // İlk filtrelenmiş belge tipi
+                                documentDesignation: this.currentDocumentDesignations.length > 0 ? this.currentDocumentDesignations[0].value : '', // İlk filtrelenmiş atama tipi
                                 uploadedAt: new Date().toISOString()
                             };
                             this.uploadedFiles.push(newFileObj);
                             this.updateFileList();
-                            this.showNotification(`Dosya yüklendi: ${file.name}. Lütfen tipini seçin.`, 'success');
+                            this.showNotification(`Dosya yüklendi: ${file.name}. Lütfen tipini ve atamasını seçin.`, 'success');
                         }).catch(error => {
                             this.showNotification(`Dosya okuma hatası: ${file.name} - ${error.message}`, 'error');
                             console.error('File read error:', error);
@@ -813,37 +856,50 @@
                 return { isValid: true, message: '' };
             }
 
+            // addFileToList metodunu güncelliyoruz: iki dropdown'ı da içerecek
             addFileToList(file) {
                 const fileListElement = document.getElementById('fileList');
                 const fileItem = document.createElement('div');
                 fileItem.className = 'file-item';
                 fileItem.dataset.fileId = file.id;
 
-                let docTypeSelectHtml = `<select class="file-item-select" data-file-id="${file.id}">`;
-                this.documentTypes.forEach(type => {
-                    const selected = (file.documentType === type || (type === this.documentTypes[0] && !file.documentType)) ? 'selected' : '';
-                    docTypeSelectHtml += `<option value="${type}" ${selected}>${type}</option>`;
+                // Doküman Tipi seçeneği için HTML oluştur
+                let docTypeSelectHtml = `<select class="file-item-select" data-file-id="${file.id}" data-field="documentType">`;
+                this.currentDocumentTypes.forEach(type => { // Filtrelenmiş listeyi kullan
+                    const selected = (file.documentType === type.value || (type.value === '' && !file.documentType)) ? 'selected' : '';
+                    docTypeSelectHtml += `<option value="${type.value}" ${selected}>${type.name}</option>`;
                 });
                 docTypeSelectHtml += `</select>`;
+
+                // Doküman Ataması seçeneği için HTML oluştur
+                let docDesignationSelectHtml = `<select class="file-item-select" data-file-id="${file.id}" data-field="documentDesignation">`;
+                this.currentDocumentDesignations.forEach(designation => { // Filtrelenmiş listeyi kullan
+                    const selected = (file.documentDesignation === designation.value || (designation.value === '' && !file.documentDesignation)) ? 'selected' : '';
+                    docDesignationSelectHtml += `<option value="${designation.value}" ${selected}>${designation.name}</option>`;
+                });
+                docDesignationSelectHtml += `</select>`;
+
 
                 fileItem.innerHTML = `
                     <span>${file.name} (${this.formatFileSize(file.size)})</span>
                     <div class="file-item-controls">
                         ${docTypeSelectHtml}
+                        ${docDesignationSelectHtml}
                         <button type="button" class="remove-file" data-file-id="${file.id}">×</button>
                     </div>
                 `;
                 fileListElement.appendChild(fileItem);
 
-                const docTypeSelect = fileItem.querySelector(`.file-item-select[data-file-id="${file.id}"]`);
-                if (docTypeSelect) {
-                    docTypeSelect.addEventListener('change', (e) => {
+                // Olay dinleyicilerini her iki select için de ekle
+                fileItem.querySelectorAll(`.file-item-select[data-file-id="${file.id}"]`).forEach(selectElement => {
+                    selectElement.addEventListener('change', (e) => {
                         const updatedFile = this.uploadedFiles.find(f => f.id === file.id);
                         if (updatedFile) {
-                            updatedFile.documentType = e.target.value;
+                            const field = e.target.dataset.field;
+                            updatedFile[field] = e.target.value;
                         }
                     });
-                }
+                });
                 fileItem.querySelector(`.remove-file[data-file-id="${file.id}"]`).addEventListener('click', (e) => this.removeFile(e.target.dataset.fileId));
             }
 
@@ -884,19 +940,38 @@
                     isValid = false;
                 }
 
-                // Sadece yeni yüklenen dosyalar için tip seçimi zorunlu
-                const filesWithoutDocType = this.uploadedFiles.filter(f => f.documentType === this.documentTypes[0]);
-                if (filesWithoutDocType.length > 0) {
-                    this.showNotification('Lütfen yüklediğiniz tüm belgeler için bir tip seçiniz.', 'error');
-                    this.showFieldError('fileInput', 'Yüklü tüm belgeler için bir tip seçmelisiniz.'); // Hata mesajını dosya yükleme alanına bağla
-                    isValid = false;
-                }
+                // Yüklenen dosyalar için Document Type ve Document Designation seçimi zorunlu
+                this.uploadedFiles.forEach((file, index) => {
+                    const docTypeFieldId = `fileTypeSelect_${file.id}`; // Her select için benzersiz ID atayabilirsiniz
+                    const docDesignationFieldId = `fileDesignationSelect_${file.id}`;
 
+                    const docTypeOption = this.currentDocumentTypes.find(dt => dt.value === file.documentType);
+                    const docDesignationOption = this.currentDocumentDesignations.find(dd => dd.value === file.documentDesignation);
+
+                    // Belge Tipi kontrolü
+                    if (!file.documentType || file.documentType === '') {
+                        // Burada doğrudan select elementine hata sınıfı eklemek gerekir
+                        // addFileToList içinde select'lere ID veya data-attribute ekleyerek hedefleyebilirsiniz
+                        // Şimdilik genel bir bildirimle devam edelim
+                        this.showNotification(`'${file.name}' belgesi için tip seçmelisiniz.`, 'error');
+                        isValid = false;
+                    }
+                    // Atama Tipi kontrolü (required özelliği true ise)
+                    if (docDesignationOption && docDesignationOption.required && (!file.documentDesignation || file.documentDesignation === '')) {
+                        this.showNotification(`'${file.name}' belgesi için atama seçmelisiniz.`, 'error');
+                        isValid = false;
+                    }
+                });
+
+
+                if (!isValid) {
+                    this.showFieldError('fileInput', 'Yüklü tüm belgeler için geçerli tip ve atama seçmelisiniz.');
+                }
                 return isValid;
             }
 
             clearAllFormErrors() {
-                document.querySelectorAll('#indexingForm .form-input, #indexingForm .form-select').forEach(input => {
+                document.querySelectorAll('#indexingForm .form-input, #indexingForm .form-select, #indexingForm textarea').forEach(input => {
                     input.classList.remove('error-field');
                 });
                 document.querySelectorAll('#indexingForm .error-message').forEach(errorDiv => {
@@ -914,12 +989,41 @@
                 this.showNotification('Belgeler indeksleniyor ve kayıt güncelleniyor...', 'info');
 
                 try {
+                    // Mevcut kaydın orijinal dosyalarını al, yeni yüklenenleri üzerine ekleyeceğiz.
+                    // Bu, Firebase'deki `files` dizisinin son hali olacak.
+                    const currentFilesOnRecord = this.originalRecordData.files || [];
+                    
+                    // Yeni yüklenen dosyaları (veya güncellenmiş metadatalarını) orijinal dizinin sonuna ekle.
+                    // Aynı ID'ye sahip olanlar güncellenmeli, olmayanlar eklenmeli.
+                    const updatedFilesForRecord = [];
+                    const uploadedFileIds = new Set(this.uploadedFiles.map(f => f.id));
+
+                    // Eski dosyaları ekle (eğer uploadedFiles'ta yoksa)
+                    currentFilesOnRecord.forEach(existingFile => {
+                        if (!uploadedFileIds.has(existingFile.id)) {
+                            updatedFilesForRecord.push(existingFile);
+                        }
+                    });
+                    // Yeni yüklenen/güncellenen dosyaları ekle/değiştir
+                    this.uploadedFiles.forEach(uploadedFile => {
+                        const existingInUpdatedList = updatedFilesForRecord.find(f => f.id === uploadedFile.id);
+                        if (existingInUpdatedList) {
+                            // Eğer bu dosya orijinalde de varsa ve burada güncellenmişse
+                            // (bu senaryo şu anki UI'da direct dosya güncelleme şeklinde yok, metadata değişimi olabilir)
+                            Object.assign(existingInUpdatedList, uploadedFile);
+                        } else {
+                            updatedFilesForRecord.push(uploadedFile);
+                        }
+                    });
+
+
                     const recordUpdates = {
-                        files: this.uploadedFiles, // Yeni dosyaları ve güncellenmiş tipleri içerir
+                        files: updatedFilesForRecord, // Kayıt üzerinde olması gereken son dosya listesi
                     };
                     
                     // İsteğe bağlı güncellemeler
                     const newStatus = document.getElementById('updateRecordStatus').value;
+                    // Eğer durum seçilmişse VE mevcut durumdan farklıysa güncelle
                     if (newStatus && newStatus !== this.originalRecordData.status) {
                         recordUpdates.status = newStatus;
                     } else { // Durum değişmediyse mevcut durumu koru
@@ -927,6 +1031,7 @@
                     }
 
                     const newNotes = document.getElementById('updateRecordNotes').value.trim();
+                    // Eğer notlar değişmişse güncelle
                     if (newNotes !== (this.originalRecordData.notes || '').trim()) {
                         recordUpdates.notes = newNotes;
                     } else { // Notlar değişmediyse mevcut notları koru
@@ -978,6 +1083,9 @@
                     <option value="rejected">Reddedildi</option>
                     <option value="expired">Süresi Doldu</option>
                 `;
+                // Belge tipi ve atama listelerini başlangıç durumuna getir
+                this.filterDocumentTypesByRecordType('all');
+                this.filterDocumentDesignationsByRecordType('all');
             }
 
             handleBack() {
