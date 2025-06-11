@@ -433,6 +433,82 @@
         .indexing-transaction-history .transaction-document-link:hover {
             color: #0056b3;
         }
+
+        /* Styles for tree structure */
+        .transaction-tree-container {
+            margin-top: 10px;
+        }
+
+        .tree-node {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 5px;
+            background-color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid #eee;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            position: relative;
+        }
+
+        .tree-node.child {
+            margin-left: 20px; /* Indent for children */
+            border-left: 3px solid #1e3c72; /* Visual indicator for child */
+            padding-left: 15px;
+        }
+
+        .tree-node-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .node-description {
+            font-weight: 600;
+            color: #333;
+            font-size: 0.9em;
+        }
+
+        .node-meta {
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 4px;
+        }
+        .node-document-link {
+            font-size: 0.75em;
+            color: #007bff;
+            text-decoration: underline;
+            margin-top: 4px;
+            display: block;
+            word-break: break-all;
+        }
+        .node-document-link:hover {
+            color: #0056b3;
+        }
+        .node-actions {
+            display: flex;
+            gap: 5px;
+            margin-left: 10px;
+            align-items: center;
+        }
+        .node-action-btn {
+            padding: 4px 8px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.7em;
+            transition: all 0.3s ease;
+        }
+        .btn-edit-node {
+            background: #ffc107;
+            color: #212529;
+        }
+        .btn-delete-node {
+            background: #dc3545;
+            color: white;
+        }
+
+
     </style>
 </head>
 <body>
@@ -559,8 +635,30 @@
         </div>
     </main>
 
+    <div class="modal" id="editTransactionModal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">İşlem Düzenle</h3>
+                <button class="close-btn" id="closeEditTransactionModal">&times;</button>
+            </div>
+            <form id="editTransactionForm">
+                <input type="hidden" id="editTransactionRecordId">
+                <input type="hidden" id="editTransactionId">
+                <div class="form-group">
+                    <label class="form-label" for="editTransactionDescription">Açıklama</label>
+                    <textarea id="editTransactionDescription" class="form-input" rows="3"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="cancelEditTransactionBtn">İptal</button>
+                    <button type="submit" class="btn btn-primary" id="saveTransactionBtn">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
     <script type="module">
-        import { authService, ipRecordsService, auth, generateUUID } from './firebase-config.js';
+        import { authService, ipRecordsService, auth, generateUUID, subDesignationTranslations, documentDesignationTranslations } from './firebase-config.js';
 
         class IndexingModule {
             constructor() {
@@ -608,6 +706,7 @@
                     { name: 'Genel Not', value: 'Genel Not', ipTypes: ['all'], required: false }
                 ];
                 this.currentDocumentDesignations = []; // Seçilen kayda göre filtrelenecek liste
+                this.existingDocumentIndexedTransactions = []; // Mevcut "Document Indexed" transaction'ları tutacak
 
                 this.init();
             }
@@ -652,6 +751,14 @@
 
                 // Form validation clearing for update fields
                 document.getElementById('updateRecordStatus').addEventListener('change', () => this.clearFieldError('updateRecordStatus'));
+
+                // Transaction Düzenleme Modalı Event Listenerları
+                document.getElementById('closeEditTransactionModal').addEventListener('click', () => this.hideEditTransactionModal());
+                document.getElementById('cancelEditTransactionBtn').addEventListener('click', () => this.hideEditTransactionModal());
+                document.getElementById('editTransactionForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.saveTransactionChanges();
+                });
             }
 
             showNotification(message, type = 'info') {
@@ -838,7 +945,7 @@
                     const indexingTransactionHistorySection = document.getElementById('indexingTransactionHistorySection');
                     if (indexingTransactionHistorySection) {
                         indexingTransactionHistorySection.style.display = 'block';
-                        this.renderIndexingTransactions(record.transactions, record.files);
+                        this.renderIndexingTransactions(record.transactions, record.files, recordId); // recordId'yi de geç
                     }
 
 
@@ -941,6 +1048,7 @@
                                 content: dataUrl, // Base64 içeriği
                                 documentDesignation: this.currentDocumentDesignations.length > 0 ? this.currentDocumentDesignations[0].value : '', // İlk filtrelenmiş atama tipi
                                 subDesignation: '', // Yeni eklenen alt atama alanı
+                                selectedParentTransactionId: null, // Alt atama için seçilen parent transaction ID'si
                                 uploadedAt: new Date().toISOString()
                             };
                             this.uploadedFiles.push(newFileObj);
@@ -992,12 +1100,30 @@
                     subDesignationSelectHtml += `</select>`;
                 }
 
+                // Parent Transaction Seçimi için HTML oluştur
+                let parentTransactionSelectHtml = '';
+                if (hasSubDesignations && this.existingDocumentIndexedTransactions.length > 0) {
+                    parentTransactionSelectHtml = `
+                        <select class="file-item-select" data-file-id="${file.id}" data-field="selectedParentTransactionId" style="margin-top: 5px;">
+                            <option value="">Yeni İşlem Oluştur (Bağımsız)</option>
+                            <optgroup label="Mevcut Ana Atama İşlemleri">
+                                ${this.existingDocumentIndexedTransactions.filter(tx => !tx.parentId).map(tx => `
+                                    <option value="${tx.transactionId}" ${file.selectedParentTransactionId === tx.transactionId ? 'selected' : ''}>
+                                        ${tx.description} (${new Date(tx.timestamp).toLocaleDateString('tr-TR')})
+                                    </option>
+                                `).join('')}
+                            </optgroup>
+                        </select>
+                    `;
+                }
+
 
                 fileItem.innerHTML = `
                     <span>${file.name} (${this.formatFileSize(file.size)})</span>
                     <div class="file-item-controls">
                         ${docDesignationSelectHtml}
                         ${subDesignationSelectHtml}
+                        ${parentTransactionSelectHtml}
                         <button type="button" class="remove-file" data-file-id="${file.id}">×</button>
                     </div>
                 `;
@@ -1010,11 +1136,9 @@
                         const updatedFile = this.uploadedFiles.find(f => f.id === file.id);
                         if (updatedFile) {
                             updatedFile.documentDesignation = e.target.value;
-                            // Reset subDesignation if primary designation changes
-                            updatedFile.subDesignation = ''; 
-
-                            // Re-render this specific file item to show/hide sub-designation dropdown
-                            this.updateSpecificFileItem(file.id);
+                            updatedFile.subDesignation = ''; // Reset subDesignation if primary designation changes
+                            updatedFile.selectedParentTransactionId = null; // Reset parent selection
+                            this.updateSpecificFileItem(file.id); // Re-render this specific file item to show/hide sub-designation dropdown
                         }
                     });
                 }
@@ -1025,6 +1149,22 @@
                         const updatedFile = this.uploadedFiles.find(f => f.id === file.id);
                         if (updatedFile) {
                             updatedFile.subDesignation = e.target.value;
+                            // Alt atama seçildiğinde, eğer parent seçimi yoksa, varsayılan olarak null kalsın
+                            // Parent seçimi combobox'ı için event listener ekle
+                            const parentTxSelect = fileItem.querySelector(`.file-item-select[data-field="selectedParentTransactionId"]`);
+                            if (parentTxSelect && !updatedFile.selectedParentTransactionId) {
+                                parentTxSelect.value = ''; // Default "Yeni İşlem Oluştur"
+                            }
+                        }
+                    });
+                }
+
+                const parentTxSelect = fileItem.querySelector(`.file-item-select[data-field="selectedParentTransactionId"]`);
+                if (parentTxSelect) {
+                    parentTxSelect.addEventListener('change', (e) => {
+                        const updatedFile = this.uploadedFiles.find(f => f.id === file.id);
+                        if (updatedFile) {
+                            updatedFile.selectedParentTransactionId = e.target.value || null; // Boşsa null kaydet
                         }
                     });
                 }
@@ -1068,10 +1208,27 @@
                             const selected = (file.subDesignation === subDesignation.value) ? 'selected' : '';
                             subDesignationSelectHtml += `<option value="${subDesignation.value}" ${selected}>${subDesignation.name}</option>`;
                         });
-                        subDesignationSelectHtml += `</select`;
+                        subDesignationSelectHtml += `</select>`;
                         newControlsDiv.innerHTML += subDesignationSelectHtml;
                     }
                     
+                    // Parent Transaction Seçimi için HTML oluştur
+                    if (selectedDesignationDef && selectedDesignationDef.subDesignations && this.existingDocumentIndexedTransactions.length > 0) {
+                        let parentTransactionSelectHtml = `
+                            <select class="file-item-select" data-file-id="${file.id}" data-field="selectedParentTransactionId" style="margin-top: 5px;">
+                                <option value="">Yeni İşlem Oluştur (Bağımsız)</option>
+                                <optgroup label="Mevcut Ana Atama İşlemleri">
+                                    ${this.existingDocumentIndexedTransactions.filter(tx => !tx.parentId).map(tx => `
+                                        <option value="${tx.transactionId}" ${file.selectedParentTransactionId === tx.transactionId ? 'selected' : ''}>
+                                            ${tx.description} (${new Date(tx.timestamp).toLocaleDateString('tr-TR')})
+                                        </option>
+                                    `).join('')}
+                                </optgroup>
+                            </select>
+                        `;
+                        newControlsDiv.innerHTML += parentTransactionSelectHtml;
+                    }
+
                     // Add remove button
                     newControlsDiv.innerHTML += `<button type="button" class="remove-file" data-file-id="${file.id}">×</button>`;
 
@@ -1085,6 +1242,7 @@
                             if (updatedFile) {
                                 updatedFile.documentDesignation = e.target.value;
                                 updatedFile.subDesignation = ''; // Reset subDesignation when main changes
+                                updatedFile.selectedParentTransactionId = null; // Reset parent selection
                                 this.updateSpecificFileItem(file.id); // Re-render to update sub-dropdown
                             }
                         });
@@ -1095,6 +1253,20 @@
                             const updatedFile = this.uploadedFiles.find(f => f.id === file.id);
                             if (updatedFile) {
                                 updatedFile.subDesignation = e.target.value;
+                                // Alt atama seçildiğinde, eğer parent seçimi yoksa, varsayılan olarak null kalsın
+                                const parentTxSelect = fileItemElement.querySelector(`.file-item-select[data-field="selectedParentTransactionId"]`);
+                                if (parentTxSelect && !updatedFile.selectedParentTransactionId) {
+                                    parentTxSelect.value = ''; // Default "Yeni İşlem Oluştur"
+                                }
+                            }
+                        });
+                    }
+                    const parentTxSelect = newControlsDiv.querySelector(`.file-item-select[data-field="selectedParentTransactionId"]`);
+                    if (parentTxSelect) {
+                        parentTxSelect.addEventListener('change', (e) => {
+                            const updatedFile = this.uploadedFiles.find(f => f.id === file.id);
+                            if (updatedFile) {
+                                updatedFile.selectedParentTransactionId = e.target.value || null; // Boşsa null kaydet
                             }
                         });
                     }
@@ -1249,6 +1421,7 @@
                 this.selectedRecord = null;
                 this.uploadedFiles = [];
                 this.originalRecordData = null;
+                this.existingDocumentIndexedTransactions = []; // Reset existing transactions
 
                 document.getElementById('recordSearchInput').value = '';
                 document.getElementById('selectedRecordDisplay').value = '';
@@ -1294,92 +1467,177 @@
                 window.location.href = 'portfolio.html';
             }
 
-            // Yeni eklenen transaction geçmişi render fonksiyonu (basitleştirilmiş)
-            // Sadece "Document Indexed" transaction'ları listelenecek ve doküman linki doğrudan gösterilecek.
-            renderIndexingTransactions(transactions, recordFiles) {
+            // Transaction Düzenleme Modalı Açma
+            openEditTransactionModal(recordId, transactionId) {
+                const record = this.allRecords.find(r => r.id === recordId);
+                if (!record) return;
+                const transaction = record.transactions.find(tx => tx.transactionId === transactionId);
+                if (!transaction) return;
+
+                document.getElementById('editTransactionRecordId').value = recordId;
+                document.getElementById('editTransactionId').value = transactionId;
+                document.getElementById('editTransactionDescription').value = transaction.description;
+                document.getElementById('editTransactionModal').style.display = 'flex';
+            }
+
+            // Transaction Düzenleme Modalı Kapatma
+            hideEditTransactionModal() {
+                document.getElementById('editTransactionModal').style.display = 'none';
+                document.getElementById('editTransactionForm').reset();
+            }
+
+            // Transaction Değişikliklerini Kaydetme
+            async saveTransactionChanges() {
+                const recordId = document.getElementById('editTransactionRecordId').value;
+                const transactionId = document.getElementById('editTransactionId').value;
+                const newDescription = document.getElementById('editTransactionDescription').value.trim();
+
+                if (!newDescription) {
+                    alert('Açıklama boş olamaz.');
+                    return;
+                }
+
+                try {
+                    const result = await ipRecordsService.updateTransaction(recordId, transactionId, { description: newDescription });
+                    if (result.success) {
+                        alert('İşlem başarıyla güncellendi.');
+                        this.hideEditTransactionModal();
+                        // Güncellenmiş veriyi tekrar yükle ve transaction listesini yenile
+                        await this.loadAllRecords(); 
+                        const updatedRecord = this.allRecords.find(r => r.id === recordId);
+                        if (updatedRecord) {
+                           this.renderIndexingTransactions(updatedRecord.transactions, updatedRecord.files, recordId);
+                        }
+                    } else {
+                        alert('İşlem güncellenirken bir hata oluştu: ' + (result.error || 'Bilinmeyen Hata'));
+                    }
+                } catch (error) {
+                    console.error('Save transaction changes error:', error);
+                    alert('İşlem güncellenirken bir hata oluştu.');
+                }
+            }
+
+            // Transaction Silme
+            async deleteTransaction(recordId, transactionId) {
+                if (!confirm('Bu işlemi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz!')) {
+                    return;
+                }
+
+                try {
+                    const result = await ipRecordsService.deleteTransaction(recordId, transactionId);
+                    if (result.success) {
+                        alert('İşlem başarıyla silindi.');
+                        // Güncellenmiş veriyi tekrar yükle ve transaction listesini yenile
+                        await this.loadAllRecords(); 
+                        const updatedRecord = this.allRecords.find(r => r.id === recordId);
+                        if (updatedRecord) {
+                           this.renderIndexingTransactions(updatedRecord.transactions, updatedRecord.files, recordId);
+                        }
+                    } else {
+                        alert('İşlem silinirken bir hata oluştu: ' + (result.error || 'Bilinmeyen Hata'));
+                    }
+                } catch (error) {
+                    console.error('Delete transaction error:', error);
+                    alert('İşlem silinirken bir hata oluştu.');
+                }
+            }
+
+
+            // Yeni eklenen transaction geçmişi render fonksiyonu
+            // Ağaç yapısı ve varsayılan olarak açık görüntüleme
+            renderIndexingTransactions(transactions, recordFiles, currentRecordId) {
                 const historyContainer = document.getElementById('indexingTransactionHistory');
                 if (!historyContainer) return;
 
                 historyContainer.innerHTML = ''; // Önceki içeriği temizle
 
-                // Sadece "Document Indexed" transaction'larını filtrele
-                const documentIndexedTransactions = transactions.filter(tx => tx.type === "Document Indexed")
-                                                               .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)); // En yeni en üstte
+                // Sadece "Document Indexed" ve "Document Sub-Indexed" transaction'larını filtrele
+                const relevantTransactions = transactions.filter(tx => 
+                                                tx.type === "Document Indexed" || 
+                                                tx.type === "Document Sub-Indexed"
+                                               )
+                                               .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)); // En yeni en üstte
 
-                if (documentIndexedTransactions.length === 0) {
+
+                if (relevantTransactions.length === 0) {
                     historyContainer.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Bu kayda ait belge indeksleme geçmişi bulunmamaktadır.</p>';
                     return;
                 }
 
-                documentIndexedTransactions.forEach(tx => {
-                    const transactionRow = document.createElement('div');
-                    transactionRow.className = 'transaction-item'; // Sadece transaction-item sınıfı, yeni grid stilleri için flex kullanacağız
+                // Parent-child ilişkisini kur
+                const transactionsMap = new Map(relevantTransactions.map(tx => [tx.transactionId, tx]));
+                const childrenMap = new Map();
 
-                    let documentLinkHtml = '';
-                    if (tx.documentId && recordFiles) {
-                        const relatedFile = recordFiles.find(file => file.id === tx.documentId);
-                        if (relatedFile && relatedFile.content) {
-                            documentLinkHtml = `
-                                <a href="${relatedFile.content}" download="${relatedFile.name}" class="transaction-document-link" title="${relatedFile.name}">
-                                    📄 ${relatedFile.name.length > 25 ? relatedFile.name.substring(0,22) + '...' : relatedFile.name} (${this.formatFileSize(relatedFile.size)})
-                                </a>
-                            `;
+                relevantTransactions.forEach(tx => {
+                    if (tx.parentId) {
+                        if (!childrenMap.has(tx.parentId)) {
+                            childrenMap.set(tx.parentId, []);
                         }
+                        childrenMap.get(tx.parentId).push(tx);
                     }
-
-                    // İşlem açıklamasını ve tarihini tek satırda göster
-                    let transactionDescription = "";
-                    // Açıklama, sadece atama ve alt atama değerlerini içerecek
-                    if (tx.subDesignation) {
-                        transactionDescription = tx.subDesignation;
-                    } else if (tx.documentDesignation) {
-                        transactionDescription = tx.documentDesignation;
-                    } else {
-                        transactionDescription = tx.description; // Eğer atama/alt atama yoksa orijinal açıklamayı kullan
-                    }
-
-                    // Alt atama değerlerini Türkçe'ye çevir (indexing.html içinde tanımlanmış combobox isimleriyle eşleşmeli)
-                    const subDesignationTranslations = {
-                        'opposition_to_publication': 'Yayına İtiraz',
-                        'response_to_opposition': 'İtiraza Karşı Görüş',
-                        'opposition_decision_rejected': 'Yayına İtiraz Kararı - Ret',
-                        'opposition_decision_accepted': 'Yayına İtiraz Kararı - Kabul'
-                    };
-                    // documentDesignation değerlerini de Türkçe'ye çevir (indexing.html içinde tanımlanmış combobox isimleriyle eşleşmeli)
-                    const documentDesignationTranslations = {
-                        'opposition_trademark_office': 'Yayına İtiraz - Markalar Dairesi',
-                        'Başvuru Ek Dokümanı': 'Başvuru Ek Dokümanı',
-                        'Resmi Yazışma': 'Resmi Yazışma',
-                        'Vekaletname': 'Vekaletname',
-                        'Teknik Çizim': 'Teknik Çizim',
-                        'Karar': 'Karar',
-                        'Finansal Belge': 'Finansal Belge',
-                        'Yayın Kararı': 'Yayın Kararı',
-                        'Ret Kararı': 'Ret Kararı',
-                        'Tescil Belgesi': 'Tescil Belgesi',
-                        'Araştırma Raporu': 'Araştırma Raporu',
-                        'İnceleme Raporu': 'İnceleme Raporu',
-                        'Diğer Belge': 'Diğer Belge',
-                        'Genel Not': 'Genel Not'
-                    };
-
-
-                    if (tx.subDesignation && subDesignationTranslations[tx.subDesignation]) {
-                        transactionDescription = subDesignationTranslations[tx.subDesignation];
-                    } else if (tx.documentDesignation && documentDesignationTranslations[tx.documentDesignation]) {
-                        transactionDescription = documentDesignationTranslations[tx.documentDesignation];
-                    }
-
-
-                    const formattedTimestamp = new Date(tx.timestamp).toLocaleString('tr-TR');
-
-                    transactionRow.innerHTML = `
-                        <div class="transaction-description-col">${transactionDescription}</div>
-                        <div class="transaction-date-col">${formattedTimestamp}</div>
-                        <div class="transaction-document-col">${documentLinkHtml}</div>
-                    `;
-                    historyContainer.appendChild(transactionRow);
                 });
+
+                // Kök işlemleri bul (parentId null olanlar veya Document Indexed olup da parent'ı olmayanlar)
+                const rootTransactions = relevantTransactions.filter(tx => !tx.parentId || tx.type === "Document Indexed" && !transactionsMap.has(tx.parentId));
+                
+                // Kök transactionları kronolojik olarak sırala
+                rootTransactions.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+                // Parent transactionları kaydet (parent seçim combobox'ı için)
+                this.existingDocumentIndexedTransactions = rootTransactions.filter(tx => tx.type === "Document Indexed");
+
+
+                const buildTreeHtml = (transactionsToRender, currentParentId, level) => {
+                    let html = '';
+                    const transactionsAtCurrentLevel = transactionsToRender.filter(tx => tx.parentId === currentParentId)
+                                                                           .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)); // En yeni en üstte
+
+
+                    transactionsAtCurrentLevel.forEach(tx => {
+                        const hasChildren = childrenMap.has(tx.transactionId) && childrenMap.get(tx.transactionId).length > 0;
+                        const isChildNode = level > 0;
+
+                        let documentLinkHtml = '';
+                        if (tx.documentId && recordFiles) {
+                            const relatedFile = recordFiles.find(file => file.id === tx.documentId);
+                            if (relatedFile && relatedFile.content) {
+                                documentLinkHtml = `
+                                    <a href="${relatedFile.content}" download="${relatedFile.name}" class="node-document-link" title="${relatedFile.name}">
+                                        📄 ${relatedFile.name.length > 20 ? relatedFile.name.substring(0,17) + '...' : relatedFile.name} (${this.formatFileSize(relatedFile.size)})
+                                    </a>
+                                `;
+                            }
+                        }
+
+                        html += `
+                            <div class="tree-node ${isChildNode ? 'child' : ''}">
+                                <div class="tree-node-content">
+                                    <div class="node-description">${tx.description}</div>
+                                    <div class="node-meta">
+                                        ${new Date(tx.timestamp).toLocaleString('tr-TR')} - ${tx.userEmail}
+                                    </div>
+                                    ${documentLinkHtml}
+                                </div>
+                                <div class="node-actions">
+                                    <button class="node-action-btn btn-edit-node" 
+                                            onclick="indexingModule.openEditTransactionModal('${currentRecordId}', '${tx.transactionId}')" 
+                                            title="Düzenle">✏️</button>
+                                    <button class="node-action-btn btn-delete-node" 
+                                            onclick="indexingModule.deleteTransaction('${currentRecordId}', '${tx.transactionId}')" 
+                                            title="Sil">🗑️</button>
+                                </div>
+                            </div>
+                        `;
+
+                        if (hasChildren) {
+                            // Çocukları direkt olarak ekle (varsayılan olarak açık)
+                            html += buildTreeHtml(relevantTransactions, tx.transactionId, level + 1);
+                        }
+                    });
+                    return html;
+                };
+
+                historyContainer.innerHTML = buildTreeHtml(relevantTransactions, null, 0); // Kökten başla
             }
         }
 
