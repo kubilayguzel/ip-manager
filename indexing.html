@@ -525,12 +525,12 @@
 
                 // 2. DOKÜMAN ATAMALARI / KAYIT TİPLERİ (Belgenin IP Kaydındaki Anlamı)
                 this.allDocumentDesignations = [
-                    { name: 'Atama Seçiniz', value: '', ipTypes: ['all'], required: false }, // required: false means optional
+                    { name: 'Atama Seçiniz', value: '', ipTypes: ['all'], required: true }, // 'all' için varsayılan zorunlu hale getirildi
                     { name: 'Başvuru Ek Dokümanı', value: 'Başvuru Ek Dokümanı', ipTypes: ['all'], required: false },
                     { name: 'Yasal Doküman', value: 'Yasal Doküman', ipTypes: ['all'], required: false },
                     { name: 'Finansal Belge', value: 'Finansal Belge', ipTypes: ['all'], required: false },
 
-                    // Marka Özel Atamaları
+                    // Marka Özel Atamaları (Kayıt Türleri)
                     { name: 'Yayın Kararı', value: 'Yayın Kararı', ipTypes: ['trademark'], required: false },
                     { name: 'Ret Kararı', value: 'Ret Kararı', ipTypes: ['trademark'], required: false },
                     { name: 'Tescil Belgesi', value: 'Tescil Belgesi', ipTypes: ['trademark'], required: false },
@@ -675,8 +675,16 @@
                 this.selectedRecord = null;
                 document.getElementById('selectedRecordDisplay').value = '';
                 document.getElementById('indexDocumentsBtn').disabled = true;
-                document.getElementById('documentUploadSection').style.display = 'none';
-                document.getElementById('recordUpdateSection').style.display = 'none';
+                
+                // Null kontrolü eklendi
+                const documentUploadSection = document.getElementById('documentUploadSection');
+                if (documentUploadSection) {
+                    documentUploadSection.style.display = 'none';
+                }
+                const recordUpdateSection = document.getElementById('recordUpdateSection');
+                if (recordUpdateSection) {
+                    recordUpdateSection.style.display = 'none';
+                }
 
                 if (searchTerm.length < 2) {
                     searchResultsContainer.innerHTML = '<p class="no-results-message">Arama yapmak için en az 2 karakter girin.</p>';
@@ -725,8 +733,12 @@
                     // Yeni seçimi işaretle
                     document.querySelector(`.record-search-item[data-record-id="${recordId}"]`)?.classList.add('selected');
 
-                    document.getElementById('documentUploadSection').style.display = 'block';
-                    document.getElementById('recordUpdateSection').style.display = 'block';
+                    const documentUploadSection = document.getElementById('documentUploadSection');
+                    if (documentUploadSection) documentUploadSection.style.display = 'block';
+
+                    const recordUpdateSection = document.getElementById('recordUpdateSection');
+                    if (recordUpdateSection) recordUpdateSection.style.display = 'block';
+
                     document.getElementById('indexDocumentsBtn').disabled = false;
                     this.clearFieldError('recordSelectError'); // Hata mesajını temizle
 
@@ -831,7 +843,8 @@
                                 type: file.type,
                                 size: file.size,
                                 content: dataUrl,
-                                documentType: this.currentDocumentTypes.length > 0 ? this.currentDocumentTypes[0].value : '', // İlk filtrelenmiş belge tipi
+                                // documentType başlangıçta ilk seçenek (Belge Tipi Seçiniz) olacak
+                                documentType: this.currentDocumentTypes.length > 0 ? this.currentDocumentTypes[0].value : '', 
                                 documentDesignation: this.currentDocumentDesignations.length > 0 ? this.currentDocumentDesignations[0].value : '', // İlk filtrelenmiş atama tipi
                                 uploadedAt: new Date().toISOString()
                             };
@@ -942,24 +955,18 @@
 
                 // Yüklenen dosyalar için Document Type ve Document Designation seçimi zorunlu
                 this.uploadedFiles.forEach((file, index) => {
-                    const docTypeFieldId = `fileTypeSelect_${file.id}`; // Her select için benzersiz ID atayabilirsiniz
-                    const docDesignationFieldId = `fileDesignationSelect_${file.id}`;
-
-                    const docTypeOption = this.currentDocumentTypes.find(dt => dt.value === file.documentType);
-                    const docDesignationOption = this.currentDocumentDesignations.find(dd => dd.value === file.documentDesignation);
-
-                    // Belge Tipi kontrolü
+                    // Document Type zorunlu kontrolü
                     if (!file.documentType || file.documentType === '') {
-                        // Burada doğrudan select elementine hata sınıfı eklemek gerekir
-                        // addFileToList içinde select'lere ID veya data-attribute ekleyerek hedefleyebilirsiniz
-                        // Şimdilik genel bir bildirimle devam edelim
+                        isValid = false;
                         this.showNotification(`'${file.name}' belgesi için tip seçmelisiniz.`, 'error');
-                        isValid = false;
+                        // İlgili dropdown'a hata sınıfı ekleme mantığı burada genişletilebilir.
                     }
-                    // Atama Tipi kontrolü (required özelliği true ise)
-                    if (docDesignationOption && docDesignationOption.required && (!file.documentDesignation || file.documentDesignation === '')) {
-                        this.showNotification(`'${file.name}' belgesi için atama seçmelisiniz.`, 'error');
+
+                    // Document Designation zorunlu kontrolü (sadece `required: true` olan atamalar için)
+                    const docDesignationDef = this.currentDocumentDesignations.find(dd => dd.value === file.documentDesignation);
+                    if (docDesignationDef && docDesignationDef.required && (!file.documentDesignation || file.documentDesignation === '')) {
                         isValid = false;
+                        this.showNotification(`'${file.name}' belgesi için atama seçmelisiniz. (Zorunlu Alan)`, 'error');
                     }
                 });
 
@@ -989,31 +996,23 @@
                 this.showNotification('Belgeler indeksleniyor ve kayıt güncelleniyor...', 'info');
 
                 try {
-                    // Mevcut kaydın orijinal dosyalarını al, yeni yüklenenleri üzerine ekleyeceğiz.
-                    // Bu, Firebase'deki `files` dizisinin son hali olacak.
                     const currentFilesOnRecord = this.originalRecordData.files || [];
                     
-                    // Yeni yüklenen dosyaları (veya güncellenmiş metadatalarını) orijinal dizinin sonuna ekle.
-                    // Aynı ID'ye sahip olanlar güncellenmeli, olmayanlar eklenmeli.
                     const updatedFilesForRecord = [];
                     const uploadedFileIds = new Set(this.uploadedFiles.map(f => f.id));
 
-                    // Eski dosyaları ekle (eğer uploadedFiles'ta yoksa)
+                    // Eski dosyaları ekle (eğer uploadedFiles'ta yoksa veya güncellenmemişse)
                     currentFilesOnRecord.forEach(existingFile => {
+                        // Eğer bu eski dosya, yeni yüklenenler arasında ID'siyle aynıysa, eklemiyoruz
+                        // çünkü yeni versiyonu 'this.uploadedFiles' içinde zaten var.
                         if (!uploadedFileIds.has(existingFile.id)) {
                             updatedFilesForRecord.push(existingFile);
                         }
                     });
+                    
                     // Yeni yüklenen/güncellenen dosyaları ekle/değiştir
                     this.uploadedFiles.forEach(uploadedFile => {
-                        const existingInUpdatedList = updatedFilesForRecord.find(f => f.id === uploadedFile.id);
-                        if (existingInUpdatedList) {
-                            // Eğer bu dosya orijinalde de varsa ve burada güncellenmişse
-                            // (bu senaryo şu anki UI'da direct dosya güncelleme şeklinde yok, metadata değişimi olabilir)
-                            Object.assign(existingInUpdatedList, uploadedFile);
-                        } else {
-                            updatedFilesForRecord.push(uploadedFile);
-                        }
+                        updatedFilesForRecord.push(uploadedFile); // Direkt ekle, updateRecord kendi mantığını halleder
                     });
 
 
@@ -1038,7 +1037,6 @@
                         recordUpdates.notes = this.originalRecordData.notes;
                     }
 
-                    // updateRecord çağrısı, transactions dizisini otomatik olarak yönetecek
                     const result = await ipRecordsService.updateRecord(this.selectedRecord.id, recordUpdates);
 
                     if (result.success) {
@@ -1066,8 +1064,16 @@
                 document.getElementById('selectedRecordDisplay').value = '';
                 document.getElementById('searchResultsContainer').innerHTML = '<p class="no-results-message">Arama yapmak için yukarıya yazın.</p>';
                 
-                document.getElementById('documentUploadSection').style.display = 'none';
-                document.getElementById('recordUpdateSection').style.display = 'none';
+                // Null kontrolü eklendi
+                const documentUploadSection = document.getElementById('documentUploadSection');
+                if (documentUploadSection) {
+                    documentUploadSection.style.display = 'none';
+                }
+                const recordUpdateSection = document.getElementById('recordUpdateSection');
+                if (recordUpdateSection) {
+                    recordUpdateSection.style.display = 'none';
+                }
+
                 document.getElementById('indexDocumentsBtn').disabled = true;
 
                 this.updateFileList(); // Dosya listesini temizle
@@ -1084,8 +1090,8 @@
                     <option value="expired">Süresi Doldu</option>
                 `;
                 // Belge tipi ve atama listelerini başlangıç durumuna getir
-                this.filterDocumentTypesByRecordType('all');
-                this.filterDocumentDesignationsByRecordType('all');
+                this.filterDocumentTypesByRecordType('all'); // 'all' ile çağırarak tüm tipleri yükle
+                this.filterDocumentDesignationsByRecordType('all'); // 'all' ile çağırarak tüm atamaları yükle
             }
 
             handleBack() {
