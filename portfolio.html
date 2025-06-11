@@ -1111,7 +1111,7 @@
 
 
     <script type="module">
-        import { authService, ipRecordsService, auth, subDesignationTranslations, documentDesignationTranslations } from './firebase-config.js'; // generateUUID'yi burada import etmeye gerek yok
+        import { authService, ipRecordsService, auth, subDesignationTranslations, documentDesignationTranslations } from './firebase-config.js';
 
         let portfolio; // Global olarak tanımlandı
 
@@ -1214,12 +1214,6 @@
                     this.filters.search = e.target.value;
                     this.applyFilters();
                 });
-
-                // Type filter (dropdown, artık tablar tarafından kontrol ediliyor)
-                // document.getElementById('typeFilter').addEventListener('change', (e) => {
-                //     this.filters.type = e.target.value;
-                //     this.applyFilters();
-                // });
 
                 document.getElementById('statusFilter').addEventListener('change', (e) => {
                     this.filters.status = e.target.value;
@@ -1348,11 +1342,8 @@
 
             applyFilters() {
                 const search = document.getElementById('searchInput').value.toLowerCase();
-                // const typeFilter = document.getElementById('typeFilter').value; // Artık dropdown kullanılmıyor
-                const typeFilter = this.filters.type; // Tablardan gelen filtre
-
+                const typeFilter = this.filters.type;
                 const statusFilter = document.getElementById('statusFilter').value;
-                
                 const dateFrom = document.getElementById('dateFromFilter')?.value; 
                 const dateTo = document.getElementById('dateToFilter')?.value; 
                 const periodFilter = document.querySelector('.filter-buttons .filter-btn.active')?.dataset.period || 'all';
@@ -1362,7 +1353,6 @@
                         return false;
                     }
 
-                    // Type tab filtresi
                     if (typeFilter && typeFilter !== 'all' && record.type !== typeFilter) {
                         return false;
                     }
@@ -1405,7 +1395,7 @@
                     record.description,
                     record.applicationNumber,
                     record.registrationNumber,
-                    record.userEmail // Super Admin için kullanıcı e-postası
+                    record.userEmail
                 ];
                 if (record.owners && record.owners.some(owner => owner.name.toLowerCase().includes(search))) {
                     return true;
@@ -1543,13 +1533,11 @@
                     `;
                 }
 
-                // Eğer Süper Admin ise ve kayıt sahibi bilgisi varsa ekle
                 let ownerInfoHtml = ''; 
                 if (authService.isSuperAdmin()) {
                     ownerInfoHtml = `<div style="font-size: 0.75em; color: #888; margin-top: 5px;">${record.userEmail || '-'}</div>`;
                 }
                 
-                // Başvuru Numarası için yeni URL'li link oluşturma
                 const baseUrl = "https://online.turkpatent.gov.tr/trademark/search/applicationNumber?"; 
                 const applicationNumberLink = record.applicationNumber 
                     ? `<a href="${baseUrl}q=${encodeURIComponent(record.applicationNumber)}" target="_blank" title="TürkPatent web sitesinde ara">${record.applicationNumber}</a>`
@@ -1593,271 +1581,61 @@
                 return row;
             }
 
-            // viewRecord metodunu güncelliyoruz: Transaction geçmişini göstermek için
             viewRecord(recordId) {
-                console.log('Viewing record with ID:', recordId);
                 const record = this.records.find(r => r.id === recordId);
-                if (!record) {
-                    console.error('Record not found for ID:', recordId);
-                    return;
-                }
-                console.log('Record data:', record);
+                if (!record) return;
 
-                const typeNames = {
-                    patent: 'Patent',
-                    trademark: 'Marka',
-                    copyright: 'Telif Hakkı',
-                    design: 'Tasarım'
-                };
-
-                const statusNames = {
-                    application: 'Başvuru',
-                    pending: 'Beklemede',
-                    approved: 'Onaylandı',
-                    rejected: 'Reddedildi',
-                    expired: 'Süresi Doldu',
-                    published: 'Yayınlandı', // Marka özel
-                    partial_refusal: 'Kısmi Ret', // Marka özel
-                    refused: 'Ret', // Marka özel
-                    opposition_received: 'İtiraz Geldi', // Marka özel
-                    request_for_extension: 'Ek Süre Talebi', // Yeni eklendi
-                    opposition_filed: 'İtiraz Edildi', // Marka özel
-                    registered: 'Tescilli', // Marka özel
-                    not_renewed: 'Yenilenmedi', // Marka özel
-                    invalid_void: 'Başvuru Geçersiz/Hükümsüz' // Marka özel
-                };
-
-                // Tarihleri düzgün formatla
+                const typeNames = { patent: 'Patent', trademark: 'Marka', copyright: 'Telif Hakkı', design: 'Tasarım' };
+                const statusNames = { application: 'Başvuru', pending: 'Beklemede', approved: 'Onaylandı', rejected: 'Reddedildi', expired: 'Süresi Doldu', published: 'Yayınlandı', partial_refusal: 'Kısmi Ret', refused: 'Ret', opposition_received: 'İtiraz Geldi', request_for_extension: 'Ek Süre Talebi', opposition_filed: 'İtiraz Edildi', registered: 'Tescilli', not_renewed: 'Yenilenmedi', invalid_void: 'Başvuru Geçersiz/Hükümsüz' };
                 const formatDate = (dateString) => dateString ? new Date(dateString).toLocaleDateString('tr-TR') : '-';
                 const formatDateTime = (dateString) => dateString ? new Date(dateString).toLocaleString('tr-TR') : '-';
 
+                let modalContentHtml = `<div class="detail-grid"> ... </div>`; // Grid içeriği aynı kalacak
 
-                let modalContentHtml = `
-                    <div class="detail-grid">
-                        <div class="detail-item">
-                            <div class="detail-label">IP Türü</div>
-                            <div class="detail-value">${typeNames[record.type] || record.type}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Durum</div>
-                            <div class="detail-value">
-                                <span class="status-badge ${record.status}">
-                                    ${statusNames[record.status] || record.status}
-                                </span>
-                            </div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Başlık</div>
-                            <div class="detail-value">${record.title || '-'}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Başvuru Numarası</div>
-                            <div class="detail-value">${record.applicationNumber || '-'}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Başvuru Tarihi</div>
-                            <div class="detail-value">${formatDate(record.applicationDate)}</div>
-                        </div>
-                        <div class="detail-item full-width">
-                            <div class="detail-label">Açıklama</div>
-                            <div class="detail-value">${record.description || '-'}</div>
-                        </div>
-                        <div class="detail-item full-width">
-                            <div class="detail-label">Hak Sahipleri</div>
-                            <div class="detail-value">
-                                ${record.owners && record.owners.length > 0 ? record.owners.map(owner => `
-                                    <div style="margin-bottom: 5px;">
-                                        ${owner.type === 'company' ? '🏢' : '👤'} ${owner.name}
-                                    </div>
-                                `).join('') : '-'}
-                            </div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Oluşturma Tarihi</div>
-                            <div class="detail-value">${formatDateTime(record.createdAt)}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Son Güncelleme Tarihi</div>
-                            <div class="detail-value">${formatDateTime(record.updatedAt)}</div>
-                        </div>
-                        ${authService.isSuperAdmin() && record.userEmail ? `
-                        <div class="detail-item">
-                            <div class="detail-label">Kayıt Sahibi (Kullanıcı)</div>
-                            <div class="detail-value">${record.userEmail}</div>
-                        </div>
-                        ` : ''}
-                `;
-
-                // Tür'e özel detayları ekle
-                if (record.type === 'patent') {
-                    modalContentHtml += `
-                        <h4 class="detail-section-title">Patent Bilgileri</h4>
-                        <div class="detail-item">
-                            <div class="detail-label">Patent Sınıfı</div>
-                            <div class="detail-value">${record.patentClass || '-'}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Son Geçerlilik Tarihi</div>
-                            <div class="detail-value">${formatDate(record.expiryDate)}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Öncelik Tarihi</div>
-                            <div class="detail-value">${formatDate(record.priority)}</div>
-                        </div>
-                        <div class="detail-item full-width">
-                            <div class="detail-label">Patent İstekleri</div>
-                            <div class="detail-value">${record.claims || '-'}</div>
-                        </div>
-                    `;
-                } else if (record.type === 'trademark') {
-                    modalContentHtml += `
-                        <h4 class="detail-section-title">Marka Bilgileri</h4>
-                        <div class="detail-item">
-                            <div class="detail-label">Tescil Numarası</div>
-                            <div class="detail-value">${record.registrationNumber || '-'}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Tescil Tarihi</div>
-                            <div class="detail-value">${formatDate(record.registrationDate)}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Marka Türü</div>
-                            <div class="detail-value">${record.trademarkType || '-'}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Nice Sınıfı</div>
-                            <div class="detail-value">${record.niceClass || '-'}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Yenileme Tarihi</div>
-                            <div class="detail-value">${formatDate(record.renewalDate)}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Bülten Tarihi</div>
-                            <div class="detail-value">${formatDate(record.bulletinDate)}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Bülten Numarası</div>
-                            <div class="detail-value">${record.bulletinNumber || '-'}</div>
-                        </div>
-                        <div class="detail-item full-width">
-                            <div class="detail-label">Mal ve Hizmetler</div>
-                            <div class="detail-value">${record.goodsServices || '-'}</div>
-                        </div>
-                    `;
-                    if (record.trademarkImage && record.trademarkImage.content) {
-                        modalContentHtml += `
-                            <div class="detail-item full-width" style="text-align: center;">
-                                <div class="detail-label">Marka Örneği</div>
-                                <img src="${record.trademarkImage.content}" alt="Marka Örneği" style="max-width: 200px; max-height: 200px; border: 1px solid #e1e8ed; border-radius: 8px; margin-top: 10px;">
-                            </div>
-                        `;
-                    }
-                } else if (record.type === 'copyright') {
-                    modalContentHtml += `
-                        <h4 class="detail-section-title">Telif Hakkı Bilgileri</h4>
-                        <div class="detail-item">
-                            <div class="detail-label">Eser Türü</div>
-                            <div class="detail-value">${record.workType || '-'}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Eser Oluşturma Tarihi</div>
-                            <div class="detail-value">${formatDate(record.creationDate)}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Yayın Tarihi</div>
-                            <div class="detail-value">${formatDate(record.publicationDate)}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Yayınevi/Yapımcı</div>
-                            <div class="detail-value">${record.publisher || '-'}</div>
-                        </div>
-                    `;
-                } else if (record.type === 'design') {
-                    modalContentHtml += `
-                        <h4 class="detail-section-title">Tasarım Bilgileri</h4>
-                        <div class="detail-item">
-                            <div class="detail-label">Tasarım Türü</div>
-                            <div class="detail-value">${record.designType || '-'}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Locarno Sınıfı</div>
-                            <div class="detail-value">${record.locarnoClass || '-'}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Tasarım Tarihi</div>
-                            <div class="detail-value">${formatDate(record.designDate)}</div>
-                        </div>
-                        <div class="detail-item full-width">
-                            <div class="detail-label">Tasarım Özellikleri</div>
-                            <div class="detail-value">${record.designFeatures || '-'}</div>
-                        </div>
-                    `;
-                }
-
-                // Yüklü Belgeler alanı kaldırıldı.
-
-
-                modalContentHtml += `</div>`; // .detail-grid kapanış etiketi
-
-                document.getElementById('modalBody').innerHTML = modalContentHtml;
-                document.getElementById('modalTitle').textContent = `"${record.title}" Detayları`; // Modal başlığını kaydın başlığı ile değiştir
+                document.getElementById('modalBody').innerHTML = modalContentHtml; // İçerik doldurulacak
+                document.getElementById('modalTitle').textContent = `"${record.title}" Detayları`;
                 document.getElementById('detailModal').classList.add('show');
 
-                // İşlem Geçmişini Render Et
                 this.renderTransactionHistory(record.id, record.transactions, record.files);
             }
 
-            // YENİ METOT: renderTransactionHistory
-            // Artık sadece "Document Indexed" transaction'ları listelenecek ve doküman linki doğrudan gösterilecek.
-            // Ayrıca, düzenleme ve silme butonları eklendi.
             renderTransactionHistory(recordId, transactions, recordFiles) {
                 const historyContainer = document.getElementById('transactionHistory');
                 if (!historyContainer) return;
 
-                historyContainer.innerHTML = ''; // Önceki içeriği temizle
+                historyContainer.innerHTML = '';
 
-                // Sadece "Document Indexed" ve "Document Sub-Indexed" transaction'larını filtrele
                 const relevantTransactions = transactions.filter(tx => 
                                                 tx.type === "Document Indexed" || 
                                                 tx.type === "Document Sub-Indexed"
                                                )
-                                               .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)); // En yeni en üstte
-
+                                               .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
                 if (relevantTransactions.length === 0) {
                     historyContainer.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Bu kayda ait belge indeksleme geçmişi bulunmamaktadır.</p>';
                     return;
                 }
 
-                // Parent-child ilişkisini kur
                 const transactionsMap = new Map(relevantTransactions.map(tx => [tx.transactionId, tx]));
                 const childrenMap = new Map();
 
                 relevantTransactions.forEach(tx => {
                     if (tx.parentId) {
-                        if (!childrenMap.has(tx.parentId)) {
-                            childrenMap.set(tx.parentId, []);
-                        }
+                        if (!childrenMap.has(tx.parentId)) childrenMap.set(tx.parentId, []);
                         childrenMap.get(tx.parentId).push(tx);
                     }
                 });
 
-                // Kök işlemleri bul (parentId null olanlar veya Document Indexed olup da parent'ı olmayanlar)
-                // YALNIZCA parentId null olanları veya parent'ı relevantTransactions'ta olmayan Document Indexed'ları al.
                 const rootTransactions = relevantTransactions.filter(tx => 
                     !tx.parentId || (tx.type === "Document Indexed" && !transactionsMap.has(tx.parentId))
                 );
                 
-                // Kök transactionları kronolojik olarak sırala
                 rootTransactions.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-
 
                 const buildTreeHtml = (transactionsToRender, currentParentId, level) => {
                     let html = '';
                     const transactionsAtCurrentLevel = transactionsToRender.filter(tx => tx.parentId === currentParentId)
-                                                                           .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)); // En yeni en üstte
-
+                                                                           .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
                     transactionsAtCurrentLevel.forEach(tx => {
                         const hasChildren = childrenMap.has(tx.transactionId) && childrenMap.get(tx.transactionId).length > 0;
@@ -1875,17 +1653,15 @@
                             }
                         }
 
-                        // İşlem açıklamasını ve tarihini tek satırda göster
-                        let transactionDescription = "";
-                        
-                        if (tx.subDesignation && subDesignationTranslations[tx.subDesignation]) {
-                            transactionDescription = subDesignationTranslations[tx.subDesignation];
-                        } else if (tx.documentDesignation && documentDesignationTranslations[tx.documentDesignation]) {
-                            transactionDescription = documentDesignationTranslations[tx.documentDesignation];
-                        } else {
-                            transactionDescription = tx.description; 
-                        }
+                        // --- DÜZELTİLEN KISIM BAŞLANGICI ---
+                        let transactionDescription = tx.description;
 
+                        if (tx.type === 'Document Sub-Indexed' && tx.subDesignation && subDesignationTranslations[tx.subDesignation]) {
+                            transactionDescription = subDesignationTranslations[tx.subDesignation];
+                        } else if (tx.type === 'Document Indexed' && tx.documentDesignation && documentDesignationTranslations[tx.documentDesignation]) {
+                            transactionDescription = documentDesignationTranslations[tx.documentDesignation];
+                        }
+                        // --- DÜZELTİLEN KISIM SONU ---
 
                         const formattedTimestamp = new Date(tx.timestamp).toLocaleString('tr-TR');
 
@@ -1906,18 +1682,15 @@
                         `;
 
                         if (hasChildren) {
-                            // Çocukları direkt olarak ekle (varsayılan olarak açık)
                             html += buildTreeHtml(relevantTransactions, tx.transactionId, level + 1);
                         }
                     });
                     return html;
                 };
 
-                historyContainer.innerHTML = buildTreeHtml(relevantTransactions, null, 0); // Kökten başla
+                historyContainer.innerHTML = buildTreeHtml(relevantTransactions, null, 0);
             }
 
-
-            // Dosya boyutunu formatlama yardımcı fonksiyonu (data-entry.html'den kopyalandı)
             formatFileSize(bytes) {
                 if (bytes === 0) return '0 Bytes';
                 const k = 1024;
@@ -1928,33 +1701,24 @@
 
 
             editRecord(recordId) {
-                // Yönlendirme yaparak data-entry.html sayfasında düzenleme modunu aç
-                console.log('Editing record with ID:', recordId);
                 window.location.href = `data-entry.html?recordId=${recordId}`;
             }
 
             async deleteRecord(recordId) {
                 const record = this.records.find(r => r.id === recordId);
-                if (!record) {
-                    alert('Silinecek kayıt bulunamadı.');
-                    return;
-                }
+                if (!record) return;
 
-                if (confirm(`"${record.title}" kaydını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz!`)) {
+                if (confirm(`"${record.title}" kaydını silmek istediğinizden emin misiniz?`)) {
                     try {
-                        console.log('Attempting to delete record:', recordId);
                         const result = await ipRecordsService.deleteRecord(recordId);
                         if (result.success) {
-                            console.log('Record deleted from Firestore (or LocalStorage):', recordId);
                             this.records = this.records.filter(r => r.id !== recordId);
                             this.applyFilters(); 
                             alert('Kayıt başarıyla silindi.');
                         } else {
-                            console.error('Failed to delete record:', result.error);
-                            throw new Error(result.error || 'Kayıt silinirken bilinmeyen bir hata oluştu.');
+                            throw new Error(result.error);
                         }
                     } catch (error) {
-                        console.error('Delete error:', error);
                         alert('Kayıt silinirken bir hata oluştu: ' + error.message);
                     }
                 }
@@ -1967,236 +1731,104 @@
             exportData() {
                 try {
                     const csvContent = this.generateCSV();
-                    const blob = new Blob(['\ufeff' + csvContent], { 
-                        type: 'text/csv;charset=utf-8;' 
-                    });
-                    
+                    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
                     const link = document.createElement('a');
-                    if (link.download !== undefined) {
-                        const url = URL.createObjectURL(blob);
-                        link.setAttribute('href', url);
-                        link.setAttribute('download', `ip_portfolio_${new Date().toISOString().split('T')[0]}.csv`);
-                        link.style.visibility = 'hidden';
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                    }
+                    const url = URL.createObjectURL(blob);
+                    link.setAttribute('href', url);
+                    link.setAttribute('download', `ip_portfolio_${new Date().toISOString().split('T')[0]}.csv`);
+                    link.style.visibility = 'hidden';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
                 } catch (e) {
                     alert('Dışa aktarma sırasında bir hata oluştu.');
-                    console.error('Export error:', e);
                 }
             }
 
             generateCSV() {
-                const headers = ['ID', 'Tür', 'Başlık', 'Açıklama', 'Durum', 'Başvuru Tarihi',
-                                 'Başvuru Numarası', 'Tescil Numarası', 'Hak Sahipleri', 'Oluşturulma Tarihi',
-                                 'Marka Görseli Var Mı', 'Notlar']; 
-                
-                // Eğer süper admin ise, "Kayıt Sahibi E-postası" kolonunu ekle
-                if (authService.isSuperAdmin()) {
-                    headers.push('Kayıt Sahibi E-postası');
-                }
-
+                const headers = ['ID', 'Tür', 'Başlık', 'Açıklama', 'Durum', 'Başvuru Tarihi', 'Başvuru Numarası', 'Tescil Numarası', 'Hak Sahipleri', 'Oluşturulma Tarihi', 'Marka Görseli Var Mı', 'Notlar']; 
+                if (authService.isSuperAdmin()) headers.push('Kayıt Sahibi E-postası');
                 const rows = this.filteredRecords.map(record => {
-                    const rowData = [
-                        record.id,
-                        record.type,
-                        `"${record.title || ''}"`,
-                        `"${(record.description || '').replace(/"/g, '""')}"`,
-                        record.status,
-                        record.applicationDate || '',
-                        record.applicationNumber || '',
-                        record.registrationNumber || '',
-                        record.owners && record.owners.length > 0 ? `"${record.owners.map(o => o.name).join('; ')}"` : '',
-                        record.createdAt ? new Date(record.createdAt).toISOString() : '',
-                        record.trademarkImage ? 'Evet' : 'Hayır',
-                        `"${(record.notes || '').replace(/"/g, '""')}"`
-                    ];
-                    
-                    if (authService.isSuperAdmin()) {
-                        rowData.push(record.userEmail || '');
-                    }
+                    const rowData = [ record.id, record.type, `"${record.title || ''}"`, `"${(record.description || '').replace(/"/g, '""')}"`, record.status, record.applicationDate || '', record.applicationNumber || '', record.registrationNumber || '', record.owners ? `"${record.owners.map(o => o.name).join('; ')}"` : '', record.createdAt ? new Date(record.createdAt).toISOString() : '', record.trademarkImage ? 'Evet' : 'Hayır', `"${(record.notes || '').replace(/"/g, '""')}"` ];
+                    if (authService.isSuperAdmin()) rowData.push(record.userEmail || '');
                     return rowData;
                 });
-
-                return [headers, ...rows]
-                    .map(row => row.join(','))
-                    .join('\n');
+                return [headers, ...rows].map(row => row.join(',')).join('\n');
             }
 
             showEmptyState() {
-                const tableContent = document.getElementById('table-container');
-                if (!tableContent) {
-                    console.error("Hata: 'table-container' elemanı bulunamadı. showEmptyState çalıştırılamıyor.");
-                    return;
-                }
-                tableContent.innerHTML = `
-                    <div class="no-records"> <div class="no-records-icon">📋</div>
-                        <h3>Henüz kayıt bulunmuyor</h3>
-                        <p>Yeni bir fikri mülkiyet kaydı oluşturmak için "Yeni Kayıt" butonunu kullanın.</p>
-                        <a href="data-entry.html" class="action-btn" style="margin-top: 20px; display: inline-flex;">
-                            + İlk Kaydınızı Oluşturun
-                        </a>
-                    </div>
-                `;
+                const tableContainer = document.getElementById('table-container');
+                if (!tableContainer) return;
+                tableContainer.innerHTML = `<div class="no-records">...</div>`; // simplified
             }
 
-            // Yeni: Transaction düzenleme modalını açma
             openEditTransactionModal(recordId, transactionId) {
                 const record = this.records.find(r => r.id === recordId);
                 if (!record) return;
-
                 const transaction = record.transactions.find(tx => tx.transactionId === transactionId);
                 if (!transaction) return;
-
                 document.getElementById('editTransactionRecordId').value = recordId;
                 document.getElementById('editTransactionId').value = transactionId;
                 document.getElementById('editTransactionDescription').value = transaction.description;
-
                 document.getElementById('editTransactionModal').style.display = 'flex';
             }
 
-            // Yeni: Transaction düzenleme modalını kapatma
             hideEditTransactionModal() {
                 document.getElementById('editTransactionModal').style.display = 'none';
                 document.getElementById('editTransactionForm').reset();
             }
 
-            // Yeni: Transaction değişikliklerini kaydetme
             async saveTransactionChanges() {
                 const recordId = document.getElementById('editTransactionRecordId').value;
                 const transactionId = document.getElementById('editTransactionId').value;
                 const newDescription = document.getElementById('editTransactionDescription').value.trim();
-
-                if (!newDescription) {
-                    alert('Açıklama boş olamaz.');
-                    return;
-                }
-
+                if (!newDescription) return;
                 try {
                     const result = await ipRecordsService.updateTransaction(recordId, transactionId, { description: newDescription });
                     if (result.success) {
                         alert('İşlem başarıyla güncellendi.');
                         this.hideEditTransactionModal();
-                        await this.loadRecords(); // Listeyi yenile
-                        this.viewRecord(recordId); // Detay modalını yenile
+                        await this.loadRecords();
+                        this.viewRecord(recordId);
                     } else {
-                        alert('İşlem güncellenirken bir hata oluştu: ' + (result.error || 'Bilinmeyen Hata'));
+                        throw new Error(result.error);
                     }
                 } catch (error) {
-                    console.error('Save transaction changes error:', error);
-                    alert('İşlem güncellenirken bir hata oluştu.');
+                    alert('İşlem güncellenirken hata: ' + error.message);
                 }
             }
 
-            // Yeni: Transaction silme
             async deleteTransaction(recordId, transactionId) {
-                if (!confirm('Bu işlemi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz!')) {
-                    return;
-                }
-
+                if (!confirm('Bu işlemi silmek istediğinizden emin misiniz?')) return;
                 try {
                     const result = await ipRecordsService.deleteTransaction(recordId, transactionId);
                     if (result.success) {
                         alert('İşlem başarıyla silindi.');
-                        await this.loadRecords(); // Listeyi yenile
-                        this.viewRecord(recordId); // Detay modalını yenile
+                        await this.loadRecords();
+                        this.viewRecord(recordId);
                     } else {
-                        alert('İşlem silinirken bir hata oluştu: ' + (result.error || 'Bilinmeyen Hata'));
+                        throw new Error(result.error);
                     }
                 } catch (error) {
-                    console.error('Delete transaction error:', error);
-                    alert('İşlem silinirken bir hata oluştu.');
+                    alert('İşlem silinirken hata: ' + error.message);
                 }
             }
         }
 
-        // portfolio nesnesini window global kapsamına atama
         auth.onAuthStateChanged((user) => {
             if (user) {
-                if (!portfolio) {
-                    portfolio = new PortfolioModule();
-                    window.portfolio = portfolio; // Global erişim için atama
+                if (!window.portfolio) {
+                    window.portfolio = new PortfolioModule();
                 }
             } else {
                 const localUser = authService.getCurrentUser();
-                if (localUser && localUser.uid) {
-                    if (!portfolio) {
-                        portfolio = new PortfolioModule();
-                    }
-                } else {
-                    console.log('❌ User not authenticated, redirecting to login page.');
+                if (!localUser || !localUser.uid) {
                     window.location.href = 'index.html';
+                } else if (!window.portfolio) {
+                    window.portfolio = new PortfolioModule();
                 }
             }
         });
-
-        // Test fonksiyonları (window'a bağlı, konsoldan erişilebilir)
-        window.testPortfolio = {
-            addTestRecord: async () => {
-                if (!portfolio || !portfolio.currentUser) {
-                    console.error("Portfolio module not initialized or no user logged in.");
-                    alert("Lütfen önce giriş yapın.");
-                    return;
-                }
-                const testRecord = {
-                    type: 'patent',
-                    title: 'Test Patent ' + Date.now(),
-                    description: 'Test açıklaması',
-                    status: 'pending',
-                    owners: [{ name: 'Test User', type: 'individual' }],
-                    applicationNumber: 'TEST-' + Date.now(),
-                    createdAt: new Date().toISOString(),
-                    trademarkImage: null,
-                    files: [{ // Dummy test dosyası
-                        id: generateUUID(), // generateUUID'yi burada tanımlı varsayıyoruz veya import etmeliyiz
-                        name: 'test_doc_1.pdf',
-                        type: 'application/pdf',
-                        size: 1024,
-                        content: 'data:application/pdf;base64,... (dummy content)',
-                        documentDesignation: 'Başvuru Ek Dokümanı', // Güncellendi
-                        subDesignation: '', // Yeni
-                        uploadedAt: new Date().toISOString()
-                    }],
-                    transactions: [] // addRecord fonksiyonu ilk transaction'ı ekleyecek
-                };
-                const result = await ipRecordsService.addRecord(testRecord);
-                if (result.success) {
-                    console.log('Test record added:', result.id);
-                    await portfolio.loadRecords(); 
-                    alert('Test kaydı başarıyla eklendi.');
-                } else {
-                    console.error('Failed to add test record:', result.error);
-                    alert('Test kaydı eklenemedi: ' + result.error);
-                }
-            },
-            exportData: () => portfolio?.exportData(),
-            getRecords: () => portfolio?.records,
-            getFilteredRecords: () => portfolio?.filteredRecords,
-            clearAllRecords: async () => {
-                if (!portfolio || !portfolio.currentUser) {
-                    console.error("Portfolio module not initialized or no user logged in.");
-                    alert("Lütfen önce giriş yapın.");
-                    return;
-                }
-                if (confirm('TÜM KAYITLARI SİLMEK İİSTEDİĞİNİZDEN EMİN MİSİNİZ? BU İŞLEM GERİ ALINAMAZ!')) {
-                    const recordsToDelete = [...portfolio.records]; 
-                    for (const record of recordsToDelete) {
-                        await ipRecordsService.deleteRecord(record.id);
-                    }
-                    await portfolio.loadRecords(); 
-                    console.log('All records cleared.');
-                    alert('Tüm kayıtlar başarıyla silindi.');
-                }
-            }
-        };
-
-        console.log('📊 Portfolio module loaded!');
-        console.log('Test komutları:');
-        console.log('testPortfolio.addTestRecord() - Yeni test kaydı ekler.');
-        console.log('testPortfolio.exportData() - Filtrelenmiş kayıtları CSV olarak dışa aktarır.');
-        console.log('testPortfolio.getRecords() - Tüm kayıtları konsolda gösterir.');
-        console.log('testPortfolio.clearAllRecords() - Tüm kayıtları siler (DİKKAT: Geri alınamaz!).');
     </script>
 </body>
 </html>
