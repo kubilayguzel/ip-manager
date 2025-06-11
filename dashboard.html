@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IP Manager - Dashboard</title>
     <style>
+        /* CSS stilleri burada kalacak */
         * {
             margin: 0;
             padding: 0;
@@ -419,7 +420,7 @@
                 <a href="portfolio.html" class="nav-item">Portföy</a>
                 <a href="data-entry.html" class="nav-item">Yeni Kayıt</a>
                 <a href="persons.html" class="nav-item">Kişiler Yönetimi</a>
-                <a href="#" class="nav-item">Raporlar</a>
+                <a href="user-management.html" class="nav-item">Kullanıcı Yönetimi</a> <a href="#" class="nav-item">Raporlar</a>
                 <a href="#" class="nav-item">Ayarlar</a>
             </nav>
             <div class="user-section">
@@ -583,7 +584,7 @@
                         try {
                             await authService.signOut();
                             // DÜZELTME: signOut() zaten yönlendirmeyi hallettiği için burada ekstra yönlendirmeye gerek yok.
-                            // EğersignOut() sadece localStorage'ı temizleyip yönlendirme yapmıyorsa, aşağıdaki satır kalsın.
+                            // EğersignOut() sadece localStorage'ı temizleyip yönlendirme yapıyorsa, aşağıdaki satır kalsın.
                             // Ancak mevcut firebase-config.js'de signOut() sonrasında yönlendirme yapılmıyor,
                             // sadece localStorage temizleniyor. Bu durumda onAuthStateChanged handle etmeli.
                             // Yine de, kesin yönlendirme için bu satırı ekleyebiliriz:
