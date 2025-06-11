@@ -1,20 +1,20 @@
 // Firebase Configuration for IP Manager
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-import { 
-    getAuth, 
-    signInWithEmailAndPassword, 
+import {
+    getAuth,
+    signInWithEmailAndPassword,
     createUserWithEmailAndPassword,
     signOut,
     onAuthStateChanged,
     updateProfile
 } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
-import { 
-    getFirestore, 
-    collection, 
-    addDoc, 
-    getDocs, 
-    doc, 
-    updateDoc, 
+import {
+    getFirestore,
+    collection,
+    addDoc,
+    getDocs,
+    doc,
+    updateDoc,
     deleteDoc,
     query,
     orderBy,
@@ -32,6 +32,11 @@ const firebaseConfig = {
     appId: "1:378017128708:web:e2c6fa7b8634022f2ef051",
     measurementId: "G-TQB1CF18Q8"
 };
+
+// Admin Kullanıcının UID'si BURAYA GELMELİ.
+// Firebase Authentication bölümünden kopyalayın. Örneğin: 'someFirebaseUserUID12345'
+// Bu UID, admin@ipmanager.com hesabınıza ait olmalı.
+const ADMIN_UID = 'S8DVLPHlt3a6aMhHxGBCHqR0ANz2';
 
 // Initialize Firebase
 let app, auth, db;
@@ -115,11 +120,37 @@ export const authService = {
 
     getCurrentUser() {
         if (this.isFirebaseAvailable && auth && auth.currentUser) {
-            return auth.currentUser;
+            const user = auth.currentUser;
+            // Rolü Firebase UID'ye göre belirle
+            const role = user.uid === ADMIN_UID ? 'admin' : 'user';
+            return {
+                uid: user.uid,
+                email: user.email,
+                displayName: user.displayName,
+                role: role,
+                isSuperAdmin: role === 'admin' // isSuperAdmin true ise Admin rolü atanır
+            };
         }
         
         const localUser = localStorage.getItem('currentUser');
-        return localUser ? JSON.parse(localUser) : null;
+        if (localUser) {
+            const parsedUser = JSON.parse(localUser);
+            // LocalStorage'dan gelen kullanıcının rolünü de kontrol et.
+            // Özellikle admin@ipmanager.com ve superadmin@ipmanager.com gibi demo hesaplar için.
+            if (!this.isFirebaseAvailable) { // Sadece Firebase bağlı değilse local demo mantığını kullan
+                if (parsedUser.email === 'admin@ipmanager.com') {
+                    return { ...parsedUser, role: 'admin', isSuperAdmin: true };
+                }
+                if (parsedUser.email === 'superadmin@ipmanager.com') {
+                    return { ...parsedUser, role: 'superadmin', isSuperAdmin: true };
+                }
+                if (parsedUser.email === 'debug@ipmanager.com') {
+                    return { ...parsedUser, role: 'debug', isSuperAdmin: true };
+                }
+            }
+            return parsedUser; // Rol zaten tanımlıysa onu kullan
+        }
+        return null;
     },
 
     // Check if current user is super admin
@@ -127,13 +158,9 @@ export const authService = {
         const currentUser = this.getCurrentUser();
         if (!currentUser) return false;
         
-        const superAdminEmails = [
-            'superadmin@ipmanager.com',
-            'admin@ipmanager.com',
-            'debug@ipmanager.com'
-        ];
-        
-        return superAdminEmails.includes(currentUser.email?.toLowerCase());
+        // Hem Firebase'den gelen kullanıcılar hem de local demo kullanıcıları için
+        // doğrudan `isSuperAdmin` özelliğini kullanabiliriz.
+        return currentUser.isSuperAdmin === true;
     },
 
     // Local authentication fallback methods
@@ -145,25 +172,25 @@ export const authService = {
             { email: 'admin@ipmanager.com', password: 'admin123', name: 'Admin Kullanıcı', role: 'admin' },
             { email: 'test@example.com', password: 'test123', name: 'Test Kullanıcı', role: 'user' },
             // 🔥 SÜPER ADMİN HESABI - TÜM VERİLERE ERİŞİM
-            { 
-                email: 'superadmin@ipmanager.com', 
-                password: 'superadmin123', 
-                name: 'Süper Admin', 
+            {
+                email: 'superadmin@ipmanager.com',
+                password: 'superadmin123',
+                name: 'Süper Admin',
                 role: 'superadmin',
                 permissions: ['viewAllData', 'editAllData', 'deleteAllData', 'systemAdmin']
             },
             // Debug hesabı
-            { 
-                email: 'debug@ipmanager.com', 
-                password: 'debug123', 
-                name: 'Debug Kullanıcı', 
+            {
+                email: 'debug@ipmanager.com',
+                password: 'debug123',
+                name: 'Debug Kullanıcı',
                 role: 'debug',
                 permissions: ['viewAllData', 'systemDebug']
             }
         ];
 
-        const account = demoAccounts.find(acc => 
-            acc.email.toLowerCase().trim() === email.toLowerCase().trim() && 
+        const account = demoAccounts.find(acc =>
+            acc.email.toLowerCase().trim() === email.toLowerCase().trim() &&
             acc.password === password.trim()
         );
 
@@ -175,7 +202,7 @@ export const authService = {
                 role: account.role,
                 permissions: account.permissions || [],
                 loginTime: new Date().toISOString(),
-                isSuperAdmin: account.role === 'superadmin' || account.role === 'debug'
+                isSuperAdmin: account.role === 'superadmin' || account.role === 'debug' || account.role === 'admin'
             };
             
             localStorage.setItem('currentUser', JSON.stringify(userData));
@@ -184,7 +211,7 @@ export const authService = {
             return {
                 success: true,
                 user: userData,
-                message: account.role === 'superadmin' ? 
+                message: account.role === 'superadmin' ?
                     '🔥 Süper Admin olarak giriş başarılı - TÜM VERİLERE ERİŞİM' :
                     account.role === 'debug' ?
                     '🐛 Debug kullanıcısı olarak giriş başarılı' :
@@ -195,11 +222,11 @@ export const authService = {
         console.error('❌ Local sign in failed - invalid credentials');
         return {
             success: false,
-            error: `Geçersiz e-posta veya şifre. 
+            error: `Geçersiz e-posta veya şifre.
             
 📧 Mevcut Hesaplar:
 • demo@ipmanager.com / demo123 (Demo)
-• admin@ipmanager.com / admin123 (Admin)  
+• admin@ipmanager.com / admin123 (Admin)
 • test@example.com / test123 (Test)
 🔥 superadmin@ipmanager.com / superadmin123 (SÜPER ADMİN)
 🐛 debug@ipmanager.com / debug123 (Debug)`
@@ -256,7 +283,12 @@ export const ipRecordsService = {
             }
         } catch (error) {
             console.error('Add record error:', error);
-            return this.localAddRecord(record);
+            // Firebase hatası durumunda dahi local'a düşmek yerine hatayı döndürmeliyiz.
+            // Çünkü yetki hatası varsa local'a eklemek doğru olmaz.
+            if (authService.isFirebaseAvailable) { // Sadece Firebase aktifken
+                return { success: false, error: error.message || 'Kayıt eklenirken bir hata oluştu.' };
+            }
+            return this.localAddRecord(record); // Firebase bağlı değilse local'a ekle
         }
     },
 
@@ -271,11 +303,12 @@ export const ipRecordsService = {
                     return this.localGetRecords();
                 }
 
+                let q;
                 // 🔥 SÜPER ADMİN KONTROLÜ - TÜM VERİLERİ GETİR
                 if (authService.isSuperAdmin()) {
-                    console.log('🔥 SÜPER ADMİN ERİŞİMİ - Tüm kullanıcıların verileri getiriliyor...');
+                    console.log('🔥 SÜPER ADMİN ERİŞİM - Tüm kullanıcıların verileri getiriliyor...');
                     
-                    const q = query(
+                    q = query(
                         collection(db, 'ipRecords'),
                         orderBy('createdAt', 'desc')
                     );
@@ -365,7 +398,7 @@ export const ipRecordsService = {
             }
         } catch (error) {
             console.error('Delete record error:', error);
-            return this.localDeleteRecord(recordId);
+            return { success: false, error: error.message || 'Kayıt silinirken bir hata oluştu.' };
         }
     },
 
@@ -503,11 +536,12 @@ export const personsService = {
                     return this.localGetPersons();
                 }
 
+                let q;
                 // 🔥 SÜPER ADMİN KONTROLÜ
                 if (authService.isSuperAdmin()) {
                     console.log('🔥 SÜPER ADMİN: Tüm kullanıcıların kişileri getiriliyor...');
                     
-                    const q = query(
+                    q = query(
                         collection(db, 'persons'),
                         orderBy('createdAt', 'desc')
                     );
@@ -515,8 +549,8 @@ export const personsService = {
                     const persons = [];
                     querySnapshot.forEach((doc) => {
                         const data = doc.data();
-                        persons.push({ 
-                            id: doc.id, 
+                        persons.push({
+                            id: doc.id,
                             ...data,
                             _ownerInfo: `👤 ${data.userEmail || 'Bilinmeyen'}`
                         });
@@ -669,7 +703,7 @@ export async function createDemoData() {
             applicationDate: '2024-01-15',
             owners: [{ name: 'TechCorp A.Ş.', type: 'company' }],
             applicationNumber: 'TR2024/001234',
-            userId: 'demo_user_1',
+            userId: 'demo_user_1', // Bu UID'ler sadece demo amaçlıdır.
             userEmail: 'demo@ipmanager.com'
         },
         {
@@ -680,7 +714,7 @@ export async function createDemoData() {
             applicationDate: '2023-11-20',
             owners: [{ name: 'Green Tech Ltd.', type: 'company' }],
             applicationNumber: 'TR2023/987654',
-            userId: 'admin_user_1',
+            userId: 'admin_user_1', // Bu UID'ler sadece demo amaçlıdır.
             userEmail: 'admin@ipmanager.com'
         },
         {
@@ -691,7 +725,7 @@ export async function createDemoData() {
             applicationDate: '2024-02-10',
             owners: [{ name: 'Software Solutions Inc.', type: 'company' }],
             applicationNumber: 'TR2024/555666',
-            userId: 'test_user_1',
+            userId: 'test_user_1', // Bu UID'ler sadece demo amaçlıdır.
             userEmail: 'test@example.com'
         },
         {
@@ -702,7 +736,7 @@ export async function createDemoData() {
             applicationDate: '2023-12-05',
             owners: [{ name: 'Design Studio X', type: 'company' }],
             applicationNumber: 'TR2023/111222',
-            userId: 'another_user',
+            userId: 'another_user', // Bu UID'ler sadece demo amaçlıdır.
             userEmail: 'designer@company.com'
         },
         {
@@ -713,7 +747,7 @@ export async function createDemoData() {
             applicationDate: '2024-03-01',
             owners: [{ name: 'AI Innovations Ltd.', type: 'company' }],
             applicationNumber: 'TR2024/789012',
-            userId: 'ai_company',
+            userId: 'ai_company', // Bu UID'ler sadece demo amaçlıdır.
             userEmail: 'ai@innovations.com'
         }
     ];
