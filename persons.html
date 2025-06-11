@@ -710,7 +710,7 @@
     <script type="module">
         import { 
             authService, 
-            personsService, // Yeni personsService import edildi
+            personsService, 
             auth 
         } from './firebase-config.js';
 
@@ -724,30 +724,25 @@
                 this.personsPerPage = 10;
                 this.sortColumn = 'name';
                 this.sortDirection = 'asc';
-                this.currentPersonId = null; // Düzenlenen kişinin ID'si
+                this.currentPersonId = null; 
                 this.init();
             }
 
             init() {
-                // Kullanıcı kimlik doğrulama durumunu dinle
                 auth.onAuthStateChanged(async (user) => {
                     if (user) {
                         this.currentUser = user;
                         console.log('✅ User authenticated:', user.email);
-                        // Kullanıcı oturum açtıysa arayüzü ve verileri hazırla
                         this.setupEventListeners();
-                        await this.loadPersons(); // Kişileri Firebase'den yükle
+                        await this.loadPersons(); 
                     } else {
-                        // Kullanıcı oturum açmamışsa veya oturum kapatılmışsa
-                        // localStorage'daki kullanıcıyı kontrol et (fallback)
                         const localUser = authService.getCurrentUser();
                         if (localUser && localUser.uid) {
                             this.currentUser = localUser;
                             console.log('⚠️ LocalStorage user detected, running in local mode:', localUser.email);
                             this.setupEventListeners();
-                            await this.loadPersons(); // Kişileri localStorage'dan yükle
+                            await this.loadPersons(); 
                         } else {
-                            // Ne Firebase ne de localStorage'da kullanıcı yoksa giriş sayfasına yönlendir
                             console.log('❌ User not authenticated, redirecting to login page.');
                             window.location.href = 'index.html';
                         }
@@ -757,12 +752,10 @@
             }
 
             setupEventListeners() {
-                // Header Navigasyon
                 document.getElementById('logoutBtn').addEventListener('click', async () => {
                     if (confirm('Çıkış yapmak istediğinizden emin misiniz?')) {
                         try {
                             await authService.signOut();
-                            // signOut metodu zaten index.html'ye yönlendirecek
                         } catch (error) {
                             console.error('Logout error:', error);
                             alert('Çıkış yaparken bir hata oluştu.');
@@ -770,17 +763,14 @@
                     }
                 });
 
-                // Kişi ekleme/yönetim butonları
                 document.getElementById('addPersonBtn').addEventListener('click', () => this.openPersonModal('add'));
-                document.getElementById('addFirstPersonBtn').addEventListener('click', () => this.openPersonModal('add')); // Empty state butonu
+                document.getElementById('addFirstPersonBtn').addEventListener('click', () => this.openPersonModal('add')); 
                 document.getElementById('refreshPersonsBtn').addEventListener('click', () => this.loadPersons());
 
-                // Filtreleme ve Arama
                 document.getElementById('searchInput').addEventListener('input', () => this.applyFilters());
                 document.getElementById('typeFilter').addEventListener('change', () => this.applyFilters());
                 document.getElementById('resetFiltersBtn').addEventListener('click', () => this.resetFilters());
 
-                // Modal butonları
                 document.getElementById('closePersonModalBtn').addEventListener('click', () => this.closePersonModal());
                 document.getElementById('cancelPersonFormBtn').addEventListener('click', () => this.closePersonModal());
                 document.getElementById('personForm').addEventListener('submit', (e) => {
@@ -788,19 +778,16 @@
                     this.savePerson();
                 });
 
-                // Modal dışı tıklama
                 document.getElementById('personModal').addEventListener('click', (e) => {
                     if (e.target.id === 'personModal') {
                         this.closePersonModal();
                     }
                 });
 
-                // Sıralama
                 document.querySelectorAll('.persons-table th.sortable').forEach(th => {
                     th.addEventListener('click', () => this.handleSort(th.dataset.sort));
                 });
 
-                // Sayfalama
                 document.getElementById('prevBtn').addEventListener('click', () => this.changePage(-1));
                 document.getElementById('nextBtn').addEventListener('click', () => this.changePage(1));
             }
@@ -814,14 +801,14 @@
                 loadingIndicator.style.display = 'block';
                 personsTable.style.display = 'none';
                 noPersons.style.display = 'none';
-                tableBody.innerHTML = ''; // Önceki kayıtları temizle
+                tableBody.innerHTML = ''; 
 
                 try {
-                    const result = await personsService.getPersons(); // personsService'den çek
+                    const result = await personsService.getPersons(); 
                     if (result.success) {
                         this.allPersons = result.data;
                         this.updateStats();
-                        this.applyFilters(); // Filtreleri ve tabloyu yeniden render et
+                        this.applyFilters(); 
                     } else {
                         console.error('Failed to load persons:', result.error);
                         this.showEmptyState();
@@ -852,7 +839,6 @@
                 const typeFilter = document.getElementById('typeFilter').value;
 
                 this.filteredPersons = this.allPersons.filter(person => {
-                    // Arama filtresi
                     if (search && !(
                         String(person.name).toLowerCase().includes(search) ||
                         String(person.email || '').toLowerCase().includes(search) ||
@@ -861,7 +847,6 @@
                         return false;
                     }
 
-                    // Tip filtresi
                     if (typeFilter && person.type !== typeFilter) {
                         return false;
                     }
@@ -1010,10 +995,10 @@
                 const savePersonBtn = document.getElementById('savePersonBtn');
                 const form = document.getElementById('personForm');
 
-                this.currentPersonId = personId; // Modalda hangi kişinin düzenlendiğini tut
+                this.currentPersonId = personId; 
 
-                // Formu temizle
                 form.reset();
+                this.clearModalErrors();
 
                 if (mode === 'add') {
                     modalTitle.textContent = 'Yeni Kişi Ekle';
@@ -1028,16 +1013,14 @@
 
                     modalTitle.textContent = mode === 'edit' ? 'Kişi Bilgilerini Düzenle' : 'Kişi Detayları';
                     savePersonBtn.textContent = 'Güncelle';
-                    savePersonBtn.disabled = mode === 'view'; // Görüntüleme modunda kaydet butonu pasif
+                    savePersonBtn.disabled = mode === 'view'; 
 
-                    // Form alanlarını doldur
                     document.getElementById('personName').value = person.name || '';
                     document.getElementById('personEmail').value = person.email || '';
                     document.getElementById('personPhone').value = person.phone || '';
                     document.getElementById('personType').value = person.type || '';
                     document.getElementById('personAddress').value = person.address || '';
 
-                    // Görüntüleme modunda inputları salt okunur yap
                     document.querySelectorAll('#personForm input, #personForm select, #personForm textarea').forEach(input => {
                         input.readOnly = mode === 'view';
                         input.disabled = mode === 'view';
@@ -1049,7 +1032,6 @@
             closePersonModal() {
                 const modal = document.getElementById('personModal');
                 modal.classList.remove('show');
-                // Inputları tekrar düzenlenebilir yap
                 document.querySelectorAll('#personForm input, #personForm select, #personForm textarea').forEach(input => {
                     input.readOnly = false;
                     input.disabled = false;
@@ -1057,7 +1039,7 @@
                 this.currentPersonId = null;
             }
 
-            async savePerson() {
+            async savePerson() { 
                 const personName = document.getElementById('personName').value.trim();
                 const personType = document.getElementById('personType').value;
 
@@ -1066,39 +1048,37 @@
                     return;
                 }
 
-                const personData = {
-                    name: personName,
-                    email: document.getElementById('personEmail').value.trim(),
-                    phone: document.getElementById('personPhone').value.trim(),
-                    type: personType,
-                    address: document.getElementById('personAddress').value.trim()
+                const personData = { 
+                    name: personName, 
+                    email: document.getElementById('personEmail').value.trim(), 
+                    phone: document.getElementById('personPhone').value.trim(), 
+                    type: personType, 
+                    address: document.getElementById('personAddress').value.trim() 
                 };
 
                 const saveBtn = document.getElementById('savePersonBtn');
-                saveBtn.disabled = true; // Kaydetme sırasında butonu pasif yap
+                saveBtn.disabled = true; 
 
                 try {
                     let result;
                     if (this.currentPersonId) {
-                        // Mevcut kişiyi güncelle
                         result = await personsService.updatePerson(this.currentPersonId, personData);
                     } else {
-                        // Yeni kişi ekle
                         result = await personsService.addPerson(personData);
                     }
 
                     if (result.success) {
                         alert(`Kişi başarıyla ${this.currentPersonId ? 'güncellendi' : 'eklendi'}!`);
                         this.closePersonModal();
-                        await this.loadPersons(); // Listeyi yenile
+                        await this.loadPersons(); 
                     } else {
-                        throw new Error(result.error || 'Kişi kaydedilirken hata oluştu.');
+                        throw new Error(result.error || 'Kişi kaydedilirken bilinmeyen bir hata oluştu.');
                     }
                 } catch (error) {
                     console.error('Save person error:', error);
                     alert('Kişi kaydedilirken bir hata oluştu: ' + error.message);
                 } finally {
-                    saveBtn.disabled = false; // Butonu tekrar aktif yap
+                    saveBtn.disabled = false; 
                 }
             }
 
@@ -1111,7 +1091,7 @@
                     const result = await personsService.deletePerson(personId);
                     if (result.success) {
                         alert('Kişi başarıyla silindi!');
-                        await this.loadPersons(); // Listeyi yenile
+                        await this.loadPersons(); 
                     } else {
                         throw new Error(result.error || 'Kişi silinirken hata oluştu.');
                     }
@@ -1141,28 +1121,32 @@
             }
         }
 
-        // Modülü başlat
         let personsModule;
-        // Firebase Auth durumunu bekleyerek PersonsModule'ü başlat
         auth.onAuthStateChanged((user) => {
             if (user) {
                 if (!personsModule) {
                     personsModule = new PersonsModule();
                 }
             } else {
-                // Kullanıcı oturum açmamışsa giriş sayfasına yönlendir
-                console.log('❌ User not authenticated for Persons Management, redirecting to login page.');
-                window.location.href = 'index.html'; 
+                const localUser = authService.getCurrentUser();
+                if (localUser && localUser.uid) {
+                    if (!personsModule) {
+                        personsModule = new PersonsModule();
+                    }
+                } else {
+                    console.log('❌ User not authenticated for Persons Management, redirecting to login page.');
+                    window.location.href = 'index.html'; 
+                }
             }
         });
 
-        // Test fonksiyonları (konsoldan erişim için)
-        window.personsModule = personsModule; // Global erişim sağlamak için
+        window.personsModule = personsModule; 
 
         window.testPersons = {
             addTestPerson: async () => {
-                if (!personsModule) {
-                    console.error("PersonsModule not initialized. Please ensure a user is logged in.");
+                if (!personsModule || !personsModule.currentUser) {
+                    console.error("PersonsModule not initialized or no user logged in.");
+                    alert("Lütfen önce giriş yapın.");
                     return;
                 }
                 const testPerson = {
@@ -1175,23 +1159,27 @@
                 const result = await personsService.addPerson(testPerson);
                 if (result.success) {
                     console.log('Test person added:', result.id);
-                    await personsModule.loadPersons(); // Listeyi yenile
+                    await personsModule.loadPersons(); 
+                    alert('Test kişisi başarıyla eklendi.');
                 } else {
                     console.error('Failed to add test person:', result.error);
+                    alert('Test kişisi eklenemedi: ' + result.error);
                 }
             },
             clearAllPersons: async () => {
-                if (!personsModule || !personsModule.allPersons) {
-                    console.warn("PersonsModule not initialized or no persons to clear.");
+                if (!personsModule || !personsModule.currentUser) {
+                    console.error("PersonsModule not initialized or no user logged in.");
+                    alert("Lütfen önce giriş yapın.");
                     return;
                 }
                 if (confirm('TÜM KİŞİLERİ SİLMEK İSTEDİĞİNİZDEN EMİN MİSİNİZ? BU İŞLEM GERİ ALINAMAZ!')) {
-                    const personsToDelete = [...personsModule.allPersons]; // Kopya al
+                    const personsToDelete = [...personsModule.allPersons]; 
                     for (const person of personsToDelete) {
                         await personsService.deletePerson(person.id);
                     }
                     await personsModule.loadPersons();
                     console.log('All persons cleared.');
+                    alert('Tüm kişiler başarıyla silindi.');
                 }
             },
             getPersons: () => personsModule?.allPersons,
