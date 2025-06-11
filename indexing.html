@@ -605,10 +605,10 @@
                     document.getElementById('formSuccessText').textContent = message;
                 } else if (type === 'error') {
                     targetDiv = errorDiv;
-                    document.getElementById('formErrorText').textContent = message;
+                    document.getElementById('errorText').textContent = message;
                 } else {
                     targetDiv = infoDiv;
-                    document.getElementById('formInfoText').textContent = message;
+                    document.getElementById('infoText').textContent = message;
                 }
 
                 targetDiv.style.display = 'flex';
@@ -678,11 +678,11 @@
                 
                 // Null kontrolü eklendi
                 const documentUploadSection = document.getElementById('documentUploadSection');
-                if (documentUploadSection) { // Hata veren yerlerden biri burasıydı
+                if (documentUploadSection) { 
                     documentUploadSection.style.display = 'none';
                 }
                 const recordUpdateSection = document.getElementById('recordUpdateSection');
-                if (recordUpdateSection) { // Hata veren yerlerden biri burasıydı
+                if (recordUpdateSection) { 
                     recordUpdateSection.style.display = 'none';
                 }
 
@@ -747,10 +747,7 @@
                     this.updateStatusOptionsForRecord(record.type, record.status);
 
                     // Mevcut dosyaları yükle
-                    // Buraya dikkat: selectedRecord'dan gelen 'files' orijinal dosyalarıdır.
-                    // uploadedFiles, sadece bu oturumda eklenen veya değiştirilen dosyaları tutacak.
-                    // Bu yüzden başlangıçta uploadedFiles'ı sıfırlıyoruz. Eğer mevcut dosyaları da düzenlemeye izin vereceksek,
-                    // onları da buraya yüklememiz gerekirdi. Şu an sadece YENİ eklenenleri işlemeye odaklanalım.
+                    // Bu sayfada sadece yeni eklenen dosyaları indeksleyeceğiz.
                     this.uploadedFiles = []; 
                     this.updateFileList();
 
@@ -998,26 +995,28 @@
                 this.showNotification('Belgeler indeksleniyor ve kayıt güncelleniyor...', 'info');
 
                 try {
+                    // Mevcut kaydın orijinal dosyalarını al, yeni yüklenenleri üzerine ekleyeceğiz.
+                    // Bu, Firebase'deki `files` dizisinin son hali olacak.
                     const currentFilesOnRecord = this.originalRecordData.files || [];
                     
-                    const updatedFilesForRecord = [];
-                    const uploadedFileIds = new Set(this.uploadedFiles.map(f => f.id));
+                    // `finalFilesForRecord` yeni ve güncellenmiş dosyaların son listesi olacak.
+                    let finalFilesForRecord = [...currentFilesOnRecord];
 
-                    // Eski dosyaları ekle (eğer yeni yüklenenler arasında ID'siyle aynı değilse)
-                    currentFilesOnRecord.forEach(existingFile => {
-                        if (!uploadedFileIds.has(existingFile.id)) {
-                            updatedFilesForRecord.push(existingFile);
+                    // `this.uploadedFiles` dizisindeki dosyaları (bu oturumda yeni eklenenler veya güncellenenler) işleyelim.
+                    this.uploadedFiles.forEach(uploadedFile => {
+                        const existingIndexInFinal = finalFilesForRecord.findIndex(f => f.id === uploadedFile.id);
+                        if (existingIndexInFinal !== -1) {
+                            // Eğer bu dosya (ID'siyle) `finalFilesForRecord` içinde zaten varsa,
+                            // o zaman eski versiyonunu `uploadedFile` (yani bu oturumdaki güncel hali) ile değiştir.
+                            finalFilesForRecord[existingIndexInFinal] = uploadedFile;
+                        } else {
+                            // Eğer bu dosya tamamen yeniyse, `finalFilesForRecord`'a ekle.
+                            finalFilesForRecord.push(uploadedFile);
                         }
                     });
-                    
-                    // Yeni yüklenen/güncellenen dosyaları ekle/değiştir
-                    this.uploadedFiles.forEach(uploadedFile => {
-                        updatedFilesForRecord.push(uploadedFile); // Direkt ekle
-                    });
-
 
                     const recordUpdates = {
-                        files: updatedFilesForRecord, // Kayıt üzerinde olması gereken son dosya listesi
+                        files: finalFilesForRecord, // Kayıt üzerinde olması gereken son dosya listesi
                     };
                     
                     // İsteğe bağlı güncellemeler: Status
@@ -1026,6 +1025,7 @@
                     if (newStatus && newStatus !== this.originalRecordData.status) {
                         recordUpdates.status = newStatus;
                     } else { 
+                        // Durum değişmediyse orijinal durumu koru. undefined ise null yap (Firebase için).
                         recordUpdates.status = (this.originalRecordData.status === undefined) ? null : this.originalRecordData.status;
                     }
 
@@ -1071,11 +1071,11 @@
                 
                 // Null kontrolü eklendi
                 const documentUploadSection = document.getElementById('documentUploadSection');
-                if (documentUploadSection) { // Hata veren yerlerden biri burasıydı
+                if (documentUploadSection) { 
                     documentUploadSection.style.display = 'none';
                 }
                 const recordUpdateSection = document.getElementById('recordUpdateSection');
-                if (recordUpdateSection) { // Hata veren yerlerden biri burasıydı
+                if (recordUpdateSection) { 
                     recordUpdateSection.style.display = 'none';
                 }
 
