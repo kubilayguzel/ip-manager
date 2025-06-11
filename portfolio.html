@@ -824,6 +824,7 @@
             display: flex;
             gap: 5px;
             justify-content: flex-end; /* Sağ tarafa yasla */
+            margin-left: 10px; /* Doküman kolonundan ayır */
         }
         .transaction-action-btn {
             padding: 4px 8px;
@@ -1110,7 +1111,7 @@
 
 
     <script type="module">
-        import { authService, ipRecordsService, auth } from './firebase-config.js'; // generateUUID'yi burada import etmeye gerek yok
+        import { authService, ipRecordsService, auth, subDesignationTranslations, documentDesignationTranslations } from './firebase-config.js'; // generateUUID'yi burada import etmeye gerek yok
 
         let portfolio; // Global olarak tanımlandı
 
@@ -1816,83 +1817,103 @@
 
                 historyContainer.innerHTML = ''; // Önceki içeriği temizle
 
-                // Sadece "Document Indexed" transaction'larını filtrele
-                const documentIndexedTransactions = transactions.filter(tx => tx.type === "Document Indexed")
-                                                               .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)); // En yeni en üstte
+                // Sadece "Document Indexed" ve "Document Sub-Indexed" transaction'larını filtrele
+                const relevantTransactions = transactions.filter(tx => 
+                                                tx.type === "Document Indexed" || 
+                                                tx.type === "Document Sub-Indexed"
+                                               )
+                                               .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)); // En yeni en üstte
 
-                if (documentIndexedTransactions.length === 0) {
+
+                if (relevantTransactions.length === 0) {
                     historyContainer.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Bu kayda ait belge indeksleme geçmişi bulunmamaktadır.</p>';
                     return;
                 }
 
-                documentIndexedTransactions.forEach(tx => {
-                    const transactionRow = document.createElement('div');
-                    transactionRow.className = 'transaction-grid'; // Yeni grid yapısı için sınıf
+                // Parent-child ilişkisini kur
+                const transactionsMap = new Map(relevantTransactions.map(tx => [tx.transactionId, tx]));
+                const childrenMap = new Map();
 
-                    let documentLinkHtml = '';
-                    if (tx.documentId && recordFiles) {
-                        const relatedFile = recordFiles.find(file => file.id === tx.documentId);
-                        if (relatedFile && relatedFile.content) {
-                            documentLinkHtml = `
-                                <a href="${relatedFile.content}" download="${relatedFile.name}" class="transaction-document-link" title="${relatedFile.name}">
-                                    📄 ${relatedFile.name.length > 25 ? relatedFile.name.substring(0,22) + '...' : relatedFile.name} (${this.formatFileSize(relatedFile.size)})
-                                </a>
-                            `;
+                relevantTransactions.forEach(tx => {
+                    if (tx.parentId) {
+                        if (!childrenMap.has(tx.parentId)) {
+                            childrenMap.set(tx.parentId, []);
                         }
+                        childrenMap.get(tx.parentId).push(tx);
                     }
-
-                    // İşlem açıklamasını ve tarihini tek satırda göster
-                    let transactionDescription = "";
-                    const subDesignationTranslations = {
-                        'opposition_to_publication': 'Yayına İtiraz',
-                        'response_to_opposition': 'İtiraza Karşı Görüş',
-                        'opposition_decision_rejected': 'Yayına İtiraz Kararı - Ret',
-                        'opposition_decision_accepted': 'Yayına İtiraz Kararı - Kabul'
-                    };
-                    const documentDesignationTranslations = {
-                        'opposition_trademark_office': 'Yayına İtiraz - Markalar Dairesi',
-                        'Başvuru Ek Dokümanı': 'Başvuru Ek Dokümanı',
-                        'Resmi Yazışma': 'Resmi Yazışma',
-                        'Vekaletname': 'Vekaletname',
-                        'Teknik Çizim': 'Teknik Çizim',
-                        'Karar': 'Karar',
-                        'Finansal Belge': 'Finansal Belge',
-                        'Yayın Kararı': 'Yayın Kararı',
-                        'Ret Kararı': 'Ret Kararı',
-                        'Tescil Belgesi': 'Tescil Belgesi',
-                        'Araştırma Raporu': 'Araştırma Raporu',
-                        'İnceleme Raporu': 'İnceleme Raporu',
-                        'Diğer Belge': 'Diğer Belge',
-                        'Genel Not': 'Genel Not'
-                    };
-
-                    if (tx.subDesignation && subDesignationTranslations[tx.subDesignation]) {
-                        transactionDescription = subDesignationTranslations[tx.subDesignation];
-                    } else if (tx.documentDesignation && documentDesignationTranslations[tx.documentDesignation]) {
-                        transactionDescription = documentDesignationTranslations[tx.documentDesignation];
-                    } else {
-                        // Eğer atama/alt atama yoksa orijinal açıklamayı kullan (fallback)
-                        transactionDescription = tx.description; 
-                    }
-
-
-                    const formattedTimestamp = new Date(tx.timestamp).toLocaleString('tr-TR');
-
-                    transactionRow.innerHTML = `
-                        <div class="transaction-description-col">${transactionDescription}</div>
-                        <div class="transaction-date-col">${formattedTimestamp}</div>
-                        <div class="transaction-document-col">${documentLinkHtml}</div>
-                        <div class="transaction-actions">
-                            <button class="transaction-action-btn btn-edit-transaction" 
-                                    onclick="portfolio.openEditTransactionModal('${recordId}', '${tx.transactionId}')" 
-                                    title="İşlemi Düzenle">✏️</button>
-                            <button class="transaction-action-btn btn-delete-transaction" 
-                                    onclick="portfolio.deleteTransaction('${recordId}', '${tx.transactionId}')" 
-                                    title="İşlemi Sil">🗑️</button>
-                        </div>
-                    `;
-                    historyContainer.appendChild(transactionRow);
                 });
+
+                // Kök işlemleri bul (parentId null olanlar veya Document Indexed olup da parent'ı olmayanlar)
+                // YALNIZCA parentId null olanları veya parent'ı relevantTransactions'ta olmayan Document Indexed'ları al.
+                const rootTransactions = relevantTransactions.filter(tx => 
+                    !tx.parentId || (tx.type === "Document Indexed" && !transactionsMap.has(tx.parentId))
+                );
+                
+                // Kök transactionları kronolojik olarak sırala
+                rootTransactions.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+
+                const buildTreeHtml = (transactionsToRender, currentParentId, level) => {
+                    let html = '';
+                    const transactionsAtCurrentLevel = transactionsToRender.filter(tx => tx.parentId === currentParentId)
+                                                                           .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)); // En yeni en üstte
+
+
+                    transactionsAtCurrentLevel.forEach(tx => {
+                        const hasChildren = childrenMap.has(tx.transactionId) && childrenMap.get(tx.transactionId).length > 0;
+                        const isChildNode = level > 0;
+
+                        let documentLinkHtml = '';
+                        if (tx.documentId && recordFiles) {
+                            const relatedFile = recordFiles.find(file => file.id === tx.documentId);
+                            if (relatedFile && relatedFile.content) {
+                                documentLinkHtml = `
+                                    <a href="${relatedFile.content}" download="${relatedFile.name}" class="transaction-document-link" title="${relatedFile.name}">
+                                        📄 ${relatedFile.name.length > 25 ? relatedFile.name.substring(0,22) + '...' : relatedFile.name} (${this.formatFileSize(relatedFile.size)})
+                                    </a>
+                                `;
+                            }
+                        }
+
+                        // İşlem açıklamasını ve tarihini tek satırda göster
+                        let transactionDescription = "";
+                        
+                        if (tx.subDesignation && subDesignationTranslations[tx.subDesignation]) {
+                            transactionDescription = subDesignationTranslations[tx.subDesignation];
+                        } else if (tx.documentDesignation && documentDesignationTranslations[tx.documentDesignation]) {
+                            transactionDescription = documentDesignationTranslations[tx.documentDesignation];
+                        } else {
+                            transactionDescription = tx.description; 
+                        }
+
+
+                        const formattedTimestamp = new Date(tx.timestamp).toLocaleString('tr-TR');
+
+                        html += `
+                            <div class="transaction-grid ${isChildNode ? 'child-transaction' : 'parent-transaction'}">
+                                <div class="transaction-description-col">${transactionDescription}</div>
+                                <div class="transaction-date-col">${formattedTimestamp}</div>
+                                <div class="transaction-document-col">${documentLinkHtml}</div>
+                                <div class="transaction-actions">
+                                    <button class="transaction-action-btn btn-edit-transaction" 
+                                            onclick="portfolio.openEditTransactionModal('${recordId}', '${tx.transactionId}')" 
+                                            title="İşlemi Düzenle">✏️</button>
+                                    <button class="transaction-action-btn btn-delete-transaction" 
+                                            onclick="portfolio.deleteTransaction('${recordId}', '${tx.transactionId}')" 
+                                            title="İşlemi Sil">🗑️</button>
+                                </div>
+                            </div>
+                        `;
+
+                        if (hasChildren) {
+                            // Çocukları direkt olarak ekle (varsayılan olarak açık)
+                            html += buildTreeHtml(relevantTransactions, tx.transactionId, level + 1);
+                        }
+                    });
+                    return html;
+                };
+
+                historyContainer.innerHTML = buildTreeHtml(relevantTransactions, null, 0); // Kökten başla
             }
 
 
@@ -2158,7 +2179,7 @@
                     alert("Lütfen önce giriş yapın.");
                     return;
                 }
-                if (confirm('TÜM KAYITLARI SİLMEK İSTEDİĞİNİZDEN EMİN MİSİNİZ? BU İŞLEM GERİ ALINAMAZ!')) {
+                if (confirm('TÜM KAYITLARI SİLMEK İİSTEDİĞİNİZDEN EMİN MİSİNİZ? BU İŞLEM GERİ ALINAMAZ!')) {
                     const recordsToDelete = [...portfolio.records]; 
                     for (const record of recordsToDelete) {
                         await ipRecordsService.deleteRecord(record.id);
