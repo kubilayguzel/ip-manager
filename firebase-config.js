@@ -403,6 +403,7 @@ export const ipRecordsService = {
                             ...data
                         });
                     });
+                    
                     console.log(`🔥 SÜPER ADMİN: ${records.length} kayıt (tüm kullanıcılar) getirildi`);
                     return {
                         success: true,
@@ -523,7 +524,7 @@ export const ipRecordsService = {
                 const existingFile = oldFiles.find(oldF => oldF.id === newFile.id);
                 if (!existingFile) {
                     // Yeni eklenen dosya
-                    let description = `Belge indekslendi.`; // Açıklama daha kısa
+                    let description = `Belge indekslendi.`; // Türkçe ve kısa açıklama
                     if (newFile.documentDesignation) {
                         description += ` Atama: '${newFile.documentDesignation}'`;
                         if (newFile.subDesignation) {
@@ -585,7 +586,7 @@ export const ipRecordsService = {
             oldFiles.forEach(oldFile => {
                 const stillExists = newFiles.some(newF => newF.id === oldFile.id);
                 if (!stillExists) {
-                    let description = `Belge silindi.`; // Açıklama daha kısa
+                    let description = `Belge silindi.`; // Türkçe ve kısa açıklama
                      if (oldFile.documentDesignation) {
                         description += ` Atama: '${oldFile.documentDesignation}'`;
                         if (oldFile.subDesignation) {
