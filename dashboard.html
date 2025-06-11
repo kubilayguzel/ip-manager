@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IP Manager - Dashboard</title>
     <style>
-        /* CSS kodlarınız burada olduğu gibi kalacaktır */
         * {
             margin: 0;
             padding: 0;
@@ -419,6 +418,7 @@
                 <a href="#" class="nav-item active">Dashboard</a>
                 <a href="portfolio.html" class="nav-item">Portföy</a>
                 <a href="data-entry.html" class="nav-item">Yeni Kayıt</a>
+                <a href="persons.html" class="nav-item">Kişiler Yönetimi</a>
                 <a href="#" class="nav-item">Raporlar</a>
                 <a href="#" class="nav-item">Ayarlar</a>
             </nav>
@@ -506,6 +506,7 @@
             <a href="data-entry.html" class="action-btn">📋 Yeni Patent Başvurusu</a>
             <a href="data-entry.html" class="action-btn">🏷️ Yeni Marka Başvurusu</a>
             <a href="portfolio.html" class="action-btn">📊 Portföyü Görüntüle</a>
+            <a href="persons.html" class="action-btn">👥 Kişileri Yönet</a>
             <a href="#" class="action-btn" onclick="alert('Raporlama modülü yakında!')">📈 Rapor Oluştur</a>
         </section>
     </main>
@@ -514,8 +515,8 @@
         import { 
             authService, 
             ipRecordsService, 
-            auth, // Firebase auth objesi
-            createDemoData // Demo veri oluşturma fonksiyonu
+            auth, 
+            createDemoData 
         } from './firebase-config.js';
 
         // Dashboard Controller Class
@@ -532,19 +533,14 @@
             }
 
             init() {
-                // Sadece auth state değiştiğinde tetiklenecek, ilk yüklemede de çalışır
-                // this.checkAuthentication(); // Bu çağrıya gerek yok, onAuthStateChanged yönetir
                 this.setupEventListeners();
                 this.setupAuthStateListener();
-                this.checkFirebaseConnectionStatus(); // Firebase bağlantı durumunu kontrol et ve göster
+                this.checkFirebaseConnectionStatus(); 
                 console.log('📊 Firebase Dashboard başlatıldı');
             }
 
-            // auth.onAuthStateChanged dışındaki manuel authentication kontrolü kaldırıldı.
-            // Zira onAuthStateChanged Firebase SDK tarafından yönetilen en doğru yaklaşımdır.
-
             setupAuthStateListener() {
-                auth.onAuthStateChanged(async (user) => { // async olarak işaretlendi
+                auth.onAuthStateChanged(async (user) => { 
                     const statusDiv = document.getElementById('firebaseStatus');
 
                     if (user) {
@@ -554,9 +550,7 @@
                         statusDiv.className = 'firebase-status connected';
                         console.log('✅ User authenticated by Firebase:', user.email);
                         
-                        // Kullanıcıya ait IP kayıtlarını yükle
-                        await this.loadUserData(); // await eklendi
-                        // localStorage'daki kullanıcı verisini Firebase kullanıcısıyla güncelle
+                        await this.loadUserData();
                         const userData = {
                             uid: user.uid,
                             email: user.email,
@@ -567,24 +561,22 @@
                         localStorage.setItem('currentUser', JSON.stringify(userData));
 
                     } else {
-                        // Kullanıcı oturumu kapattığında veya hiç oturum açılmadığında
                         console.log('ℹ️ User is not authenticated. Checking localStorage fallback.');
-                        const localUser = authService.getCurrentUser(); // localStorage'dan kullanıcı çek
+                        const localUser = authService.getCurrentUser(); 
                         if (localUser && localUser.uid) {
-                             // localStorage'da kullanıcı varsa ve henüz Firebase ile oturum açılmadıysa
                             this.currentUser = localUser;
                             this.updateUserInfo(localUser);
                             statusDiv.textContent = '⚠️ Yerel Mod (Firebase bağlı değil)';
                             statusDiv.className = 'firebase-status error';
                             console.log('✅ LocalStorage user detected, running in local mode:', localUser.email);
-                            await this.loadUserData(); // await eklendi
+                            await this.loadUserData();
                         } else {
                             console.log('❌ No authenticated user found, redirecting to login.');
-                            window.location.href = 'index.html'; // Kullanıcı yoksa giriş sayfasına yönlendir
+                            window.location.href = 'index.html'; 
                         }
                     }
                     setTimeout(() => {
-                        statusDiv.style.display = 'none'; // 3 saniye sonra gizle
+                        statusDiv.style.display = 'none'; 
                     }, 3000);
                 });
             }
@@ -593,8 +585,7 @@
                 document.getElementById('logoutBtn').addEventListener('click', async () => {
                     if (confirm('Çıkış yapmak istediğinizden emin misiniz?')) {
                         try {
-                            await authService.signOut(); // authService'in signOut metodunu çağır
-                            // onAuthStateChanged dinleyicisi otomatik olarak index.html'ye yönlendirecek
+                            await authService.signOut();
                         } catch (error) {
                             console.error('Logout error:', error);
                             alert('Çıkış yaparken bir hata oluştu.');
@@ -612,7 +603,7 @@
                     statusDiv.textContent = '❌ Firebase Bağlantı Hatası (Yerel Mod)';
                     statusDiv.className = 'firebase-status error';
                 }
-                statusDiv.style.display = 'block'; // Başlangıçta göster
+                statusDiv.style.display = 'block'; 
                 setTimeout(() => {
                     statusDiv.style.display = 'none'; 
                 }, 3000);
@@ -624,8 +615,6 @@
 
                 document.getElementById('userName').textContent = userName;
                 document.getElementById('userAvatar').textContent = userAvatar;
-                // Rol bilgisi Firebase Auth'ta direkt bulunmaz,
-                // Firestore'da kullanıcı dokümanında saklanabilir veya varsayılan kullanılabilir.
                 document.getElementById('userRole').textContent = this.currentUser?.role || 'Kullanıcı'; 
             }
 
@@ -648,7 +637,6 @@
                 `;
 
                 try {
-                    // ipRecordsService.getRecords() artık userId'ye göre filtreleme yapar
                     const result = await ipRecordsService.getRecords(); 
                     
                     if (result.success) {
@@ -656,7 +644,7 @@
                         this.processRecords(records);
                         this.updateStats();
                         this.updateActivities(records);
-                        this.updateChart(records); // Chart için de kayıtları gönder
+                        this.updateChart(records); 
                     } else {
                         console.error('Error loading records:', result.error);
                         this.handleNoData();
@@ -747,7 +735,7 @@
                 });
             }
 
-            updateChart(records) { // records parametresi eklendi
+            updateChart(records) { 
                 const chartContainer = document.getElementById('trendChart');
                 const total = Object.values(this.stats).reduce((sum, val) => sum + val, 0);
                 
@@ -764,8 +752,6 @@
                     return;
                 }
 
-                // Basit bir aylık trend simülasyonu
-                // Gerçek bir grafik kütüphanesi (Chart.js gibi) kullanmak daha iyi olur
                 const monthlyCounts = {};
                 records.forEach(record => {
                     const date = new Date(record.createdAt);
@@ -789,7 +775,7 @@
             }
 
             handleNoData() {
-                this.updateStats(); // İstatistikleri sıfırlar
+                this.updateStats(); 
                 
                 document.getElementById('activitiesList').innerHTML = `
                     <div style="text-align: center; padding: 40px; color: #666;">
@@ -803,7 +789,6 @@
                     </div>
                 `;
 
-                // updateChart metoduna kayıtları boş olarak gönderin
                 this.updateChart([]);
             }
 
@@ -840,16 +825,22 @@
         // Initialize Dashboard after Firebase auth state is determined
         let dashboard;
         
-        // Bu dinleyici, Firebase Auth objesinin (auth) hazır olmasını bekler
-        // ve kullanıcı oturum açtığında veya açmadığında uygun aksiyonu alır.
         auth.onAuthStateChanged((user) => {
-            // DashboardController sadece bir kez başlatılmalı
-            if (!dashboard) {
-                dashboard = new DashboardController();
+            if (user) {
+                if (!dashboard) {
+                    dashboard = new DashboardController();
+                }
+            } else {
+                const localUser = authService.getCurrentUser();
+                if (localUser && localUser.uid) {
+                    if (!dashboard) {
+                        dashboard = new DashboardController();
+                    }
+                } else {
+                    console.log('❌ No authenticated user found, redirecting to login.');
+                    window.location.href = 'index.html'; 
+                }
             }
-            // onAuthStateChanged içindeki mantık, dashboard objesini ve görünümü güncelleyecektir.
-            // DashboardController'ın kendi içindeki loadUserData ve updateUserInfo çağrıları,
-            // bu onAuthStateChanged'in tetiklenmesiyle çalışır.
         });
 
         // Test functions (window'a bağlı, konsoldan erişilebilir)
@@ -861,7 +852,7 @@
         };
 
         console.log('🚀 Firebase Dashboard modülü hazır!');
-        console.log('Test: testDashboard.createTestData() - Demo veri oluştur');
+        console.log('Test için: testDashboard.createTestData() - Demo veri oluştur');
     </script>
 </body>
 </html>
