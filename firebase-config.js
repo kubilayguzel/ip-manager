@@ -550,34 +550,35 @@ export const ipRecordsService = {
                 const existingFile = oldFiles.find(oldF => oldF.id === newFile.id);
                 if (!existingFile) {
                     // Yeni eklenen dosya
-                    let description = '';
-                    let mainTxId = generateUUID(); // Ana transaction ID'si
+                    let parentTxIdForNewFile = newFile.selectedParentTransactionId || null; // Kullanıcının seçtiği parent veya null
 
-                    // Eğer alt atama varsa, ana atama (parent) olarak bir transaction oluştur, alt atama (child) için ayrı bir transaction oluştur.
-                    if (newFile.documentDesignation && newFile.subDesignation) {
-                        // Parent transaction (Atama)
-                        description = documentDesignationTranslations[newFile.documentDesignation] || newFile.documentDesignation;
-                        newTransactions.unshift({
-                            transactionId: mainTxId,
-                            type: "Document Indexed", // Ana işlem tipi
-                            description: description,
-                            documentId: newFile.id,
-                            documentName: newFile.name,
-                            documentDesignation: newFile.documentDesignation,
-                            subDesignation: null, // Bu parent tx için alt atama null
-                            timestamp: newFile.uploadedAt || updatedTimestamp,
-                            userId: user.uid,
-                            userEmail: user.email,
-                            parentId: newFile.selectedParentTransactionId || defaultParentTxId // Kullanıcı seçtiyse onu, yoksa otomatik parent
-                        });
+                    // Ana atama transaction'ı oluştur
+                    const mainTxId = generateUUID();
+                    const mainTxDescription = documentDesignationTranslations[newFile.documentDesignation] || newFile.documentDesignation || "Belge indekslendi.";
 
-                        // Child transaction (Alt Atama)
+                    // Yeni dosya için ana transaction
+                    newTransactions.unshift({
+                        transactionId: mainTxId,
+                        type: "Document Indexed",
+                        description: mainTxDescription,
+                        documentId: newFile.id,
+                        documentName: newFile.name,
+                        documentDesignation: newFile.documentDesignation,
+                        subDesignation: newFile.subDesignation, // Ana transaction'da da subDesignation tutulabilir
+                        timestamp: newFile.uploadedAt || updatedTimestamp,
+                        userId: user.uid,
+                        userEmail: user.email,
+                        parentId: parentTxIdForNewFile // Kullanıcı seçtiyse o parent, yoksa null (kendi root'u olur)
+                    });
+
+                    // Eğer alt atama varsa, child transaction'ı oluştur
+                    if (newFile.subDesignation) {
                         const childTxId = generateUUID();
-                        description = subDesignationTranslations[newFile.subDesignation] || newFile.subDesignation;
+                        const childTxDescription = subDesignationTranslations[newFile.subDesignation] || newFile.subDesignation;
                         newTransactions.unshift({
                             transactionId: childTxId,
                             type: "Document Sub-Indexed", // Alt işlem tipi
-                            description: description,
+                            description: childTxDescription,
                             documentId: newFile.id,
                             documentName: newFile.name,
                             documentDesignation: newFile.documentDesignation,
@@ -585,39 +586,7 @@ export const ipRecordsService = {
                             timestamp: newFile.uploadedAt || updatedTimestamp,
                             userId: user.uid,
                             userEmail: user.email,
-                            parentId: mainTxId // Parent'ı ana atama transaction'ı
-                        });
-                    } else if (newFile.documentDesignation) {
-                        // Sadece atama varsa, o tek başına bir transaction
-                        description = documentDesignationTranslations[newFile.documentDesignation] || newFile.documentDesignation;
-                        newTransactions.unshift({
-                            transactionId: mainTxId,
-                            type: "Document Indexed",
-                            description: description,
-                            documentId: newFile.id,
-                            documentName: newFile.name,
-                            documentDesignation: newFile.documentDesignation,
-                            subDesignation: null,
-                            timestamp: newFile.uploadedAt || updatedTimestamp,
-                            userId: user.uid,
-                            userEmail: user.email,
-                            parentId: newFile.selectedParentTransactionId || defaultParentTxId // Kullanıcı seçtiyse onu, yoksa otomatik parent
-                        });
-                    } else {
-                        // Ne atama ne de alt atama varsa, genel bir açıklama
-                        description = `Yeni belge indekslendi: ${newFile.name}`;
-                        newTransactions.unshift({
-                            transactionId: mainTxId,
-                            type: "Document Indexed",
-                            description: description,
-                            documentId: newFile.id,
-                            documentName: newFile.name,
-                            documentDesignation: null,
-                            subDesignation: null,
-                            timestamp: newFile.uploadedAt || updatedTimestamp,
-                            userId: user.uid,
-                            userEmail: user.email,
-                            parentId: newFile.selectedParentTransactionId || defaultParentTxId
+                            parentId: mainTxId // Child transaction'ın parent'ı ana atama transaction'ı
                         });
                     }
                 } else {
@@ -650,7 +619,7 @@ export const ipRecordsService = {
                             timestamp: updatedTimestamp,
                             userId: user.uid,
                             userEmail: user.email,
-                            parentId: defaultParentTxId // Parent'ı ana güncelleme işlemi
+                            parentId: defaultParentTxId
                         });
                     }
                 }
@@ -840,207 +809,6 @@ export const ipRecordsService = {
     },
 
     // ... (diğer metodlar) ...
-};
-
-// Persons Service (Super Admin desteği ile)
-export const personsService = {
-    async addPerson(person) {
-        console.log('👥 Adding person:', person);
-        try {
-            if (authService.isFirebaseAvailable && db) {
-                const user = authService.getCurrentUser();
-                if (!user || !user.uid) throw new Error('Kullanıcı oturumu bulunamadı.');
-
-                const personData = {
-                    ...person,
-                    userId: user.uid,
-                    userEmail: user.email,
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString()
-                };
-                const docRef = await addDoc(collection(db, 'persons'), personData);
-                console.log('✅ Firebase person added with ID:', docRef.id);
-                return { success: true, id: docRef.id, data: personData };
-            } else {
-                return this.localAddPerson(person);
-            }
-        } catch (error) {
-            console.error('Add person error:', error);
-            if (authService.isFirebaseAvailable) {
-                return { success: false, error: error.message || 'Kişi eklenirken bir hata oluştu.' };
-            }
-            return { success: false, error: error.message || 'Kişi eklenirken bir hata oluştu.' };
-        }
-    },
-
-    async getPersons() {
-        console.log('👥 Getting persons...');
-        try {
-            if (authService.isFirebaseAvailable && db) {
-                const user = authService.getCurrentUser();
-                if (!user || !user.uid) {
-                    console.warn('Firebase get persons: No authenticated user. Returning local persons.');
-                    return this.localGetPersons();
-                }
-
-                let q;
-                // 🔥 SÜPER ADMİN KONTROLÜ
-                if (authService.isSuperAdmin()) {
-                    console.log('🔥 SÜPER ADMİN: Tüm kullanıcıların kişileri getiriliyor...');
-                    
-                    q = query(
-                        collection(db, 'persons'),
-                        orderBy('createdAt', 'desc')
-                    );
-                    const querySnapshot = await getDocs(q);
-                    const persons = [];
-                    querySnapshot.forEach((doc) => {
-                        const data = doc.data();
-                        persons.push({
-                            id: doc.id,
-                            ...data
-                        });
-                    });
-                    console.log(`🔥 SÜPER ADMİN: ${persons.length} kişi (tüm kullanıcılar) getirildi`);
-                    return { success: true, data: persons };
-                } else {
-                    // Normal kullanıcı
-                    const q = query(
-                        collection(db, 'persons'),
-                        where('userId', '==', user.uid),
-                        orderBy('createdAt', 'desc')
-                    );
-                    const querySnapshot = await getDocs(q);
-                    const persons = [];
-                    querySnapshot.forEach((doc) => {
-                        persons.push({ id: doc.id, ...doc.data() });
-                    });
-                    console.log(`✅ Normal kullanıcı: ${persons.length} kişi getirildi`);
-                    return { success: true, data: persons };
-                }
-            } else {
-                return this.localGetPersons();
-            }
-        } catch (error) {
-            console.error('Get persons error:', error);
-            if (authService.isFirebaseAvailable) {
-                return { success: false, error: error.message || 'Kişiler alınırken bir hata oluştu.' };
-            }
-            return { success: false, error: error.message || 'Kişiler alınırken bir hata oluştu.' };
-        }
-    },
-
-    async updatePerson(personId, updates) {
-        console.log(`🔄 Updating person ${personId}:`, updates);
-        try {
-            if (authService.isFirebaseAvailable && db) {
-                const personRef = doc(db, 'persons', personId);
-                const updateData = { ...updates, updatedAt: new Date().toISOString() };
-                await updateDoc(personRef, updateData);
-                console.log(`✅ Firebase person ${personId} updated.`);
-                return { success: true };
-            } else {
-                return this.localUpdatePerson(personId, updates);
-            }
-        } catch (error) {
-            console.error('Update person error:', error);
-            if (authService.isFirebaseAvailable) {
-                return { success: false, error: error.message || 'Kişi güncellenirken bir hata oluştu.' };
-            }
-            return { success: false, error: error.message || 'Kişi güncellenirken bir hata oluştu.' };
-        }
-    },
-
-    async deletePerson(personId) {
-        console.log(`🗑️ Deleting person: ${personId}`);
-        try {
-            if (authService.isFirebaseAvailable && db) {
-                await deleteDoc(doc(db, 'persons', personId));
-                console.log(`✅ Firebase person ${personId} deleted.`);
-                return { success: true };
-            } else {
-                return this.localDeletePerson(personId);
-            }
-        } catch (error) {
-            console.error('Delete person error:', error);
-            if (authService.isFirebaseAvailable) {
-                return { success: false, error: error.message || 'Kişi silinirken bir hata oluştu.' };
-            }
-            return { success: false, error: error.message || 'Kişi silinirken bir hata oluştu.' };
-        }
-    },
-
-    // Local storage fallback methods for persons
-    localAddPerson(person) {
-        const persons = this.getLocalPersons();
-        const user = authService.getCurrentUser();
-        
-        const newPerson = {
-            id: 'local_person_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
-            ...person,
-            userId: user?.uid || 'anonymous',
-            userEmail: user?.email || 'anonymous@localhost',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-        };
-        persons.push(newPerson);
-        localStorage.setItem('persons', JSON.stringify(persons));
-        console.log('✅ Local person added:', newPerson);
-        return { success: true, id: newPerson.id, data: newPerson };
-    },
-
-    localGetPersons() {
-        const persons = this.getLocalPersons();
-        const user = authService.getCurrentUser();
-        
-        // 🔥 SÜPER ADMİN KONTROLÜ
-        if (authService.isSuperAdmin()) {
-            console.log('🔥 SÜPER ADMİN (LOCAL): Tüm kişiler döndürülüyor');
-            const allPersons = persons.map(person => ({
-                ...person
-            }));
-            return { success: true, data: allPersons.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)) };
-        } else {
-            // Normal kullanıcı
-            const userPersons = persons.filter(person => 
-                person.userId === user?.uid || 
-                person.userEmail === user?.email
-            );
-            console.log('📋 Normal kullanıcı (local persons):', userPersons.length);
-            return { success: true, data: userPersons.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)) };
-        }
-    },
-
-    localUpdatePerson(personId, updates) {
-        const persons = this.getLocalPersons();
-        const index = persons.findIndex(p => p.id === personId);
-        if (index !== -1) {
-            persons[index] = { ...persons[index], ...updates, updatedAt: new Date().toISOString() };
-            localStorage.setItem('persons', JSON.stringify(persons));
-            console.log(`✅ Local person ${personId} updated.`);
-            return { success: true };
-        }
-        console.warn(`Local update failed: Person ${personId} not found.`);
-        return { success: false, error: 'Kişi bulunamadı' };
-    },
-
-    localDeletePerson(personId) {
-        const persons = this.getLocalPersons();
-        const filteredPersons = persons.filter(p => p.id !== personId);
-        localStorage.setItem('persons', JSON.stringify(filteredPersons));
-        console.log('🗑️ Local person deleted:', personId);
-        return { success: true };
-    },
-
-    getLocalPersons() {
-        try {
-            const persons = localStorage.getItem('persons');
-            return persons ? JSON.parse(persons) : [];
-        } catch (error) {
-            console.error('Error reading local persons:', error);
-            return [];
-        }
-    }
 };
 
 // Export çeviri objeleri de dışarıdan erişilebilir olsun
