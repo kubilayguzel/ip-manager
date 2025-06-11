@@ -819,6 +819,34 @@
         .transaction-document-link:hover {
             color: #0056b3;
         }
+        /* Action buttons for transactions */
+        .transaction-actions {
+            display: flex;
+            gap: 5px;
+            justify-content: flex-end; /* Sağ tarafa yasla */
+        }
+        .transaction-action-btn {
+            padding: 4px 8px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.75em;
+            transition: all 0.3s ease;
+        }
+        .btn-edit-transaction {
+            background: #ffc107;
+            color: #212529;
+        }
+        .btn-edit-transaction:hover {
+            background: #e0a800;
+        }
+        .btn-delete-transaction {
+            background: #dc3545;
+            color: white;
+        }
+        .btn-delete-transaction:hover {
+            background: #c82333;
+        }
 
 
         .transaction-item {
@@ -1059,6 +1087,28 @@
             </div>
     </div>
 
+    <div class="modal" id="editTransactionModal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">İşlem Düzenle</h3>
+                <button class="close-btn" id="closeEditTransactionModal">&times;</button>
+            </div>
+            <form id="editTransactionForm">
+                <input type="hidden" id="editTransactionRecordId">
+                <input type="hidden" id="editTransactionId">
+                <div class="form-group">
+                    <label class="form-label" for="editTransactionDescription">Açıklama</label>
+                    <textarea id="editTransactionDescription" class="form-input" rows="3"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="cancelEditTransactionBtn">İptal</button>
+                    <button type="submit" class="btn btn-primary" id="saveTransactionBtn">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
     <script type="module">
         import { authService, ipRecordsService, auth } from './firebase-config.js'; // generateUUID'yi burada import etmeye gerek yok
 
@@ -1236,6 +1286,14 @@
                         this.currentPage++;
                         this.renderTable();
                     }
+                });
+
+                // Transaction Düzenleme Modalı Event Listenerları
+                document.getElementById('closeEditTransactionModal').addEventListener('click', () => this.hideEditTransactionModal());
+                document.getElementById('cancelEditTransactionBtn').addEventListener('click', () => this.hideEditTransactionModal());
+                document.getElementById('editTransactionForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.saveTransactionChanges();
                 });
             }
 
@@ -1736,25 +1794,7 @@
                     `;
                 }
 
-                // Belgeler ve Dosyalar (güncellenmiş hali)
-                if (record.files && record.files.length > 0) {
-                    modalContentHtml += `
-                        <h4 class="detail-section-title">Yüklü Belgeler</h4>
-                        <div class="detail-item full-width">
-                            <div class="detail-value">
-                                ${record.files.map(file => `
-                                    <div style="margin-bottom: 5px;">
-                                        📄 <a href="${file.content}" download="${file.name}" class="file-link">${file.name}</a> 
-                                        <span style="font-size: 0.8em; color: #888;">(${this.formatFileSize(file.size)})</span>
-                                        <span style="font-size: 0.8em; color: #555;"> - Atama: ${file.documentDesignation || 'Belirtilmedi'}</span>
-                                        ${file.subDesignation ? `<span style="font-size: 0.8em; color: #555;"> (${file.subDesignation})</span>` : ''}
-                                        <span style="font-size: 0.7em; color: #999;"> (${formatDate(file.uploadedAt)})</span>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        </div>
-                    `;
-                }
+                // Yüklü Belgeler alanı kaldırıldı.
 
 
                 modalContentHtml += `</div>`; // .detail-grid kapanış etiketi
@@ -1764,12 +1804,13 @@
                 document.getElementById('detailModal').classList.add('show');
 
                 // İşlem Geçmişini Render Et
-                this.renderTransactionHistory(record.transactions, record.files);
+                this.renderTransactionHistory(record.id, record.transactions, record.files);
             }
 
             // YENİ METOT: renderTransactionHistory
             // Artık sadece "Document Indexed" transaction'ları listelenecek ve doküman linki doğrudan gösterilecek.
-            renderTransactionHistory(transactions, recordFiles) {
+            // Ayrıca, düzenleme ve silme butonları eklendi.
+            renderTransactionHistory(recordId, transactions, recordFiles) {
                 const historyContainer = document.getElementById('transactionHistory');
                 if (!historyContainer) return;
 
@@ -1841,6 +1882,14 @@
                         <div class="transaction-description-col">${transactionDescription}</div>
                         <div class="transaction-date-col">${formattedTimestamp}</div>
                         <div class="transaction-document-col">${documentLinkHtml}</div>
+                        <div class="transaction-actions">
+                            <button class="transaction-action-btn btn-edit-transaction" 
+                                    onclick="portfolio.openEditTransactionModal('${recordId}', '${tx.transactionId}')" 
+                                    title="İşlemi Düzenle">✏️</button>
+                            <button class="transaction-action-btn btn-delete-transaction" 
+                                    onclick="portfolio.deleteTransaction('${recordId}', '${tx.transactionId}')" 
+                                    title="İşlemi Sil">🗑️</button>
+                        </div>
                     `;
                     historyContainer.appendChild(transactionRow);
                 });
@@ -1969,6 +2018,75 @@
                         </a>
                     </div>
                 `;
+            }
+
+            // Yeni: Transaction düzenleme modalını açma
+            openEditTransactionModal(recordId, transactionId) {
+                const record = this.records.find(r => r.id === recordId);
+                if (!record) return;
+
+                const transaction = record.transactions.find(tx => tx.transactionId === transactionId);
+                if (!transaction) return;
+
+                document.getElementById('editTransactionRecordId').value = recordId;
+                document.getElementById('editTransactionId').value = transactionId;
+                document.getElementById('editTransactionDescription').value = transaction.description;
+
+                document.getElementById('editTransactionModal').style.display = 'flex';
+            }
+
+            // Yeni: Transaction düzenleme modalını kapatma
+            hideEditTransactionModal() {
+                document.getElementById('editTransactionModal').style.display = 'none';
+                document.getElementById('editTransactionForm').reset();
+            }
+
+            // Yeni: Transaction değişikliklerini kaydetme
+            async saveTransactionChanges() {
+                const recordId = document.getElementById('editTransactionRecordId').value;
+                const transactionId = document.getElementById('editTransactionId').value;
+                const newDescription = document.getElementById('editTransactionDescription').value.trim();
+
+                if (!newDescription) {
+                    alert('Açıklama boş olamaz.');
+                    return;
+                }
+
+                try {
+                    const result = await ipRecordsService.updateTransaction(recordId, transactionId, { description: newDescription });
+                    if (result.success) {
+                        alert('İşlem başarıyla güncellendi.');
+                        this.hideEditTransactionModal();
+                        await this.loadRecords(); // Listeyi yenile
+                        this.viewRecord(recordId); // Detay modalını yenile
+                    } else {
+                        alert('İşlem güncellenirken bir hata oluştu: ' + (result.error || 'Bilinmeyen Hata'));
+                    }
+                } catch (error) {
+                    console.error('Save transaction changes error:', error);
+                    alert('İşlem güncellenirken bir hata oluştu.');
+                }
+            }
+
+            // Yeni: Transaction silme
+            async deleteTransaction(recordId, transactionId) {
+                if (!confirm('Bu işlemi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz!')) {
+                    return;
+                }
+
+                try {
+                    const result = await ipRecordsService.deleteTransaction(recordId, transactionId);
+                    if (result.success) {
+                        alert('İşlem başarıyla silindi.');
+                        await this.loadRecords(); // Listeyi yenile
+                        this.viewRecord(recordId); // Detay modalını yenile
+                    } else {
+                        alert('İşlem silinirken bir hata oluştu: ' + (result.error || 'Bilinmeyen Hata'));
+                    }
+                } catch (error) {
+                    console.error('Delete transaction error:', error);
+                    alert('İşlem silinirken bir hata oluştu.');
+                }
             }
         }
 
