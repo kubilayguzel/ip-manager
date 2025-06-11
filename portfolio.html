@@ -1361,6 +1361,13 @@
                 if (authService.isSuperAdmin()) {
                     ownerInfoHtml = `<div style="font-size: 0.75em; color: #888; margin-top: 5px;">${record.userEmail || '-'}</div>`;
                 }
+                
+                // Başvuru Numarası için yeni URL'li link oluşturma
+                const baseUrl = "https://online.turkpatent.gov.tr/trademark/search/applicationNumber?"; // Buraya istediğiniz URL'i girin
+                const applicationNumberLink = record.applicationNumber 
+                    ? `<a href="${baseUrl}q=${encodeURIComponent(record.applicationNumber)}" target="_blank" title="TürkPatent web sitesinde ara">${record.applicationNumber}</a>`
+                    : '-';
+
 
                 row.innerHTML = `
                     <td>
@@ -1375,7 +1382,7 @@
                         </div>
                     </td>
                     ${trademarkImageCellHtml}
-                    <td>${record.applicationNumber || '-'}</td>
+                    <td>${applicationNumberLink}</td>
                     <td>
                         <span class="status-badge ${record.status}">
                             ${statusNames[record.status] || record.status}
