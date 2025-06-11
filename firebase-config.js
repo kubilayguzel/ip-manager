@@ -50,47 +50,46 @@ try {
     isFirebaseAvailable = false;
 }
 
-// Helper to get user role from Firestore
-async function getUserRole(uid) {
-    if (!isFirebaseAvailable) return null; // Firebase yoksa null dön
-    try {
-        const userDocRef = doc(db, 'users', uid);
-        const userDoc = await getDoc(userDocRef);
-        if (userDoc.exists()) {
-            return userDoc.data().role;
-        }
-        return null; // Belge yoksa
-    } catch (error) {
-        console.error("Error getting user role from Firestore:", error);
-        return null;
-    }
-}
-
-// Helper to set user role in Firestore
-async function setUserRole(uid, email, displayName, role) {
-    if (!isFirebaseAvailable) return false;
-    try {
-        const userDocRef = doc(db, 'users', uid);
-        await setDoc(userDocRef, {
-            email: email,
-            displayName: displayName,
-            role: role,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-        }, { merge: true }); // Merge true ile sadece verilen alanları günceller veya ekler
-        console.log(`User ${uid} role set to ${role} in Firestore.`);
-        return true;
-    } catch (error) {
-        console.error("Error setting user role in Firestore:", error);
-        return false;
-    }
-}
-
-
 // Authentication Service
 export const authService = {
     auth: auth,
     isFirebaseAvailable: isFirebaseAvailable,
+
+    // Helper to get user role from Firestore (Şimdi authService'in bir metodu)
+    async getUserRole(uid) {
+        if (!this.isFirebaseAvailable) return null; // Firebase yoksa null dön
+        try {
+            const userDocRef = doc(db, 'users', uid);
+            const userDoc = await getDoc(userDocRef);
+            if (userDoc.exists()) {
+                return userDoc.data().role;
+            }
+            return null; // Belge yoksa
+        } catch (error) {
+            console.error("Error getting user role from Firestore:", error);
+            return null;
+        }
+    },
+
+    // Helper to set user role in Firestore (Şimdi authService'in bir metodu)
+    async setUserRole(uid, email, displayName, role) {
+        if (!this.isFirebaseAvailable) return false;
+        try {
+            const userDocRef = doc(db, 'users', uid);
+            await setDoc(userDocRef, {
+                email: email,
+                displayName: displayName,
+                role: role,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            }, { merge: true }); // Merge true ile sadece verilen alanları günceller veya ekler
+            console.log(`User ${uid} role set to ${role} in Firestore.`);
+            return true;
+        } catch (error) {
+            console.error("Error setting user role in Firestore:", error);
+            return false;
+        }
+    },
 
     async signIn(email, password) {
         console.log('🔐 Attempting sign in with:', email);
@@ -102,7 +101,7 @@ export const authService = {
         try {
             const result = await signInWithEmailAndPassword(auth, email, password);
             const user = result.user;
-            const role = await getUserRole(user.uid) || 'user'; // Varsayılan rol 'user'
+            const role = await this.getUserRole(user.uid) || 'user'; // Varsayılan rol 'user'
 
             const userData = {
                 uid: user.uid,
@@ -140,7 +139,7 @@ export const authService = {
             });
 
             // Firestore'a kullanıcı rolünü kaydet
-            await setUserRole(user.uid, email, displayName, initialRole);
+            await this.setUserRole(user.uid, email, displayName, initialRole);
             
             const userData = {
                 uid: user.uid,
