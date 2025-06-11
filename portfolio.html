@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IP Manager - Portföy</title>
     <style>
-        /* CSS stilleri burada kalacak */
         * {
             margin: 0;
             padding: 0;
@@ -564,7 +563,7 @@
             background: white;
             padding: 30px;
             border-radius: 20px;
-            max-width: 600px;
+            max-width: 800px; /* Modal genişliği artırıldı */
             width: 90%;
             max-height: 90vh;
             overflow-y: auto;
@@ -601,12 +600,12 @@
 
         .detail-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* Sütun genişliği artırıldı */
             gap: 20px;
         }
 
         .detail-item {
-            margin-bottom: 15px;
+            margin-bottom: 10px; /* Boşluk azaltıldı */
         }
 
         .detail-label {
@@ -618,9 +617,10 @@
         .detail-value {
             color: #666;
             word-break: break-word;
+            font-size: 0.95em; /* Yazı boyutu ayarlandı */
         }
 
-        .trademark-image-thumb { /* Yeni stil: Küçük marka görseli */
+        .trademark-image-thumb {
             width: 40px;
             height: 40px;
             object-fit: contain;
@@ -628,6 +628,28 @@
             border-radius: 4px;
             vertical-align: middle;
             margin-left: 5px;
+        }
+
+        /* Yeni eklenen stiller */
+        .detail-section-title {
+            grid-column: 1 / -1; /* Tüm sütunları kapsa */
+            font-size: 1.1em;
+            color: #1e3c72;
+            margin-top: 20px;
+            margin-bottom: 15px;
+            padding-bottom: 5px;
+            border-bottom: 1px dashed #e1e8ed;
+        }
+        .file-link {
+            display: block;
+            margin-bottom: 5px;
+            color: #007bff;
+            text-decoration: none;
+            font-size: 0.9em;
+            word-break: break-all;
+        }
+        .file-link:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
@@ -1240,24 +1262,21 @@
                     pending: 'Beklemede',
                     approved: 'Onaylandı',
                     rejected: 'Reddedildi',
-                    expired: 'Süresi Doldu'
+                    expired: 'Süresi Doldu',
+                    published: 'Yayınlandı',
+                    partial_refusal: 'Kısmi Ret',
+                    refused: 'Ret',
+                    opposition_received: 'İtiraz Geldi',
+                    opposition_filed: 'İtiraz Edildi',
+                    registered: 'Tescilli',
+                    not_renewed: 'Yenilenmedi',
+                    invalid_void: 'Başvuru Geçersiz/Hükümsüz'
                 };
 
-                document.getElementById('modalTitle').textContent = record.title;
-                
-                const modalBody = document.getElementById('modalBody');
+                // Tarihleri düzgün formatla
+                const formatDate = (dateString) => dateString ? new Date(dateString).toLocaleDateString('tr-TR') : '-';
 
-                let trademarkImageDetailHtml = '';
-                if (record.type === 'trademark' && record.trademarkImage && record.trademarkImage.content) {
-                    trademarkImageDetailHtml = `
-                        <div class="detail-item" style="grid-column: 1 / -1; text-align: center;">
-                            <div class="detail-label">Marka Örneği</div>
-                            <img src="${record.trademarkImage.content}" alt="Marka Örneği" style="max-width: 150px; max-height: 150px; border: 1px solid #e1e8ed; border-radius: 8px; margin-top: 10px;">
-                        </div>
-                    `;
-                }
-
-                modalBody.innerHTML = `
+                let modalContentHtml = `
                     <div class="detail-grid">
                         <div class="detail-item">
                             <div class="detail-label">IP Türü</div>
@@ -1272,18 +1291,22 @@
                             </div>
                         </div>
                         <div class="detail-item">
+                            <div class="detail-label">Başlık</div>
+                            <div class="detail-value">${record.title || '-'}</div>
+                        </div>
+                        <div class="detail-item">
                             <div class="detail-label">Başvuru Numarası</div>
                             <div class="detail-value">${record.applicationNumber || '-'}</div>
                         </div>
                         <div class="detail-item">
                             <div class="detail-label">Başvuru Tarihi</div>
-                            <div class="detail-value">${record.applicationDate ? new Date(record.applicationDate).toLocaleDateString('tr-TR') : '-'}</div>
+                            <div class="detail-value">${formatDate(record.applicationDate)}</div>
                         </div>
-                        <div class="detail-item" style="grid-column: 1 / -1;">
+                        <div class="detail-item">
                             <div class="detail-label">Açıklama</div>
                             <div class="detail-value">${record.description || '-'}</div>
                         </div>
-                        <div class="detail-item" style="grid-column: 1 / -1;">
+                        <div class="detail-item">
                             <div class="detail-label">Hak Sahipleri</div>
                             <div class="detail-value">
                                 ${record.owners && record.owners.length > 0 ? record.owners.map(owner => `
@@ -1293,21 +1316,160 @@
                                 `).join('') : '-'}
                             </div>
                         </div>
-                        ${trademarkImageDetailHtml}
                         <div class="detail-item">
                             <div class="detail-label">Oluşturma Tarihi</div>
-                            <div class="detail-value">${record.createdAt ? new Date(record.createdAt).toLocaleDateString('tr-TR') : '-'}</div>
+                            <div class="detail-value">${formatDate(record.createdAt)}</div>
                         </div>
-                        ${authService.isSuperAdmin() && record.userEmail ? ` <div class="detail-item">
-                                <div class="detail-label">Kayıt Sahibi (Kullanıcı)</div>
-                                <div class="detail-value">${record.userEmail}</div>
-                            </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Son Güncelleme Tarihi</div>
+                            <div class="detail-value">${formatDate(record.updatedAt)}</div>
+                        </div>
+                        ${authService.isSuperAdmin() && record.userEmail ? `
+                        <div class="detail-item">
+                            <div class="detail-label">Kayıt Sahibi (Kullanıcı)</div>
+                            <div class="detail-value">${record.userEmail}</div>
+                        </div>
                         ` : ''}
-                    </div>
                 `;
 
+                // Tür'e özel detayları ekle
+                if (record.type === 'patent') {
+                    modalContentHtml += `
+                        <h4 class="detail-section-title">Patent Bilgileri</h4>
+                        <div class="detail-item">
+                            <div class="detail-label">Patent Sınıfı</div>
+                            <div class="detail-value">${record.patentClass || '-'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Son Geçerlilik Tarihi</div>
+                            <div class="detail-value">${formatDate(record.expiryDate)}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Öncelik Tarihi</div>
+                            <div class="detail-value">${formatDate(record.priority)}</div>
+                        </div>
+                        <div class="detail-item full-width">
+                            <div class="detail-label">Patent İstekleri</div>
+                            <div class="detail-value">${record.claims || '-'}</div>
+                        </div>
+                    `;
+                } else if (record.type === 'trademark') {
+                    modalContentHtml += `
+                        <h4 class="detail-section-title">Marka Bilgileri</h4>
+                        <div class="detail-item">
+                            <div class="detail-label">Tescil Numarası</div>
+                            <div class="detail-value">${record.registrationNumber || '-'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Tescil Tarihi</div>
+                            <div class="detail-value">${formatDate(record.registrationDate)}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Marka Türü</div>
+                            <div class="detail-value">${record.trademarkType || '-'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Nice Sınıfı</div>
+                            <div class="detail-value">${record.niceClass || '-'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Yenileme Tarihi</div>
+                            <div class="detail-value">${formatDate(record.renewalDate)}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Bülten Tarihi</div>
+                            <div class="detail-value">${formatDate(record.bulletinDate)}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Bülten Numarası</div>
+                            <div class="detail-value">${record.bulletinNumber || '-'}</div>
+                        </div>
+                        <div class="detail-item full-width">
+                            <div class="detail-label">Mal ve Hizmetler</div>
+                            <div class="detail-value">${record.goodsServices || '-'}</div>
+                        </div>
+                    `;
+                    if (record.trademarkImage && record.trademarkImage.content) {
+                        modalContentHtml += `
+                            <div class="detail-item full-width" style="text-align: center;">
+                                <div class="detail-label">Marka Örneği</div>
+                                <img src="${record.trademarkImage.content}" alt="Marka Örneği" style="max-width: 200px; max-height: 200px; border: 1px solid #e1e8ed; border-radius: 8px; margin-top: 10px;">
+                            </div>
+                        `;
+                    }
+                } else if (record.type === 'copyright') {
+                    modalContentHtml += `
+                        <h4 class="detail-section-title">Telif Hakkı Bilgileri</h4>
+                        <div class="detail-item">
+                            <div class="detail-label">Eser Türü</div>
+                            <div class="detail-value">${record.workType || '-'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Eser Oluşturma Tarihi</div>
+                            <div class="detail-value">${formatDate(record.creationDate)}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Yayın Tarihi</div>
+                            <div class="detail-value">${formatDate(record.publicationDate)}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Yayınevi/Yapımcı</div>
+                            <div class="detail-value">${record.publisher || '-'}</div>
+                        </div>
+                    `;
+                } else if (record.type === 'design') {
+                    modalContentHtml += `
+                        <h4 class="detail-section-title">Tasarım Bilgileri</h4>
+                        <div class="detail-item">
+                            <div class="detail-label">Tasarım Türü</div>
+                            <div class="detail-value">${record.designType || '-'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Locarno Sınıfı</div>
+                            <div class="detail-value">${record.locarnoClass || '-'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Tasarım Tarihi</div>
+                            <div class="detail-value">${formatDate(record.designDate)}</div>
+                        </div>
+                        <div class="detail-item full-width">
+                            <div class="detail-label">Tasarım Özellikleri</div>
+                            <div class="detail-value">${record.designFeatures || '-'}</div>
+                        </div>
+                    `;
+                }
+
+                // Belgeler ve Dosyalar
+                if (record.files && record.files.length > 0) {
+                    modalContentHtml += `
+                        <h4 class="detail-section-title">Belgeler ve Dosyalar</h4>
+                        <div class="detail-item full-width">
+                            <div class="detail-label">Yüklü Belgeler</div>
+                            <div class="detail-value">
+                                ${record.files.map(file => `
+                                    <a href="${file.content}" download="${file.name}" class="file-link">📄 ${file.name} (${this.formatFileSize(file.size)})</a>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+
+
+                modalContentHtml += `</div>`; // .detail-grid kapanış etiketi
+
+                document.getElementById('modalBody').innerHTML = modalContentHtml;
                 document.getElementById('detailModal').classList.add('show');
             }
+
+            // Dosya boyutunu formatlama yardımcı fonksiyonu (data-entry.html'den kopyalandı)
+            formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+
 
             editRecord(recordId) {
                 // Yönlendirme yaparak data-entry.html sayfasında düzenleme modunu aç
