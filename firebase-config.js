@@ -339,9 +339,8 @@ export const ipRecordsService = {
                     ...file,
                     id: file.id || generateUUID(),
                     uploadedAt: file.uploadedAt || new Date().toISOString(),
-                    // documentType kaldırıldı, subDesignation eklendi
-                    documentDesignation: file.documentDesignation || '',
-                    subDesignation: file.subDesignation || ''
+                    documentDesignation: file.documentDesignation || null, // Ensure null if empty
+                    subDesignation: file.subDesignation || null // Ensure null if empty
                 }))
             };
 
@@ -613,17 +612,31 @@ export const ipRecordsService = {
             });
 
             const finalUpdates = {
-                ...updates,
                 updatedAt: updatedTimestamp,
                 transactions: newTransactions, // Güncel transaction dizisi
                 files: newFiles.map(file => ({ // Her dosya objesinin ID'si ve uploadedAt'i olduğundan emin ol
                     ...file,
                     id: file.id || generateUUID(),
                     uploadedAt: file.uploadedAt || updatedTimestamp,
-                    documentDesignation: file.documentDesignation || '', // Atamayı koru
-                    subDesignation: file.subDesignation || '' // Alt atamayı koru
+                    documentDesignation: file.documentDesignation || null, // Ensure null if empty
+                    subDesignation: file.subDesignation || null // Ensure null if empty
                 }))
             };
+
+            // updates objesindeki diğer alanları da finalUpdates'e eklerken undefined kontrolü yap
+            for (const key in updates) {
+                // 'files', 'transactions' ve 'updatedAt' zaten yukarıda ele alındı, tekrar ekleme
+                if (key === 'files' || key === 'transactions' || key === 'updatedAt') {
+                    continue;
+                }
+                
+                // Eğer değer undefined ise null olarak ayarla, aksi takdirde değeri olduğu gibi kullan
+                if (updates[key] === undefined) {
+                    finalUpdates[key] = null;
+                } else {
+                    finalUpdates[key] = updates[key];
+                }
+            }
 
             if (authService.isFirebaseAvailable && db) {
                 await updateDoc(recordRef, finalUpdates);
