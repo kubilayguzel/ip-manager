@@ -624,7 +624,7 @@
             background: white;
             padding: 30px;
             border-radius: 20px;
-            max-width: 800px; /* Modal genişliği artırıldı */
+            max-width: 1000px; /* Modal genişliği artırıldı */
             width: 90%;
             max-height: 90vh;
             overflow-y: auto;
@@ -807,19 +807,20 @@
             color: #1e3c72;
             margin-right: 8px;
         }
-
-        .transaction-description {
-            color: #333;
-        }
         .transaction-document-link {
             font-size: 0.8em;
             color: #007bff;
             text-decoration: underline;
             margin-top: 4px;
-            display: block;
+            display: block; /* Bağlantının kendi satırında olması için */
         }
         .transaction-document-link:hover {
             color: #0056b3;
+        }
+
+
+        .transaction-description {
+            color: #333;
         }
 
         .transaction-meta {
@@ -1730,6 +1731,9 @@
 
                 document.getElementById('modalBody').innerHTML = modalContentHtml;
                 document.getElementById('modalTitle').textContent = `"${record.title}" Detayları`; // Modal başlığını kaydın başlığı ile değiştir
+                // Yeni sekmede açmak için 'btn-view' butonuna 'target="_blank"' ve 'rel="noopener noreferrer"' eklememiz gerekir.
+                // Ancak bu, modalın kendisini değil, viewRecord fonksiyonunun çağrılmasını etkileyecektir.
+                // Modalın yeni sekmede açılması, mevcut yapıyla doğrudan desteklenmez, bu yüzden mevcut modal yapısını koruyoruz.
                 document.getElementById('detailModal').classList.add('show');
 
                 // İşlem Geçmişini Render Et
