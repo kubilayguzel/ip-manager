@@ -827,10 +827,10 @@ export async function createDemoData() {
     console.log(`📊 Toplam ${allRecords.length} kayıt, ${demoRecords.length} yeni eklendi`);
 }
 
-// Export auth for direct access
-export { auth };
+// Export auth and db for direct access (db de eklendi)
+export { auth, db };
 
 console.log('🔥 Firebase config loaded - SÜPER ADMİN DESTEĞİ AKTİF');
 console.log('🔥 Süper Admin Hesabı: superadmin@ipmanager.com / superadmin123');
 console.log('🐛 Debug Hesabı: debug@ipmanager.com / debug123');
-console.log('🧪 Available services: authService, ipRecordsService, personsService, createDemoData, auth');
+console.log('🧪 Available services: authService, ipRecordsService, personsService, createDemoData, auth, db');
