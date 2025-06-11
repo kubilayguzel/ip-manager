@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IP Manager - Yeni Kayıt</title>
     <style>
-        /* CSS kodları önceki sürümle aynı kalacaktır */
         * {
             margin: 0;
             padding: 0;
@@ -953,37 +952,34 @@
     </div>
 
     <script type="module">
-        import { authService, ipRecordsService, auth } from './firebase-config.js'; // auth da eklendi
+        import { authService, ipRecordsService, personsService, auth } from './firebase-config.js'; // personsService de eklendi
 
         class DataEntryModule {
             constructor() {
                 this.selectedType = null;
                 this.selectedOwners = []; 
-                this.persons = this.loadPersons(); // Şimdilik yerel demo kişiler
+                this.persons = []; // Kişiler artık Firebase/localStorage'dan çekilecek
                 this.uploadedFiles = []; 
                 this.uploadedTrademarkImage = null; 
                 this.selectedPersonForSearch = null; 
-                this.currentUser = null; // Mevcut kullanıcıyı tutacak
+                this.currentUser = null; 
                 this.init();
             }
 
             init() {
-                // Firebase kimlik doğrulama durumunu dinle
                 auth.onAuthStateChanged(async (user) => {
                     if (user) {
                         this.currentUser = user;
                         console.log('✅ User authenticated:', user.email);
-                        // Kullanıcı oturum açtıysa arayüzü hazırla
+                        // Kullanıcı oturum açtıysa kişileri yükle ve arayüzü hazırla
+                        await this.loadPersonsFromService(); // Kişileri servis üzerinden yükle
                         this.initializeEventListeners();
                         this.setupFileUpload();
                         this.setupTrademarkImageUpload(); 
-                        // Hak sahipleri listesini Firebase veya local'den çek
-                        // (Şimdilik persons array'i local loadPersons'dan geliyor, bu durum korunacak)
                         this.renderOwnerList(); 
                         this.updateTitleLabel(); 
                         this.toggleTrademarkImageUpload(false); 
                         
-                        // URL'de tip parametresi varsa seçili hale getir
                         const urlParams = new URLSearchParams(window.location.search);
                         const typeFromUrl = urlParams.get('type');
                         if (typeFromUrl) {
@@ -991,23 +987,30 @@
                         }
 
                     } else {
-                        // Kullanıcı oturum açmamışsa giriş sayfasına yönlendir
                         console.log('❌ User not authenticated, redirecting to login page.');
                         window.location.href = 'index.html'; 
                     }
                 });
 
-                console.log('📝 Veri Giriş Modülü başlatıldı (Firebase Auth ile)');
+                console.log('📝 Veri Giriş Modülü başlatılıyor (Firebase Auth ile)');
             }
 
-            // `persons` listesi şu an için sabit demo verilerden geliyor.
-            // Gerçek bir senaryoda bu kişiler de Firebase Firestore'dan çekilebilir.
-            loadPersons() { 
-                return [
-                    { id: 'person_1', name: 'Ahmet Yılmaz', email: 'ahmet@example.com', phone: '05321112233', type: 'individual', address: 'İstanbul' },
-                    { id: 'person_2', name: 'Ayşe Kaya', email: 'ayse@example.com', phone: '05334445566', type: 'individual', address: 'Ankara' },
-                    { id: 'person_3', name: 'Mega Teknoloji A.Ş.', email: 'info@megatech.com', phone: '02127778899', type: 'company', address: 'İzmir' },
-                ];
+            // Kişileri `personsService` üzerinden çeken yeni metot
+            async loadPersonsFromService() {
+                try {
+                    const result = await personsService.getPersons();
+                    if (result.success) {
+                        this.persons = result.data;
+                        console.log('👥 Persons loaded from service:', this.persons.length);
+                    } else {
+                        console.error('Failed to load persons for DataEntry:', result.error);
+                        // Hata durumunda boş bırak veya demo data kullan
+                        this.persons = [];
+                    }
+                } catch (error) {
+                    console.error('Error in loadPersonsFromService:', error);
+                    this.persons = [];
+                }
             }
 
             initializeEventListeners() {
@@ -1204,6 +1207,10 @@
 
             showAddPersonModal() {
                 const modal = document.getElementById('addPersonModal');
+                // Yeni kişi ekleme modunda formu temizle
+                document.getElementById('personForm').reset();
+                // Eski hataları ve bildirimleri temizle
+                this.clearModalErrors();
                 if (modal) {
                     modal.classList.add('show');
                     const nameInput = document.getElementById('personName');
@@ -1215,8 +1222,8 @@
                 const modal = document.getElementById('addPersonModal');
                 if (modal) {
                     modal.classList.remove('show');
-                    const form = document.getElementById('personForm');
-                    if (form) form.reset();
+                    document.getElementById('personForm').reset();
+                    this.clearModalErrors();
                 }
             }
 
@@ -1313,34 +1320,54 @@
                 }
             }
 
-            savePerson() {
+            async savePerson() { // async olarak işaretlendi
                 const name = document.getElementById('personName').value.trim();
-                if (!name) {
-                    this.showNotification('Ad Soyad alanı zorunludur.', 'error'); 
+                const email = document.getElementById('personEmail').value.trim();
+                const phone = document.getElementById('personPhone').value.trim();
+                const type = document.getElementById('personType').value;
+                const address = document.getElementById('personAddress').value.trim();
+
+                if (!name || !type) {
+                    this.showNotification('Ad Soyad ve Kişi Türü alanları zorunludur.', 'error');
                     return;
                 }
 
-                const newPerson = {
-                    id: 'person_' + Date.now(),
-                    name: name,
-                    email: document.getElementById('personEmail').value.trim(),
-                    phone: document.getElementById('personPhone').value.trim(),
-                    type: document.getElementById('personType').value,
-                    address: document.getElementById('personAddress').value.trim()
-                };
+                const newPersonData = { name, email, phone, type, address };
 
-                this.persons.push(newPerson);
-                
-                if (!this.selectedOwners.includes(newPerson.id)) {
-                    this.selectedOwners.push(newPerson.id);
+                const savePersonBtn = document.getElementById('savePersonBtn');
+                savePersonBtn.disabled = true;
+
+                try {
+                    const result = await personsService.addPerson(newPersonData); // personsService üzerinden ekle
+                    if (result.success) {
+                        // Kişiyi mevcut persons listesine ekle (gerçek ID'si ile)
+                        this.persons.push({ id: result.id, ...newPersonData }); 
+                        // Yeni eklenen kişiyi selectedOwners listesine de ekle
+                        if (!this.selectedOwners.includes(result.id)) {
+                            this.selectedOwners.push(result.id);
+                        }
+                        this.renderOwnerList();
+                        this.hideAddPersonModal();
+                        this.showNotification(`${newPersonData.name} başarıyla eklendi ve hak sahiplerine eklendi!`, 'success');
+                    } else {
+                        throw new Error(result.error || 'Kişi kaydedilirken bilinmeyen bir hata oluştu.');
+                    }
+                } catch (error) {
+                    console.error('Save person error:', error);
+                    this.showNotification('Kişi kaydedilirken bir hata oluştu: ' + error.message, 'error');
+                } finally {
+                    savePersonBtn.disabled = false;
                 }
-                
-                this.renderOwnerList(); 
-                this.hideAddPersonModal();
+            }
 
-                this.showNotification(`${newPerson.name} başarıyla eklendi ve hak sahiplerine eklendi!`, 'success');
-
-                console.log('New person added:', newPerson);
+            clearModalErrors() {
+                // Modaldaki input hatalarını ve hata mesajlarını temizle
+                document.querySelectorAll('#personForm .form-input').forEach(input => {
+                    input.classList.remove('error');
+                });
+                document.querySelectorAll('#personForm .error-message').forEach(errorDiv => {
+                    errorDiv.style.display = 'none';
+                });
             }
 
             showNotification(message, type = 'info') {
@@ -1595,17 +1622,14 @@
 
             async collectFormData() { 
                 const formData = {
-                    id: 'ip_' + Date.now(), // Firestore kendi ID'sini verecek ama bu şimdilik kalabilir
                     type: this.selectedType,
                     title: document.getElementById('title').value.trim(),
                     status: document.getElementById('status').value,
                     applicationNumber: document.getElementById('applicationNumber').value.trim(),
                     applicationDate: document.getElementById('applicationDate').value,
                     description: document.getElementById('description').value.trim(),
-                    // Hak sahipleri objelerini saklayın, sadece ID'leri değil
                     owners: this.selectedOwners.map(id => this.persons.find(p => p.id === id)).filter(Boolean), 
                     notes: document.getElementById('notes').value.trim(),
-                    // Yüklenen dosyaların isim ve boyut bilgilerini saklayın (gerçek dosyalar Storage'a yüklenir)
                     files: this.uploadedFiles.map(file => ({
                         name: file.name,
                         size: file.size,
@@ -1614,7 +1638,6 @@
                     createdAt: new Date().toISOString()
                 };
 
-                // Tür'e özel alanları ekle
                 if (this.selectedType === 'patent') {
                     formData.patentClass = document.getElementById('patentClass')?.value || '';
                     formData.expiryDate = document.getElementById('expiryDate')?.value || '';
@@ -1671,7 +1694,6 @@
                 try {
                     const formData = await this.collectFormData(); 
                     
-                    // Firestore'a kayıt ekle
                     const result = await ipRecordsService.addRecord(formData); 
                     
                     if (result.success) {
@@ -1681,11 +1703,9 @@
                         setTimeout(() => {
                             this.resetForm();
                             successMessage.style.display = 'none';
-                            // Başarılı kayıttan sonra portföy sayfasına yönlendirme yapabiliriz
                             window.location.href = 'portfolio.html'; 
                         }, 2000);
                     } else {
-                        // Firestore'dan dönen hata mesajını göster
                         throw new Error(result.error || 'Kayıt oluşturulurken bilinmeyen bir hata oluştu.');
                     }
                     
@@ -1698,9 +1718,6 @@
                     submitLoading.style.display = 'none';
                 }
             }
-
-            // saveToLocalStorage kaldırıldı, artık direkt Firestore'a yazılıyor
-            // Bu metodun çağrıları ipRecordsService.addRecord ile değiştirildi
 
             resetForm() {
                 this.selectedType = null;
@@ -1717,17 +1734,15 @@
                     field.classList.remove('show');
                 });
 
-                // ipForm'u sıfırla
                 const ipForm = document.getElementById('ipForm');
                 if (ipForm) ipForm.reset();
 
-                // Dosya listelerini ve önizlemeleri temizle
                 const fileList = document.getElementById('fileList');
                 if (fileList) fileList.innerHTML = '';
                 this.renderTrademarkImagePreview(); 
                 this.toggleTrademarkImageUpload(false); 
                 this.updateTitleLabel(''); 
-                this.renderOwnerList(); // Hak sahipleri gridini de temizle
+                this.renderOwnerList(); 
 
                 console.log('Form reset');
             }
@@ -1747,16 +1762,12 @@
                 document.getElementById('description').value = 'Bu bir test kaydıdır.';
                 
                 if (this.persons.length > 0) {
-                    // Test verisi olarak ilk kişiyi seçili hak sahibi yap
                     this.selectedOwners = [this.persons[0].id];
                     this.renderOwnerList(); 
                 }
 
                 if (type === 'trademark') {
                     this.toggleTrademarkImageUpload(true); 
-                    // İsterseniz burada bir test Base64 görseli yükleyebilirsiniz
-                    // this.uploadedTrademarkImage = { name: 'test.jpeg', type: 'image/jpeg', size: 1000, content: 'data:image/jpeg;base64,...' };
-                    // this.renderTrademarkImagePreview();
                 }
                 
                 console.log(`Test data set for ${type}`);
@@ -1771,25 +1782,21 @@
             }
         }
 
-        // Initialize DataEntryModule ONLY after Firebase authentication state is known
         let dataEntry; 
-        auth.onAuthStateChanged((user) => {
+        auth.onAuthStateChanged(async (user) => {
             if (user) {
-                // Sadece kullanıcı oturum açmışsa DataEntryModule'ü başlat
-                if (!dataEntry) { // Birden fazla kez başlatmayı önle
+                if (!dataEntry) { 
                     dataEntry = new DataEntryModule();
                 }
             } else {
-                // Kullanıcı oturum açmamışsa giriş sayfasına yönlendir
                 console.log('❌ User not authenticated, redirecting to login page.');
                 window.location.href = 'index.html'; 
             }
         });
 
-        // Global test functions
         window.testDataEntry = {
             setTestData: (type) => dataEntry?.setTestData(type),
-            getFormData: () => dataEntry?.collectFormData(), // async olduğu için await kullanın
+            getFormData: () => dataEntry?.collectFormData(), 
             resetForm: () => dataEntry?.resetForm(),
             getPersons: () => dataEntry?.getPersons()
         };
