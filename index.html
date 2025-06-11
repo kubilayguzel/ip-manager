@@ -364,7 +364,15 @@
                     if (user) {
                         console.log('✅ User authenticated by Firebase:', user.email);
                         
-                        const userData = authService.getCurrentUser(); 
+                        // Kullanıcının rolünü Firestore'dan al ve localStorage'a kaydet
+                        const role = await authService.getUserRole(user.uid); // Firebase'den rolü çek
+                        const userData = {
+                            uid: user.uid,
+                            email: user.email,
+                            displayName: user.displayName,
+                            role: role || 'user', // Rol yoksa varsayılan 'user'
+                            isSuperAdmin: role === 'superadmin' // isSuperAdmin bayrağını ayarla
+                        };
                         localStorage.setItem('currentUser', JSON.stringify(userData));
                         console.log('💾 User data saved to localStorage:', userData);
                         
@@ -376,17 +384,10 @@
                         }, 1500);
                     } else {
                         console.log('ℹ️ User is not authenticated by Firebase.');
-                        // Bu noktada, eğer localStorage'da geçerli bir kullanıcı yoksa
-                        // ve sayfa index.html ise, hiçbir şey yapmamalıyız.
-                        // Diğer sayfalardan buraya yönlendirme zaten yapılıyor.
-                        // Ancak, logout işlemi tetiklendiğinde buradaki localUser kontrolü önemlidir.
                         const localUser = authService.getCurrentUser();
                         if (localUser && localUser.uid) {
-                             // localStorage'da kullanıcı var ama Firebase'de yok. Bu durum local mod anlamına gelir.
-                             // Yönlendirme yapma, kullanıcının tekrar login olmasını bekle.
                              console.log('⚠️ LocalStorage user found, but Firebase not authenticated. Staying on login page.');
                         } else {
-                             // Ne Firebase ne de localStorage'da kullanıcı yok. Giriş sayfasında kal.
                              console.log('❌ No authenticated user (Firebase or LocalStorage). Staying on login page.');
                         }
                     }
@@ -461,7 +462,8 @@
                 this.clearMessages();
 
                 try {
-                    const result = await authService.signUp(email, password, name);
+                    // Varsayılan rolü 'user' olarak gönderiyoruz
+                    const result = await authService.signUp(email, password, name, 'user');
                     
                     if (result.success) {
                         this.showSuccess('Hesap oluşturuldu! Demo veriler yükleniyor...');
@@ -494,7 +496,8 @@
                 this.clearMessages();
 
                 try {
-                    const result = await authService.signUp(demoEmail, demoPassword, demoName);
+                    // Demo hesap için varsayılan rol 'user' olarak gönderiliyor
+                    const result = await authService.signUp(demoEmail, demoPassword, demoName, 'user');
                     
                     if (result.success) {
                         this.showSuccess(`Demo hesap oluşturuldu: ${demoEmail}. Veriler yükleniyor...`);
@@ -643,6 +646,13 @@
                 document.getElementById('signin-password-error').style.display = 'none';
                 document.getElementById('successMessage').style.display = 'none';
             },
+            fillSuperAdminSignIn: () => { // Süper Admin için yeni test fonksiyonu
+                document.getElementById('signin-email').value = 'superadmin@ipmanager.com';
+                document.getElementById('signin-password').value = 'superadmin123';
+                document.getElementById('signin-email-error').style.display = 'none'; 
+                document.getElementById('signin-password-error').style.display = 'none';
+                document.getElementById('successMessage').style.display = 'none';
+            },
             getCurrentUser: () => {
                 const user = authService.getCurrentUser(); 
                 return user;
@@ -650,12 +660,6 @@
             signOut: async () => { 
                 console.log('Attempting sign out...');
                 await authService.signOut(); 
-                // DÜZELTME: authService.signOut() artık localStorage'ı temizleyip yönlendirme yaptığı için
-                // burada ekstra window.location.href = 'index.html'; satırına gerek kalmıyor,
-                // veya dashboard.html'den gelen yönlendirmeyle çakışabilir.
-                // Eğer logout işlemi doğrudan index.html'den çağrılıyorsa, yönlendirme burada kalabilir.
-                // Genel tutarlılık için, tüm sayfalarda çıkışın aynı şekilde davranması önemlidir.
-                // dashboard.html'deki gibi burada da yönlendirme satırı tutulabilir.
                 window.location.href = 'index.html'; 
                 console.log('User signed out.');
             },
@@ -668,6 +672,7 @@
         console.log('Test komutları:');
         console.log('testAuth.fillDemoSignIn() - Demo bilgileri doldur');
         console.log('testAuth.fillAdminSignIn() - Admin bilgileri doldur');
+        console.log('testAuth.fillSuperAdminSignIn() - Süper Admin bilgileri doldur');
         console.log('testAuth.getCurrentUser() - Mevcut kullanıcı');
         console.log('testAuth.signOut() - Oturumu kapat ve login sayfasına dön');
         console.log('testAuth.forceDashboard() - Dashboard\'a zorla git (Authenticated değilse hata verir)');
