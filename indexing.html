@@ -577,7 +577,7 @@
 
             initializeEventListeners() {
                 document.getElementById('backBtn').addEventListener('click', () => {
-                    if (confirm('Değişiklikler kaybolacak. Devam etmek istiyor musunuz?')) {
+                    if (confirm('Değişiklikler kaybolacak. Devam etmek istiyorunuz mı?')) {
                         window.location.href = 'portfolio.html';
                     }
                 });
@@ -747,7 +747,10 @@
                     this.updateStatusOptionsForRecord(record.type, record.status);
 
                     // Mevcut dosyaları yükle
-                    // Bu sayfada sadece yeni eklenen dosyaları indeksleyeceğiz.
+                    // Buraya dikkat: selectedRecord'dan gelen 'files' orijinal dosyalarıdır.
+                    // uploadedFiles, sadece bu oturumda eklenen veya değiştirilen dosyaları tutacak.
+                    // Bu yüzden başlangıçta uploadedFiles'ı sıfırlıyoruz. Eğer mevcut dosyaları da düzenlemeye izin vereceksek,
+                    // onları da buraya yüklememiz gerekirdi. Şu an sadece YENİ eklenenleri işlemeye odaklanalım.
                     this.uploadedFiles = []; 
                     this.updateFileList();
 
@@ -793,6 +796,7 @@
                     partial_refusal: 'Kısmi Ret', // Marka özel
                     refused: 'Ret', // Marka özel
                     opposition_received: 'İtiraz Geldi', // Marka özel
+                    request_for_extension: 'Ek Süre Talebi', // Yeni eklendi
                     opposition_filed: 'İtiraz Edildi', // Marka özel
                     registered: 'Tescilli', // Marka özel
                     not_renewed: 'Yenilenmedi', // Marka özel
