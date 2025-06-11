@@ -19,7 +19,8 @@ import {
     query,
     orderBy,
     where,
-    onSnapshot
+    getDoc, // Belirli bir belgeyi çekmek için eklendi
+    setDoc // Belge oluşturmak veya üzerine yazmak için eklendi
 } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
 // Firebase Config - Gerçek Proje Bilgileri
@@ -32,11 +33,6 @@ const firebaseConfig = {
     appId: "1:378017128708:web:e2c6fa7b8634022f2ef051",
     measurementId: "G-TQB1CF18Q8"
 };
-
-// Admin Kullanıcının UID'si BURAYA GELMELİ.
-// Firebase Authentication bölümünden kopyalayın. Örneğin: 'someFirebaseUserUID12345'
-// Bu UID, admin@ipmanager.com hesabınıza ait olmalı.
-const ADMIN_UID = 'S8DVLPHlt3a6aMhHxGBCHqR0ANz2';
 
 // Initialize Firebase
 let app, auth, db;
@@ -54,6 +50,43 @@ try {
     isFirebaseAvailable = false;
 }
 
+// Helper to get user role from Firestore
+async function getUserRole(uid) {
+    if (!isFirebaseAvailable) return null; // Firebase yoksa null dön
+    try {
+        const userDocRef = doc(db, 'users', uid);
+        const userDoc = await getDoc(userDocRef);
+        if (userDoc.exists()) {
+            return userDoc.data().role;
+        }
+        return null; // Belge yoksa
+    } catch (error) {
+        console.error("Error getting user role from Firestore:", error);
+        return null;
+    }
+}
+
+// Helper to set user role in Firestore
+async function setUserRole(uid, email, displayName, role) {
+    if (!isFirebaseAvailable) return false;
+    try {
+        const userDocRef = doc(db, 'users', uid);
+        await setDoc(userDocRef, {
+            email: email,
+            displayName: displayName,
+            role: role,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        }, { merge: true }); // Merge true ile sadece verilen alanları günceller veya ekler
+        console.log(`User ${uid} role set to ${role} in Firestore.`);
+        return true;
+    } catch (error) {
+        console.error("Error setting user role in Firestore:", error);
+        return false;
+    }
+}
+
+
 // Authentication Service
 export const authService = {
     auth: auth,
@@ -68,44 +101,63 @@ export const authService = {
         
         try {
             const result = await signInWithEmailAndPassword(auth, email, password);
+            const user = result.user;
+            const role = await getUserRole(user.uid) || 'user'; // Varsayılan rol 'user'
+
+            const userData = {
+                uid: user.uid,
+                email: user.email,
+                displayName: user.displayName,
+                role: role,
+                isSuperAdmin: role === 'superadmin' // isSuperAdmin özelliğini burada belirle
+            };
+            localStorage.setItem('currentUser', JSON.stringify(userData)); // Güncel kullanıcıyı LocalStorage'a kaydet
+            
             return {
                 success: true,
-                user: result.user,
+                user: userData,
                 message: 'Giriş başarılı'
             };
         } catch (error) {
             console.error('Firebase sign in error:', error);
-            // Firebase hatası durumunda dahi local'a düşmek yerine hatayı döndürmeliyiz.
-            // Çünkü yetki hatası varsa local'a eklemek doğru olmaz.
-            // Bu kısım, Firebase'e bağlanılamaması durumunda localSignIn'i çağırır.
-            // Ancak kimlik doğrulama başarısız olursa, Firebase hatasını doğrudan döndürmek daha iyi olabilir.
-            // Şimdilik mevcut mantığı koruyorum, ancak üretimde dikkatli olunmalı.
-            return this.localSignIn(email, password);
+            return { success: false, error: error.message || 'Giriş yaparken bir hata oluştu.' };
         }
     },
 
-    async signUp(email, password, displayName) {
-        console.log('📝 Attempting sign up with:', email);
+    async signUp(email, password, displayName, initialRole = 'user') {
+        console.log('📝 Attempting sign up with:', email, 'Role:', initialRole);
         
         if (!this.isFirebaseAvailable) {
-            return this.localSignUp(email, password, displayName);
+            return this.localSignUp(email, password, displayName, initialRole);
         }
         
         try {
             const result = await createUserWithEmailAndPassword(auth, email, password);
+            const user = result.user;
             
-            await updateProfile(result.user, {
+            await updateProfile(user, {
                 displayName: displayName
             });
+
+            // Firestore'a kullanıcı rolünü kaydet
+            await setUserRole(user.uid, email, displayName, initialRole);
             
+            const userData = {
+                uid: user.uid,
+                email: user.email,
+                displayName: user.displayName,
+                role: initialRole,
+                isSuperAdmin: initialRole === 'superadmin' // isSuperAdmin özelliğini belirle
+            };
+            localStorage.setItem('currentUser', JSON.stringify(userData)); // Yeni kullanıcıyı LocalStorage'a kaydet
+
             return {
                 success: true,
-                user: result.user,
+                user: userData,
                 message: 'Hesap oluşturuldu'
             };
         } catch (error) {
             console.error('Firebase sign up error:', error);
-            // Firebase hatası durumunda doğrudan hatayı döndür.
             return { success: false, error: error.message || 'Kayıt olurken bir hata oluştu.' };
         }
     },
@@ -115,51 +167,44 @@ export const authService = {
             if (this.isFirebaseAvailable && auth) {
                 await signOut(auth);
             }
-            // Firebase'in durumundan bağımsız olarak localStorage'ı temizle
-            localStorage.removeItem('currentUser'); // DÜZELTME: Bu satır her zaman çalışmalı
+            localStorage.removeItem('currentUser');
             console.log('✅ User signed out. LocalStorage cleaned.');
             return { success: true };
         } catch (error) {
             console.error('Sign out error:', error);
-            localStorage.removeItem('currentUser'); // Yine de temizle
+            localStorage.removeItem('currentUser');
             return { success: true, error: error.message || 'Çıkış yaparken bir hata oluştu.' };
         }
     },
 
     getCurrentUser() {
+        // Firebase Auth'tan gelen güncel kullanıcıyı tercih et
         if (this.isFirebaseAvailable && auth && auth.currentUser) {
             const user = auth.currentUser;
-            const role = user.uid === ADMIN_UID ? 'admin' : 'user';
-            return {
-                uid: user.uid,
-                email: user.email,
-                displayName: user.displayName,
-                role: role,
-                isSuperAdmin: role === 'admin' 
-            };
+            // Rolü senkronize olarak Firestore'dan çekmek yerine,
+            // kullanıcı oturum açtığında veya güncellendiğinde çekip localStorage'a kaydetmeliyiz.
+            // Burası sadece localStorage'ı okuyor, bu yüzden doğru bilgiye sahip olması önemli.
+            const localUser = localStorage.getItem('currentUser');
+            if (localUser) {
+                return JSON.parse(localUser);
+            } else {
+                // Eğer localStorage'da yoksa ve Firebase Auth'ta varsa, minimum bilgiyi döndür
+                // ve arka planda rolü çekmek için bir mekanizma düşün
+                return {
+                    uid: user.uid,
+                    email: user.email,
+                    displayName: user.displayName,
+                    role: 'user', // Varsayılan, çünkü rol henüz çekilmedi
+                    isSuperAdmin: false
+                };
+            }
         }
         
+        // Firebase bağlı değilse veya Auth'ta kullanıcı yoksa LocalStorage'dan oku
         const localUser = localStorage.getItem('currentUser');
         if (localUser) {
             const parsedUser = JSON.parse(localUser);
-            // LocalStorage'dan gelen kullanıcının rolünü de kontrol et.
-            // Özellikle admin@ipmanager.com ve superadmin@ipmanager.com gibi demo hesaplar için.
-            // Firebase bağlı değilse local demo mantığını kullan
-            if (!this.isFirebaseAvailable) {
-                if (parsedUser.email === 'admin@ipmanager.com') {
-                    return { ...parsedUser, role: 'admin', isSuperAdmin: true };
-                }
-                if (parsedUser.email === 'superadmin@ipmanager.com') {
-                    return { ...parsedUser, role: 'superadmin', isSuperAdmin: true };
-                }
-                if (parsedUser.email === 'debug@ipmanager.com') {
-                    return { ...parsedUser, role: 'debug', isSuperAdmin: true };
-                }
-            }
-            // Eğer Firebase bağlı ise ve localUser'da isSuperAdmin zaten varsa onu kullan.
-            // Aksi takdirde, localUser'ın isSuperAdmin'ini kendi kurallarınıza göre belirleyin.
-            // Varsayılan olarak localUser'da isSuperAdmin yoksa false kabul edilebilir.
-            return { ...parsedUser, isSuperAdmin: parsedUser.isSuperAdmin || false };
+            return parsedUser;
         }
         return null;
     },
@@ -167,10 +212,7 @@ export const authService = {
     // Check if current user is super admin
     isSuperAdmin() {
         const currentUser = this.getCurrentUser();
-        if (!currentUser) return false;
-        
-        // DÜZELTME: `getCurrentUser()` zaten `isSuperAdmin` özelliğini döndürdüğü için, doğrudan kullanabiliriz.
-        return currentUser.isSuperAdmin === true; 
+        return currentUser?.role === 'superadmin' || currentUser?.isSuperAdmin === true;
     },
 
     // Local authentication fallback methods
@@ -178,8 +220,8 @@ export const authService = {
         console.log('🧪 Local sign in attempt (Firebase not available):', email, password);
         
         const demoAccounts = [
-            { email: 'demo@ipmanager.com', password: 'demo123', name: 'Demo Kullanıcı', role: 'demo' },
-            { email: 'admin@ipmanager.com', password: 'admin123', name: 'Admin Kullanıcı', role: 'admin' },
+            { email: 'demo@ipmanager.com', password: 'demo123', name: 'Demo Kullanıcı', role: 'user' }, // Rolü 'user'
+            { email: 'admin@ipmanager.com', password: 'admin123', name: 'Admin Kullanıcı', role: 'admin' }, // Rolü 'admin'
             { email: 'test@example.com', password: 'test123', name: 'Test Kullanıcı', role: 'user' },
             // 🔥 SÜPER ADMİN HESABI - TÜM VERİLERE ERİŞİM
             {
@@ -212,8 +254,7 @@ export const authService = {
                 role: account.role,
                 permissions: account.permissions || [],
                 loginTime: new Date().toISOString(),
-                // DÜZELTME: isSuperAdmin'in doğru ayarlandığından emin ol
-                isSuperAdmin: account.role === 'superadmin' || account.role === 'debug' || account.role === 'admin'
+                isSuperAdmin: account.role === 'superadmin' // isSuperAdmin'i role göre belirle
             };
             
             localStorage.setItem('currentUser', JSON.stringify(userData));
@@ -244,15 +285,15 @@ export const authService = {
         };
     },
 
-    localSignUp(email, password, displayName) {
+    localSignUp(email, password, displayName, initialRole = 'user') {
         const userData = {
             uid: 'local_new_user_' + Date.now(),
             email: email,
             displayName: displayName,
-            role: 'user',
+            role: initialRole,
             permissions: [],
             loginTime: new Date().toISOString(),
-            isSuperAdmin: false
+            isSuperAdmin: initialRole === 'superadmin' // isSuperAdmin'i role göre belirle
         };
         
         localStorage.setItem('currentUser', JSON.stringify(userData));
@@ -264,7 +305,7 @@ export const authService = {
     }
 };
 
-// IP Records Service (Firestore veya localStorage) - Super Admin desteği ile
+// IP Records Service (Firestore veya localStorage)
 export const ipRecordsService = {
     async addRecord(record) {
         console.log('💾 Adding record:', record);
@@ -294,13 +335,10 @@ export const ipRecordsService = {
             }
         } catch (error) {
             console.error('Add record error:', error);
-            // Firebase hatası durumunda dahi local'a düşmek yerine hatayı döndürmeliyiz.
-            // Çünkü yetki hatası varsa local'a eklemek doğru olmaz.
-            // DÜZELTME: Firebase aktifken hata olursa local'a eklemek yerine hatayı döndür.
             if (authService.isFirebaseAvailable) {
                 return { success: false, error: error.message || 'Kayıt eklenirken bir hata oluştu.' };
             }
-            return this.localAddRecord(record); // Firebase bağlı değilse local'a ekle
+            return this.localAddRecord(record);
         }
     },
 
@@ -332,8 +370,7 @@ export const ipRecordsService = {
                         const data = doc.data();
                         records.push({
                             id: doc.id,
-                            ...data,
-                            _ownerInfo: `👤 ${data.userEmail || 'Bilinmeyen'}` // Kayıt sahibi bilgisi
+                            ...data
                         });
                     });
                     
@@ -372,11 +409,10 @@ export const ipRecordsService = {
             }
         } catch (error) {
             console.error('Get records error:', error);
-            // DÜZELTME: Firebase aktifken hata olursa local'a eklemek yerine hatayı döndür.
             if (authService.isFirebaseAvailable) {
                 return { success: false, error: error.message || 'Kayıtlar alınırken bir hata oluştu.' };
             }
-            return this.localGetRecords(); // Firebase bağlı değilse local'dan getir
+            return this.localGetRecords();
         }
     },
 
@@ -398,11 +434,10 @@ export const ipRecordsService = {
             }
         } catch (error) {
             console.error('Update record error:', error);
-            // DÜZELTME: Firebase aktifken hata olursa local'a eklemek yerine hatayı döndür.
             if (authService.isFirebaseAvailable) {
                 return { success: false, error: error.message || 'Kayıt güncellenirken bir hata oluştu.' };
             }
-            return this.localUpdateRecord(recordId, updates); // Firebase bağlı değilse local'da güncelle
+            return this.localUpdateRecord(recordId, updates);
         }
     },
 
@@ -418,11 +453,10 @@ export const ipRecordsService = {
             }
         } catch (error) {
             console.error('Delete record error:', error);
-            // DÜZELTME: Firebase aktifken hata olursa local'a eklemek yerine hatayı döndür.
             if (authService.isFirebaseAvailable) {
                 return { success: false, error: error.message || 'Kayıt silinirken bir hata oluştu.' };
             }
-            return { success: false, error: error.message || 'Kayıt silinirken bir hata oluştu.' }; // Lokal modda da hata dönsün
+            return { success: false, error: error.message || 'Kayıt silinirken bir hata oluştu.' };
         }
     },
 
@@ -460,8 +494,7 @@ export const ipRecordsService = {
         if (authService.isSuperAdmin()) {
             console.log('🔥 SÜPER ADMİN (LOCAL): Tüm kayıtlar döndürülüyor');
             const allRecords = records.map(record => ({
-                ...record,
-                _ownerInfo: `👤 ${record.userEmail || 'Bilinmeyen'}`
+                ...record
             }));
             return {
                 success: true,
@@ -546,11 +579,10 @@ export const personsService = {
             }
         } catch (error) {
             console.error('Add person error:', error);
-            // DÜZELTME: Firebase aktifken hata olursa local'a eklemek yerine hatayı döndür.
             if (authService.isFirebaseAvailable) {
                 return { success: false, error: error.message || 'Kişi eklenirken bir hata oluştu.' };
             }
-            return { success: false, error: error.message || 'Kişi eklenirken bir hata oluştu.' }; // Lokal modda da hata dönsün
+            return { success: false, error: error.message || 'Kişi eklenirken bir hata oluştu.' };
         }
     },
 
@@ -579,8 +611,7 @@ export const personsService = {
                         const data = doc.data();
                         persons.push({
                             id: doc.id,
-                            ...data,
-                            _ownerInfo: `👤 ${data.userEmail || 'Bilinmeyen'}`
+                            ...data
                         });
                     });
                     console.log(`🔥 SÜPER ADMİN: ${persons.length} kişi (tüm kullanıcılar) getirildi`);
@@ -605,11 +636,10 @@ export const personsService = {
             }
         } catch (error) {
             console.error('Get persons error:', error);
-            // DÜZELTME: Firebase aktifken hata olursa local'a eklemek yerine hatayı döndür.
             if (authService.isFirebaseAvailable) {
                 return { success: false, error: error.message || 'Kişiler alınırken bir hata oluştu.' };
             }
-            return { success: false, error: error.message || 'Kişiler alınırken bir hata oluştu.' }; // Lokal modda da hata dönsün
+            return { success: false, error: error.message || 'Kişiler alınırken bir hata oluştu.' };
         }
     },
 
@@ -627,11 +657,10 @@ export const personsService = {
             }
         } catch (error) {
             console.error('Update person error:', error);
-            // DÜZELTME: Firebase aktifken hata olursa local'a eklemek yerine hatayı döndür.
             if (authService.isFirebaseAvailable) {
                 return { success: false, error: error.message || 'Kişi güncellenirken bir hata oluştu.' };
             }
-            return { success: false, error: error.message || 'Kişi güncellenirken bir hata oluştu.' }; // Lokal modda da hata dönsün
+            return { success: false, error: error.message || 'Kişi güncellenirken bir hata oluştu.' };
         }
     },
 
@@ -647,11 +676,10 @@ export const personsService = {
             }
         } catch (error) {
             console.error('Delete person error:', error);
-            // DÜZELTME: Firebase aktifken hata olursa local'a eklemek yerine hatayı döndür.
             if (authService.isFirebaseAvailable) {
                 return { success: false, error: error.message || 'Kişi silinirken bir hata oluştu.' };
             }
-            return { success: false, error: error.message || 'Kişi silinirken bir hata oluştu.' }; // Lokal modda da hata dönsün
+            return { success: false, error: error.message || 'Kişi silinirken bir hata oluştu.' };
         }
     },
 
@@ -682,8 +710,7 @@ export const personsService = {
         if (authService.isSuperAdmin()) {
             console.log('🔥 SÜPER ADMİN (LOCAL): Tüm kişiler döndürülüyor');
             const allPersons = persons.map(person => ({
-                ...person,
-                _ownerInfo: `👤 ${person.userEmail || 'Bilinmeyen'}`
+                ...person
             }));
             return { success: true, data: allPersons.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)) };
         } else {
