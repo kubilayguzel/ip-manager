@@ -313,9 +313,9 @@
     </div>
 
     <script type="module">
-        import { 
-            authService, 
-            ipRecordsService, 
+        import {
+            authService,
+            ipRecordsService,
             createDemoData,
             auth
         } from './firebase-config.js';
@@ -329,8 +329,8 @@
 
             init() {
                 this.setupEventListeners();
-                this.setupAuthStateListener(); 
-                this.checkFirebaseConnectionStatus(); 
+                this.setupAuthStateListener();
+                this.checkFirebaseConnectionStatus();
                 console.log('🔐 Auth Controller initialized');
             }
 
@@ -361,17 +361,12 @@
             }
 
             setupAuthStateListener() {
-                auth.onAuthStateChanged((user) => {
+                auth.onAuthStateChanged(async (user) => {
                     if (user) {
                         console.log('✅ User authenticated by Firebase:', user.email);
                         
-                        const userData = {
-                            uid: user.uid,
-                            email: user.email,
-                            displayName: user.displayName || 'Kullanıcı',
-                            role: 'user', 
-                            loginTime: new Date().toISOString()
-                        };
+                        // authService.getCurrentUser() çağrısı, rol bilgisini de içerecek şekilde güncellendi.
+                        const userData = authService.getCurrentUser(); //
                         
                         localStorage.setItem('currentUser', JSON.stringify(userData));
                         console.log('💾 User data saved to localStorage:', userData);
@@ -384,13 +379,16 @@
                         }, 1500);
                     } else {
                         console.log('ℹ️ User is not authenticated by Firebase.');
+                        // Bu noktada, eğer localStorage'da geçerli bir kullanıcı yoksa
+                        // ve sayfa index.html ise, hiçbir şey yapmamalıyız.
+                        // Diğer sayfalardan buraya yönlendirme zaten yapılıyor.
                     }
                 });
             }
 
             checkFirebaseConnectionStatus() {
                 const statusDiv = document.getElementById('firebaseStatus');
-                if (authService.isFirebaseAvailable) { 
+                if (authService.isFirebaseAvailable) {
                     statusDiv.textContent = '🔥 Firebase Bağlı';
                     statusDiv.className = 'firebase-status connected';
                 } else {
@@ -398,7 +396,7 @@
                     statusDiv.className = 'firebase-status error';
                 }
                 setTimeout(() => {
-                    statusDiv.style.display = 'none'; 
+                    statusDiv.style.display = 'none';
                 }, 3000);
             }
 
@@ -425,13 +423,15 @@
                 if (!this.validateSignIn(email, password)) return;
 
                 this.setLoading('signin', true);
-                this.clearMessages(); 
+                this.clearMessages();
 
                 try {
                     const result = await authService.signIn(email, password);
                     
                     if (result.success) {
                         console.log('✅ Sign in process successful');
+                        // Firebase auth.onAuthStateChanged listener'ı zaten yönlendirmeyi yapacak.
+                        // Burada ekstra bir şey yapmaya gerek yok, sadece başarılı mesajı gösterebiliriz.
                         this.showSuccess(result.message);
                     } else {
                         this.showError('signin', result.error);
@@ -452,7 +452,7 @@
                 if (!this.validateSignUp(name, email, password)) return;
 
                 this.setLoading('signup', true);
-                this.clearMessages(); 
+                this.clearMessages();
 
                 try {
                     const result = await authService.signUp(email, password, name);
@@ -461,7 +461,16 @@
                         this.showSuccess('Hesap oluşturuldu! Demo veriler yükleniyor...');
                         
                         setTimeout(async () => {
+                            // Demo verileri oluştururken `auth.currentUser`'ın dolu olduğundan emin olun.
+                            // `createDemoData` içinde zaten bu kontrol var.
                             await createDemoData();
+                            // createDemoData bittikten sonra tekrar yönlendirmeyi tetiklemeye gerek yok,
+                            // `onAuthStateChanged` zaten Firebase oturumu başarıyla oluştuğunda yönlendirme yapıyor.
+                            // Ancak local modda, `onAuthStateChanged` Firebase'e bağlı olmadığı için
+                            // local'a kayıt olduğunda manuel yönlendirme yapabiliriz.
+                            if (!authService.isFirebaseAvailable) {
+                                window.location.href = 'dashboard.html';
+                            }
                         }, 2000);
                     } else {
                         this.showError('signup', result.error);
@@ -475,19 +484,30 @@
             }
 
             async createDemoAccount() {
-                const demoEmail = `demo-${Date.now()}@ipmanager.com`; 
+                const demoEmail = `demo-${Date.now()}@ipmanager.com`;
                 const demoPassword = 'demo123456';
                 const demoName = 'Demo Kullanıcı';
 
-                this.setLoading(this.currentTab, true); 
-                this.clearMessages(); 
+                this.setLoading(this.currentTab, true);
+                this.clearMessages();
 
                 try {
                     const result = await authService.signUp(demoEmail, demoPassword, demoName);
                     
                     if (result.success) {
                         this.showSuccess(`Demo hesap oluşturuldu: ${demoEmail}. Veriler yükleniyor...`);
-                        await createDemoData(); 
+                        // Firebase onAuthStateChanged tetiklenecek.
+                        // Local modda isek:
+                        if (!authService.isFirebaseAvailable) {
+                            await createDemoData(); // Local demo data oluştur
+                            // `onAuthStateChanged` local modda Firebase gibi otomatik yönlendirme yapmayacağı için
+                            // burada manuel yönlendirme yapabiliriz.
+                            window.location.href = 'dashboard.html';
+                        } else {
+                            // Firebase bağlı ise, onAuthStateChanged zaten yönlendirecek.
+                            // Sadece demo verileri oluşturmasını tetikleyelim.
+                            await createDemoData();
+                        }
                     } else {
                         this.showError(this.currentTab, result.error || 'Demo hesap oluşturulamadı.');
                     }
@@ -627,8 +647,8 @@
                 document.getElementById('successMessage').style.display = 'none';
             },
             getCurrentUser: () => {
-                const user = localStorage.getItem('currentUser');
-                return user ? JSON.parse(user) : null;
+                const user = authService.getCurrentUser(); //
+                return user;
             },
             signOut: async () => { 
                 console.log('Attempting sign out...');
