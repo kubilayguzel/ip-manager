@@ -545,34 +545,30 @@
 
                     if (user) {
                         this.currentUser = user;
-                        this.updateUserInfo(user);
-                        statusDiv.textContent = '🔥 Firebase Bağlı';
-                        statusDiv.className = 'firebase-status connected';
-                        console.log('✅ User authenticated by Firebase:', user.email);
+                        // Kullanıcı bilgilerini ve rolünü güncellemek için authService'ten al
+                        this.currentUser = authService.getCurrentUser(); //
+                        this.updateUserInfo(this.currentUser); //
+                        statusDiv.textContent = '🔥 Firebase Bağlı'; //
+                        statusDiv.className = 'firebase-status connected'; //
+                        console.log('✅ User authenticated by Firebase:', user.email); //
                         
-                        await this.loadUserData();
-                        const userData = {
-                            uid: user.uid,
-                            email: user.email,
-                            displayName: user.displayName || 'Kullanıcı',
-                            role: 'user', 
-                            loginTime: new Date().toISOString()
-                        };
-                        localStorage.setItem('currentUser', JSON.stringify(userData));
+                        await this.loadUserData(); //
+                        // localStorage'a kaydedilen kullanıcı verisi artık authService'den geliyor
+                        localStorage.setItem('currentUser', JSON.stringify(this.currentUser)); //
 
                     } else {
-                        console.log('ℹ️ User is not authenticated. Checking localStorage fallback.');
-                        const localUser = authService.getCurrentUser(); 
-                        if (localUser && localUser.uid) {
-                            this.currentUser = localUser;
-                            this.updateUserInfo(localUser);
-                            statusDiv.textContent = '⚠️ Yerel Mod (Firebase bağlı değil)';
-                            statusDiv.className = 'firebase-status error';
-                            console.log('✅ LocalStorage user detected, running in local mode:', localUser.email);
-                            await this.loadUserData();
+                        console.log('ℹ️ User is not authenticated. Checking localStorage fallback.'); //
+                        const localUser = authService.getCurrentUser(); //
+                        if (localUser && localUser.uid) { //
+                            this.currentUser = localUser; //
+                            this.updateUserInfo(localUser); //
+                            statusDiv.textContent = '⚠️ Yerel Mod (Firebase bağlı değil)'; //
+                            statusDiv.className = 'firebase-status error'; //
+                            console.log('✅ LocalStorage user detected, running in local mode:', localUser.email); //
+                            await this.loadUserData(); //
                         } else {
-                            console.log('❌ No authenticated user found, redirecting to login.');
-                            window.location.href = 'index.html'; 
+                            console.log('❌ No authenticated user found, redirecting to login.'); //
+                            window.location.href = 'index.html'; //
                         }
                     }
                     setTimeout(() => {
@@ -610,12 +606,13 @@
             }
 
             updateUserInfo(user) {
-                const userName = user.displayName || user.email.split('@')[0] || 'Kullanıcı';
-                const userAvatar = userName.charAt(0).toUpperCase();
+                const userName = user.displayName || user.email.split('@')[0] || 'Kullanıcı'; //
+                const userAvatar = userName.charAt(0).toUpperCase(); //
 
-                document.getElementById('userName').textContent = userName;
-                document.getElementById('userAvatar').textContent = userAvatar;
-                document.getElementById('userRole').textContent = this.currentUser?.role || 'Kullanıcı'; 
+                document.getElementById('userName').textContent = userName; //
+                document.getElementById('userAvatar').textContent = userAvatar; //
+                // user objesi authService.getCurrentUser() tarafından role ve isSuperAdmin bilgisiyle geliyor
+                document.getElementById('userRole').textContent = user.role === 'admin' ? 'Yönetici' : 'Kullanıcı'; //
             }
 
             async loadUserData() {
@@ -652,6 +649,10 @@
                 } catch (error) {
                     console.error('Error in loadUserData:', error);
                     this.handleNoData();
+                } finally {
+                    // Bu blokta loading indicator'ı gizlediğimizden emin olun
+                    activitiesListPlaceholder.innerHTML = activitiesListPlaceholder.innerHTML; // İçeriği koru, loading spinner'ı kaldır
+                    trendChartPlaceholder.innerHTML = trendChartPlaceholder.innerHTML; // İçeriği koru, loading spinner'ı kaldır
                 }
             }
 
