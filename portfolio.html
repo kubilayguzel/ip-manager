@@ -639,7 +639,7 @@
                 <a href="#" class="nav-item active">Portföy</a>
                 <a href="data-entry.html" class="nav-item">Yeni Kayıt</a>
                 <a href="persons.html" class="nav-item">Kişiler Yönetimi</a>
-                <a href="#" class="nav-item">Raporlar</a>
+                <a href="excel-upload.html" class="nav-item">Excel Yükle</a> <a href="#" class="nav-item">Raporlar</a>
                 <a href="#" class="nav-item">Ayarlar</a>
             </nav>
             <div class="user-section">
@@ -1173,8 +1173,8 @@
 
                 // Eğer Süper Admin ise ve kayıt sahibi bilgisi varsa ekle
                 let ownerInfoHtml = ''; 
-                if (authService.isSuperAdmin() && record._ownerInfo) { //
-                    ownerInfoHtml = `<div style="font-size: 0.75em; color: #888; margin-top: 5px;">${record._ownerInfo}</div>`; //
+                if (authService.isSuperAdmin()) { //
+                    ownerInfoHtml = `<div style="font-size: 0.75em; color: #888; margin-top: 5px;">${record.userEmail || '-'}</div>`; //
                 }
 
                 row.innerHTML = `
