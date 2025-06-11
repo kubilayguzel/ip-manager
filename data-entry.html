@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IP Manager - Yeni Kayıt</title>
     <style>
+        /* CSS stilleri burada kalacak */
         * {
             margin: 0;
             padding: 0;
@@ -1259,7 +1260,7 @@
 
             async loadPersonsFromService() {
                 try {
-                    // Bu satırın düzeltildiğinden emin olun: personsService.getPersons() olmalı
+                    // Bu satırın personsService.getPersons() olarak doğru olduğundan emin olun!
                     const result = await personsService.getPersons();
                     if (result.success) {
                         this.persons = result.data;
@@ -1674,11 +1675,15 @@
                         this.closePersonModal();
                         await this.loadPersons(); 
                     } else {
-                        throw new Error(result.error || 'Kişi kaydedilirken bilinmeyen bir hata oluştu.');
+                        // result.error dolu değilse, hata nesnesinin kendisini kullanmaya çalış
+                        const errorMessage = result.error || (error && (error.code || error.message || JSON.stringify(error))) || 'Bilinmeyen bir hata oluştu.';
+                        throw new Error(errorMessage); // Hata mesajını düzgün fırlat
                     }
                 } catch (error) {
-                    console.error('Save person error:', error);
-                    alert('Kişi kaydedilirken bir hata oluştu: ' + error.message);
+                    console.error('Save person error:', error); // Burası line 1680
+                    // Hata mesajını daha detaylı göstermek için
+                    const displayMessage = error.message || (error && (error.code || JSON.stringify(error))) || 'Bilinmeyen bir hata oluştu.';
+                    alert('Kişi kaydedilirken bir hata oluştu: ' + displayMessage);
                 } finally {
                     savePersonBtn.disabled = false;
                 }
@@ -1790,14 +1795,14 @@
         // dataEntryModule nesnesini window global kapsamına atama
         auth.onAuthStateChanged((user) => {
             if (user) {
-                if (!dataEntryModule) { // personsModule yerine dataEntryModule olacak
+                if (!dataEntryModule) {
                     dataEntryModule = new DataEntryModule();
                     window.dataEntryModule = dataEntryModule; // Global erişim için atama
                 }
             } else {
                 const localUser = authService.getCurrentUser();
                 if (localUser && localUser.uid) {
-                    if (!dataEntryModule) { // personsModule yerine dataEntryModule olacak
+                    if (!dataEntryModule) {
                         dataEntryModule = new DataEntryModule();
                         window.dataEntryModule = dataEntryModule; // Global erişim için atama
                     }
