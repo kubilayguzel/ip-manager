@@ -471,7 +471,8 @@ export const ipRecordsService = {
             }
 
             const newTransactions = [...(currentRecord.transactions || [])];
-            let parentTxId = null; // Varsayılan parentTxId, ana işlem ID'si.
+            // Parent transaction ID'sini belirlemek için, eğer spesifik bir alt atama yapıldıysa, ana atamayı parent olarak kullanacağız.
+            let parentTxId = null; 
 
             // 1. Ana güncelleme işlemi (eğer temel alanlarda değişiklik varsa)
             const changedFields = [];
@@ -502,7 +503,7 @@ export const ipRecordsService = {
                     timestamp: updatedTimestamp,
                     userId: user.uid,
                     userEmail: user.email,
-                    parentId: null // Ana işlem
+                    parentId: null // Bu işlem ana seviyede bir işlem
                 });
                 parentTxId = recordUpdateTxId; // Diğer işlemler bunun altında olabilir
             } else if (currentRecord.transactions && currentRecord.transactions.length > 0) {
@@ -524,27 +525,32 @@ export const ipRecordsService = {
                 const existingFile = oldFiles.find(oldF => oldF.id === newFile.id);
                 if (!existingFile) {
                     // Yeni eklenen dosya
-                    let description = `Belge indekslendi.`; // Türkçe ve kısa açıklama
-                    if (newFile.documentDesignation) {
-                        description += ` Atama: '${newFile.documentDesignation}'`;
-                        if (newFile.subDesignation) {
-                            description += ` (${newFile.subDesignation})`;
-                        }
-                    }
+                    let description = newFile.documentDesignation || "Belge indekslendi."; // Default açıklama
+                    
+                    // Eğer alt atama varsa, ana atama parent, alt atama description olsun
+                    if (newFile.subDesignation) {
+                        description = newFile.subDesignation;
+                    } 
+                    // else if (newFile.documentDesignation) { // Sadece ana atama varsa, o olsun açıklama
+                    //     description = newFile.documentDesignation;
+                    // }
 
                     const fileTxId = generateUUID();
                     newTransactions.unshift({
                         transactionId: fileTxId,
                         type: "Document Indexed",
-                        description: description, // Yeni kısa açıklama
+                        description: description, // Yeni belirlenen açıklama
                         documentId: newFile.id,
                         documentName: newFile.name,
-                        documentDesignation: newFile.documentDesignation, // Yeni
-                        subDesignation: newFile.subDesignation, // Yeni
-                        timestamp: newFile.uploadedAt || updatedTimestamp, // Yükleme zamanı
+                        documentDesignation: newFile.documentDesignation, 
+                        subDesignation: newFile.subDesignation, 
+                        timestamp: newFile.uploadedAt || updatedTimestamp,
                         userId: user.uid,
                         userEmail: user.email,
-                        parentId: parentTxId // Ana işlem ID'si altında
+                        parentId: newFile.subDesignation ? null : parentTxId // Alt atama varsa ana transaction, yoksa üst trans. bağla
+                        // NOTE: Eğer alt atama varsa, bu transaction kendisi ana transaction olacak, parentId = null.
+                        // Yoksa, normal Record Updated parent'ına bağlanacak.
+                        // Bu yapı, portfolyo detayındaki yeni renderTransactionHistory ile uyumlu.
                     });
                 } else {
                     // 3. Mevcut dosyaların güncellenmesi için transaction
@@ -650,6 +656,53 @@ export const ipRecordsService = {
             return { success: false, error: error.message || 'Kayıt güncellenirken bir hata oluştu.' };
         }
     },
+
+    // Yeni: Transaction silme işlevi
+    async deleteTransaction(recordId, transactionId) {
+        console.log(`🗑️ Deleting transaction ${transactionId} from record ${recordId}`);
+        try {
+            const recordRef = doc(db, 'ipRecords', recordId);
+            const docSnap = await getDoc(recordRef);
+            if (!docSnap.exists()) {
+                throw new Error('Kayıt bulunamadı.');
+            }
+            const recordData = docSnap.data();
+            const newTransactions = recordData.transactions.filter(tx => tx.transactionId !== transactionId);
+
+            await updateDoc(recordRef, { transactions: newTransactions });
+            console.log(`✅ Firebase transaction ${transactionId} deleted.`);
+            return { success: true };
+        } catch (error) {
+            console.error('Delete transaction error:', error);
+            return { success: false, error: error.message || 'İşlem silinirken bir hata oluştu.' };
+        }
+    },
+
+    // Yeni: Transaction güncelleme işlevi
+    async updateTransaction(recordId, transactionId, updates) {
+        console.log(`🔄 Updating transaction ${transactionId} in record ${recordId}`);
+        try {
+            const recordRef = doc(db, 'ipRecords', recordId);
+            const docSnap = await getDoc(recordRef);
+            if (!docSnap.exists()) {
+                throw new Error('Kayıt bulunamadı.');
+            }
+            const recordData = docSnap.data();
+            const newTransactions = recordData.transactions.map(tx => {
+                if (tx.transactionId === transactionId) {
+                    return { ...tx, ...updates, timestamp: new Date().toISOString() };
+                }
+                return tx;
+            });
+
+            await updateDoc(recordRef, { transactions: newTransactions });
+            console.log(`✅ Firebase transaction ${transactionId} updated.`);
+            return { success: true };
+        } catch (error) {
+            console.error('Update transaction error:', error);
+            return { success: false, error: error.message || 'İşlem güncellenirken bir hata oluştu.' };
+        }
+    },
     
     // localAddRecord ve localUpdateRecord metotlarını da transaction ve files yapısını destekleyecek şekilde güncelleyin
     localAddRecord(recordData) { // recordData artık yeni yapıyı içeriyor
@@ -684,6 +737,37 @@ export const ipRecordsService = {
         }
         
         console.warn(`Local update failed: Record ${recordId} not found.`);
+        return { success: false, error: 'Kayıt bulunamadı' };
+    },
+
+    localDeleteTransaction(recordId, transactionId) {
+        const records = this.getLocalRecords();
+        const recordIndex = records.findIndex(r => r.id === recordId);
+        if (recordIndex !== -1) {
+            const record = records[recordIndex];
+            record.transactions = (record.transactions || []).filter(tx => tx.transactionId !== transactionId);
+            localStorage.setItem('ipRecords', JSON.stringify(records));
+            console.log(`✅ Local transaction ${transactionId} deleted from record ${recordId}.`);
+            return { success: true };
+        }
+        return { success: false, error: 'Kayıt bulunamadı' };
+    },
+
+    localUpdateTransaction(recordId, transactionId, updates) {
+        const records = this.getLocalRecords();
+        const recordIndex = records.findIndex(r => r.id === recordId);
+        if (recordIndex !== -1) {
+            const record = records[recordIndex];
+            record.transactions = (record.transactions || []).map(tx => {
+                if (tx.transactionId === transactionId) {
+                    return { ...tx, ...updates, timestamp: new Date().toISOString() };
+                }
+                return tx;
+            });
+            localStorage.setItem('ipRecords', JSON.stringify(records));
+            console.log(`✅ Local transaction ${transactionId} updated in record ${recordId}.`);
+            return { success: true };
+        }
         return { success: false, error: 'Kayıt bulunamadı' };
     },
 
