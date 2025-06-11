@@ -396,30 +396,43 @@
             max-height: 200px; /* Belirli bir yükseklik sınırı */
             overflow-y: auto; /* Dikey kaydırma çubuğu */
         }
+        /* Simplified transaction item for indexing page */
         .indexing-transaction-history .transaction-item {
-            margin-bottom: 5px;
-            padding: 5px 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between; /* Açıklama, Tarih ve Dokümanı hizala */
+            padding: 8px 0;
             border-bottom: 1px dashed #eee;
         }
         .indexing-transaction-history .transaction-item:last-child {
             border-bottom: none;
         }
-        .indexing-transaction-history .transaction-type {
-            font-weight: 600;
-            color: #1e3c72;
-            font-size: 0.85em;
+        .indexing-transaction-history .transaction-description-col {
+            flex-grow: 1; /* Açıklama alanı daha fazla yer kaplasın */
+            font-size: 0.9em;
+            color: #333;
+            word-break: break-word; /* Uzun açıklamaları bölmek için */
+            padding-right: 10px; /* Sağdaki elementten boşluk */
         }
-        .indexing-transaction-history .transaction-description,
-        .indexing-transaction-history .transaction-meta {
+        .indexing-transaction-history .transaction-date-col {
             font-size: 0.8em;
             color: #666;
+            white-space: nowrap; /* Tarihin tek satırda kalması için */
+            padding-right: 10px; /* Sağdaki elementten boşluk */
+        }
+        .indexing-transaction-history .transaction-document-col {
+            flex-shrink: 0; /* Küçülmesini engelle */
+            font-size: 0.8em;
+            white-space: nowrap; /* Doküman adının tek satırda kalması için */
+            text-align: right;
         }
         .indexing-transaction-history .transaction-document-link {
-            font-size: 0.75em;
             color: #007bff;
+            text-decoration: underline;
         }
-
-
+        .indexing-transaction-history .transaction-document-link:hover {
+            color: #0056b3;
+        }
     </style>
 </head>
 <body>
@@ -606,6 +619,7 @@
                         console.log('✅ User authenticated for Indexing:', this.currentUser.email, 'Role:', this.currentUser.role);
                         await this.loadAllRecords(); // Tüm kayıtları yükle
                         this.initializeEventListeners();
+                        this.setupFileUpload();
                         this.resetForm(); // Formu başlangıçta temizle
                     } else {
                         const localUser = authService.getCurrentUser();
@@ -614,6 +628,7 @@
                             console.log('⚠️ LocalStorage user detected for Indexing, running in local mode:', this.currentUser.email, 'Role:', this.currentUser.role);
                             await this.loadAllRecords();
                             this.initializeEventListeners();
+                            this.setupFileUpload();
                             this.resetForm();
                         } else {
                             console.log('❌ User not authenticated, redirecting to login page.');
@@ -1280,50 +1295,55 @@
             }
 
             // Yeni eklenen transaction geçmişi render fonksiyonu (basitleştirilmiş)
+            // Sadece "Document Indexed" transaction'ları listelenecek ve doküman linki doğrudan gösterilecek.
             renderIndexingTransactions(transactions, recordFiles) {
                 const historyContainer = document.getElementById('indexingTransactionHistory');
                 if (!historyContainer) return;
 
                 historyContainer.innerHTML = ''; // Önceki içeriği temizle
 
-                if (!transactions || transactions.length === 0) {
-                    historyContainer.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Bu kayda ait işlem geçmişi bulunmamaktadır.</p>';
+                // Sadece "Document Indexed" transaction'larını filtrele
+                const documentIndexedTransactions = transactions.filter(tx => tx.type === "Document Indexed")
+                                                               .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)); // En yeni en üstte
+
+                if (documentIndexedTransactions.length === 0) {
+                    historyContainer.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Bu kayda ait belge indeksleme geçmişi bulunmamaktadır.</p>';
                     return;
                 }
-                
-                // Sadece son 5 işlemi göster (veya hepsi, duruma göre ayarlanabilir)
-                const recentTransactions = transactions.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 5);
 
-                recentTransactions.forEach(tx => {
-                    const item = document.createElement('div');
-                    item.className = 'transaction-item';
+                documentIndexedTransactions.forEach(tx => {
+                    const transactionRow = document.createElement('div');
+                    transactionRow.className = 'transaction-item'; // Sadece transaction-item sınıfı, yeni grid stilleri için flex kullanacağız
 
-                    let description = tx.description;
                     let documentLinkHtml = '';
-
-                    // Dokümanla ilgili transaction'lar için link ekle
                     if (tx.documentId && recordFiles) {
                         const relatedFile = recordFiles.find(file => file.id === tx.documentId);
                         if (relatedFile && relatedFile.content) {
                             documentLinkHtml = `
-                                <a href="${relatedFile.content}" download="${relatedFile.name}" class="transaction-document-link">
-                                    📄 ${relatedFile.name} (${this.formatFileSize(relatedFile.size)})
+                                <a href="${relatedFile.content}" download="${relatedFile.name}" class="transaction-document-link" title="${relatedFile.name}">
+                                    📄 ${relatedFile.name.length > 25 ? relatedFile.name.substring(0,22) + '...' : relatedFile.name} (${this.formatFileSize(relatedFile.size)})
                                 </a>
                             `;
                         }
                     }
 
-                    item.innerHTML = `
-                        <div class="transaction-content">
-                            <div class="transaction-type">${tx.type.replace(/([A-Z])/g, ' $1').trim()}</div>
-                            <div class="transaction-description">${description}</div>
-                            ${documentLinkHtml}
-                            <div class="transaction-meta">
-                                ${new Date(tx.timestamp).toLocaleString('tr-TR')} - ${tx.userEmail}
-                            </div>
-                        </div>
+                    // İşlem açıklamasını ve tarihini tek satırda göster
+                    let transactionDescription = tx.description;
+                    // "Document Indexed" transaction için açıklamayı formatla
+                    if (tx.type === "Document Indexed") {
+                         transactionDescription = `Belge indekslendi: ${tx.documentName}`;
+                         if (tx.documentDesignation) transactionDescription += ` (Atama: ${tx.documentDesignation})`;
+                         if (tx.subDesignation) transactionDescription += ` (${tx.subDesignation})`;
+                    }
+
+                    const formattedTimestamp = new Date(tx.timestamp).toLocaleString('tr-TR');
+
+                    transactionRow.innerHTML = `
+                        <div class="transaction-description-col">${transactionDescription}</div>
+                        <div class="transaction-date-col">${formattedTimestamp}</div>
+                        <div class="transaction-document-col">${documentLinkHtml}</div>
                     `;
-                    historyContainer.appendChild(item);
+                    historyContainer.appendChild(transactionRow);
                 });
             }
         }
