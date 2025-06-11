@@ -1068,7 +1068,7 @@
                             const selected = (file.subDesignation === subDesignation.value) ? 'selected' : '';
                             subDesignationSelectHtml += `<option value="${subDesignation.value}" ${selected}>${subDesignation.name}</option>`;
                         });
-                        subDesignationSelectHtml += `</select>`;
+                        subDesignationSelectHtml += `</select`;
                         newControlsDiv.innerHTML += subDesignationSelectHtml;
                     }
                     
@@ -1184,7 +1184,7 @@
                     const currentFilesOnRecord = this.originalRecordData.files || [];
                     
                     // `finalFilesForRecord` yeni ve güncellenmiş dosyaların son listesi olacak.
-                    // Bu, orijinal kayıttaki tüm dosyaları içerir (bu oturumda silinmeyenler hariç).
+                    // Bu, orijinal kaydındaki tüm dosyaları içerir (bu oturumda silinmeyenler hariç).
                     let finalFilesForRecord = [...currentFilesOnRecord];
 
                     // `this.uploadedFiles` dizisindeki dosyaları (bu oturumda yeni eklenenler veya güncellenenler) işleyelim.
@@ -1328,13 +1328,48 @@
                     }
 
                     // İşlem açıklamasını ve tarihini tek satırda göster
-                    let transactionDescription = tx.description;
-                    // "Document Indexed" transaction için açıklamayı formatla
-                    if (tx.type === "Document Indexed") {
-                         transactionDescription = `Belge indekslendi: ${tx.documentName}`;
-                         if (tx.documentDesignation) transactionDescription += ` (Atama: ${tx.documentDesignation})`;
-                         if (tx.subDesignation) transactionDescription += ` (${tx.subDesignation})`;
+                    let transactionDescription = "";
+                    // Açıklama, sadece atama ve alt atama değerlerini içerecek
+                    if (tx.subDesignation) {
+                        transactionDescription = tx.subDesignation;
+                    } else if (tx.documentDesignation) {
+                        transactionDescription = tx.documentDesignation;
+                    } else {
+                        transactionDescription = tx.description; // Eğer atama/alt atama yoksa orijinal açıklamayı kullan
                     }
+
+                    // Alt atama değerlerini Türkçe'ye çevir (indexing.html içinde tanımlanmış combobox isimleriyle eşleşmeli)
+                    const subDesignationTranslations = {
+                        'opposition_to_publication': 'Yayına İtiraz',
+                        'response_to_opposition': 'İtiraza Karşı Görüş',
+                        'opposition_decision_rejected': 'Yayına İtiraz Kararı - Ret',
+                        'opposition_decision_accepted': 'Yayına İtiraz Kararı - Kabul'
+                    };
+                    // documentDesignation değerlerini de Türkçe'ye çevir (indexing.html içinde tanımlanmış combobox isimleriyle eşleşmeli)
+                    const documentDesignationTranslations = {
+                        'opposition_trademark_office': 'Yayına İtiraz - Markalar Dairesi',
+                        'Başvuru Ek Dokümanı': 'Başvuru Ek Dokümanı',
+                        'Resmi Yazışma': 'Resmi Yazışma',
+                        'Vekaletname': 'Vekaletname',
+                        'Teknik Çizim': 'Teknik Çizim',
+                        'Karar': 'Karar',
+                        'Finansal Belge': 'Finansal Belge',
+                        'Yayın Kararı': 'Yayın Kararı',
+                        'Ret Kararı': 'Ret Kararı',
+                        'Tescil Belgesi': 'Tescil Belgesi',
+                        'Araştırma Raporu': 'Araştırma Raporu',
+                        'İnceleme Raporu': 'İnceleme Raporu',
+                        'Diğer Belge': 'Diğer Belge',
+                        'Genel Not': 'Genel Not'
+                    };
+
+
+                    if (tx.subDesignation && subDesignationTranslations[tx.subDesignation]) {
+                        transactionDescription = subDesignationTranslations[tx.subDesignation];
+                    } else if (tx.documentDesignation && documentDesignationTranslations[tx.documentDesignation]) {
+                        transactionDescription = documentDesignationTranslations[tx.documentDesignation];
+                    }
+
 
                     const formattedTimestamp = new Date(tx.timestamp).toLocaleString('tr-TR');
 
