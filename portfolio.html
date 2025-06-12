@@ -639,7 +639,7 @@
                     });
                 });
                 document.querySelectorAll('.portfolio-table th.sortable').forEach(th => {
-                    th.addEventListener('click', this.handleSort); // handleSort'u direkt bağlamışız
+                    th.addEventListener('click', this.handleSort); 
                 });
                 document.getElementById('refreshBtn').addEventListener('click', () => this.loadRecords());
                 document.getElementById('exportBtn').addEventListener('click', () => this.exportData());
@@ -726,8 +726,8 @@
                 return (record.title.toLowerCase().includes(search) || (record.applicationNumber && record.applicationNumber.toLowerCase().includes(search)) || (record.description && record.description.toLowerCase().includes(search)) || ownersString.includes(search));
             }
             
-            handleSort(event) { // event parametresini alacak şekilde güncelledik
-                const column = event.currentTarget.dataset.sort; // event.currentTarget üzerinden dataya erişim
+            handleSort(event) { 
+                const column = event.currentTarget.dataset.sort; 
                 if (this.sortColumn === column) { this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc'; } else { this.sortColumn = column; this.sortDirection = 'asc'; }
                 this.sortRecords();
                 this.renderTable();
