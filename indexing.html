@@ -271,7 +271,7 @@
                         this.initializeEventListeners();
                         await this.loadRecords(); // allRecords'u yükler
                         this.populateStatusOptions();
-                        // this.renderSearchResults(this.allRecords); // Bu satırı kaldırdık
+                        // this.renderSearchResults(this.allRecords); // İlk başta tüm kayıtları gösterme kaldırıldı
                     } else {
                         window.location.href = 'index.html';
                     }
@@ -415,7 +415,7 @@
                 this.updateFileList();
                 
                 // Parent transaction seçeneklerini doldur
-                this.populateParentTransactionSelect(this.selectedRecord.transactions);
+                this.populateParentTransactionSelect(this.selectedRecord.transactions); // Hata burada
                 this.renderTransactionHistory(this.selectedRecord.id, this.selectedRecord.transactions, this.selectedRecord.files);
 
                 this.toggleIndexButton();
@@ -448,7 +448,7 @@
                         break;
                     default:
                         targetMessage = infoMessage;
-                        targetText = document.getElementById('formInfoText');
+                        targetText = document.getElementById('infoText');
                 }
 
                 if (targetMessage && targetText) {
@@ -651,6 +651,34 @@
                 this.showNotification('Form temizlendi.', 'info');
             }
             
+            // Bu metot IndexingModule sınıfının içinde doğru yerde olmalı
+            populateParentTransactionSelect(transactions) {
+                const selectElement = document.getElementById('parentTransactionSelect');
+                if (!selectElement) { // Element yoksa hata vermeden çık
+                    console.warn("parentTransactionSelect elementi bulunamadı. Bu form tipi için gerekli değil mi?");
+                    return;
+                }
+
+                selectElement.innerHTML = '<option value="">Yok (Ana Belge)</option>'; // Varsayılan seçenek
+                
+                if (!transactions || transactions.length === 0) {
+                    return;
+                }
+
+                // Sadece parent transaction'ları (parentId null olanları) filtrele
+                const parentTransactions = transactions.filter(tx => tx.parentId === null);
+
+                if (parentTransactions.length > 0) {
+                    parentTransactions.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)) // En yeni üste
+                                    .forEach(tx => {
+                        const option = document.createElement('option');
+                        option.value = tx.transactionId;
+                        option.textContent = `${new Date(tx.timestamp).toLocaleDateString('tr-TR')} - ${tx.description || tx.type}`; // description veya type göster
+                        selectElement.appendChild(option);
+                    });
+                }
+            }
+
             renderTransactionHistory(recordId, transactions, recordFiles) {
                 const historyContainer = document.getElementById('indexingTransactionHistory');
                 historyContainer.innerHTML = '';
