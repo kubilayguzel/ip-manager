@@ -583,8 +583,8 @@
                     'İtiraza Karşı Görüş (YIDD)',
                     'İtiraza Karşı Görüş (Markalar)',
                     'İtirazı Geri Çekme',
-                    'Kullanım İspatı Sunma',
-                    'İtiraza Ek Belge'
+                    'Kullanım İspatı Sunma', 
+                    'İtiraza Ek Belge' 
                 ];
                 if (transactionSpecificTasks.includes(specificTaskType) && this.selectedIpRecord.transactions) {
                     this.populateRelatedTransactions(specificTaskType);
@@ -603,8 +603,7 @@
                 const selectElement = document.getElementById('relatedTransactionSelect');
                 const section = document.getElementById('relatedTransactionSection');
                 
-                if (!selectElement || !section) { // Null kontrolü eklendi
-                    // Eğer elementler henüz DOM'da yoksa (form render edilmediyse) veya başka bir hata varsa
+                if (!selectElement || !section) { 
                     console.warn('relatedTransactionSelect veya relatedTransactionSection elementi bulunamadı. Form tipinin doğru yüklendiğinden emin olun.');
                     return;
                 }
@@ -619,16 +618,14 @@
                 }
 
                 let filteredTransactions = [];
-                // transaction'ları tarihe göre sırala (en yeni en üstte)
                 const allTransactions = this.selectedIpRecord.transactions.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp)); 
 
                 if (specificTaskType === 'İtirazı Geri Çekme' || specificTaskType === 'İtiraza Ek Belge') {
                     filteredTransactions = allTransactions.filter(tx => 
                         tx.description && (
                             tx.description.includes('Yayına İtiraz') || 
-                            tx.description.includes('Karara İtiraz') ||
-                            tx.description.includes('İtiraz') // Daha genel bir kapsayıcılık için
-                        ) && (tx.type === "Document Indexed" || tx.type === "Document Sub-Indexed") // Sadece belge indeksleme transaction'ları
+                            tx.description.includes('Karara İtiraz')
+                        ) && (tx.type === "Document Indexed" || tx.type === "Document Sub-Indexed") 
                     );
                 } else if (specificTaskType === 'İtiraza Karşı Görüş (YIDD)') {
                     filteredTransactions = allTransactions.filter(tx => 
@@ -638,7 +635,14 @@
                     filteredTransactions = allTransactions.filter(tx => 
                         tx.description && tx.description.includes('Yayına İtiraz') && (tx.type === "Document Indexed" || tx.type === "Document Sub-Indexed")
                     );
+                } else if (specificTaskType === 'Yayına İtiraz') { // Yeni eklenecek kısım
+                    // 'Yayına İtiraz' işlemi için transaction listesi yok, çünkü kendisi bir başlangıç işlemi.
+                    // Eğer burada özel bir transaction listeleme istenmiyorsa, bu kısmı boş bırakabiliriz.
+                    // Ya da "Bu işlem için ilgili bir transaction seçimi yoktur" gibi bir mesaj gösterebiliriz.
+                    selectElement.innerHTML = '<option value="">Uygun İşlem Yok</option>';
+                    return;
                 }
+
 
                 if (filteredTransactions.length > 0) {
                     filteredTransactions.forEach(tx => {
@@ -786,6 +790,7 @@
                     }
                 } else if (transactionSpecificTasks.includes(taskType)) {
                      // Transaction seçimi de zorunlu hale getirilebilir
+                     // Sadece transaction'ları listelemesi gereken bir form ise ve varlık seçiliyse
                      if (this.selectedIpRecord && document.getElementById('relatedTransactionSelect') && document.getElementById('relatedTransactionSelect').value !== '') {
                         isComplete = true;
                     }
