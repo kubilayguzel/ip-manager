@@ -20,7 +20,8 @@ import {
     where,
     getDoc, 
     setDoc,
-    arrayUnion
+    arrayUnion, // arrayUnion'ı burada tutmaya devam edelim, belki başka yerlerde kullanılır
+    arrayRemove // arrayRemove da lazım olabilir
 } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
 // --- Firebase App Initialization ---
@@ -241,7 +242,7 @@ export const ipRecordsService = {
         localStorage.setItem('ipRecords', JSON.stringify(records));
         return { success: true, id: newRecord.id };
     },
-    // YENİ METOT: Bir kayda transaction eklemek için
+    // YENİ METOT: Bir kayda transaction eklemek için (güncellendi)
     async addTransactionToRecord(recordId, transactionData) {
         const user = authService.getCurrentUser();
         if(!user) return {success: false, error: "Not logged in"};
@@ -252,6 +253,8 @@ export const ipRecordsService = {
             const currentDoc = await getDoc(recordRef);
             if (!currentDoc.exists()) return { success: false, error: "Record not found" };
 
+            let currentTransactions = currentDoc.data().transactions || []; // Mevcut transaction'ları al
+            
             const newTransaction = {
                 transactionId: generateUUID(),
                 timestamp: new Date().toISOString(),
@@ -260,8 +263,10 @@ export const ipRecordsService = {
                 ...transactionData // description, type, parentId gibi datalar buraya gelecek
             };
 
+            currentTransactions.push(newTransaction); // Yeni transaction'ı diziye ekle
+
             await updateDoc(recordRef, {
-                transactions: arrayUnion(newTransaction),
+                transactions: currentTransactions, // Tüm diziyi güncel olarak geri yaz
                 updatedAt: new Date().toISOString()
             });
             return { success: true, transaction: newTransaction };
@@ -497,7 +502,7 @@ export async function createDemoData() {
                     name: 'logo_ornek.jpg',
                     type: 'image/jpeg',
                     size: 1024,
-                    content: 'data:image/jpeg;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='
+                    content: 'data:image/jpeg;base64,iVBORw0KGgoAAAANSUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='
                 },
             }
         ];
