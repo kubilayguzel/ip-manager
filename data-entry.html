@@ -27,11 +27,12 @@
             background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
         }
         
-        .main-container {
-            max-width: 1200px;
-            margin: 30px auto;
-            padding: 0 20px;
-        }
+.main-container {
+    width: 100%; /* Genişliği tamamen doldurmasını sağlar */
+    padding: 30px; /* İçeriğin kenarlara yapışmaması için boşluk bırakır */
+    margin: 0; /* Otomatik ortalamayı kaldırır */
+}
+        
 
         /* ESKİ HEADER'I GİZLE */
         body > .header { display: none; }
