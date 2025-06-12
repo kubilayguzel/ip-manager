@@ -58,7 +58,7 @@
         .user-info { display: flex; flex-direction: column; }
         .user-name { font-weight: 600; color: #333; }
         .user-role { font-size: 0.8em; color: #666; }
-        .logout-btn { background: #ff6b6b; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 0.9em; transition: all 0.3s ease; }
+        .logout-btn { background: #ff6b6b; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: font-size: 0.9em; transition: all 0.3s ease; }
         .logout-btn:hover { background: #ff5252; }
         .breadcrumb { display: flex; align-items: center; gap: 10px; color: #666; font-size: 1.1em; }
         .breadcrumb a { color: #1e3c72; text-decoration: none; }
@@ -82,7 +82,6 @@
         .error-message { color: #ff6b6b; font-size: 0.85em; margin-top: 5px; display: none; }
         .file-upload-area { border: 2px dashed #e1e8ed; border-radius: 10px; padding: 30px; text-align: center; cursor: pointer; transition: all 0.3s ease; }
         .file-upload-area:hover { border-color: #1e3c72; background: #f8f9fa; }
-        .upload-icon { font-size: 3em; color: #1e3c72; margin-bottom: 15px; }
         .file-list { margin-top: 15px; }
         .file-item { display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start; padding: 10px; background: #f8f9fa; border-radius: 8px; margin-bottom: 10px; }
         .file-item > span { font-weight: 500; color: #333; margin-bottom: 5px; }
@@ -166,12 +165,7 @@
 
     <div class="page-wrapper">
         <header class="top-header">
-            <div class="breadcrumb">
-                <a href="portfolio.html">Portföy</a>
-                <span>&gt;</span>
-                <span>Belge İndeksleme</span>
-            </div>
-             <div class="user-section">
+            <div class="user-section">
                 <div class="user-avatar" id="userAvatar">?</div>
                 <div class="user-info">
                     <div class="user-name" id="userName">Yükleniyor...</div>
@@ -185,7 +179,7 @@
             <div class="page-header-section">
                 <h1 class="page-title">Belge İndeksleme</h1>
                 <p class="page-subtitle">Mevcut fikri mülkiyet kayıtlarına belge ekleyin ve indeksleyin.</p>
-            </div>
+            </section>
     
             <div class="form-container">
                 <div class="notification-message success" id="formSuccessMessage" style="display: none;"><span>✅</span><span id="formSuccessText">Belgeler başarıyla indekslendi!</span></div>
@@ -228,37 +222,472 @@
     <script type="module">
         import { authService, ipRecordsService, auth, generateUUID, subDesignationTranslations, documentDesignationTranslations } from './firebase-config.js';
 
-        // Orijinal IndexingModule sınıfı ve tüm metodları buraya gelecek
         class IndexingModule {
             constructor() {
-                // ... Orijinal constructor içeriği
                 this.currentUser = null;
                 this.allRecords = []; 
                 this.selectedRecord = null; 
                 this.uploadedFiles = [];
                 this.originalRecordData = null; 
-                this.allDocumentDesignations = [ /* ... */ ];
-                this.currentDocumentDesignations = [];
-                this.existingDocumentIndexedTransactions = [];
+                this.allDocumentDesignations = [ 
+                    'Başvuru Ek Dokümanı',
+                    'Resmi Yazışma',
+                    'Vekaletname',
+                    'Teknik Çizim',
+                    'Karar',
+                    'Finansal Belge',
+                    'Yayın Kararı',
+                    'Ret Kararı',
+                    'Tescil Belgesi',
+                    'Araştırma Raporu',
+                    'İnceleme Raporu',
+                    'Diğer Belge',
+                    'Genel Not'
+                ];
+                this.currentDocumentDesignations = []; // Dynamically populated
+                this.existingDocumentIndexedTransactions = []; // Unused in provided snippet
                 this.init();
             }
 
             init() {
-                // ... Orijinal init içeriği
+                auth.onAuthStateChanged(async (user) => {
+                    if (user) {
+                        this.currentUser = authService.getCurrentUser();
+                        this.updateUserInfo();
+                        this.initializeEventListeners();
+                        await this.loadRecords();
+                        this.populateStatusOptions();
+                    } else {
+                        window.location.href = 'index.html';
+                    }
+                });
             }
 
-            // Diğer tüm orijinal metodlar (initializeEventListeners, showNotification, vb.)
-            // ...
+            updateUserInfo() {
+                if (this.currentUser) {
+                    const userName = this.currentUser.displayName || this.currentUser.email.split('@')[0] || 'Kullanıcı';
+                    const userRole = this.currentUser.role === 'admin' ? 'Yönetici' : this.currentUser.role === 'superadmin' ? 'Süper Yönetici' : 'Kullanıcı';
+                    
+                    document.getElementById('userAvatar').textContent = userName.charAt(0).toUpperCase();
+                    document.getElementById('userName').textContent = userName;
+                    document.getElementById('userRole').textContent = userRole;
+                }
+            }
+
+            initializeEventListeners() {
+                document.getElementById('logoutBtn').addEventListener('click', () => authService.signOut());
+                document.getElementById('recordSearchInput').addEventListener('input', (e) => this.searchRecords(e.target.value));
+                document.getElementById('fileInput').addEventListener('change', (e) => this.handleFiles(e.target.files));
+                document.getElementById('fileUploadArea').addEventListener('click', () => document.getElementById('fileInput').click());
+                
+                document.getElementById('fileUploadArea').addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    e.currentTarget.style.borderColor = '#1e3c72';
+                    e.currentTarget.style.background = '#f0f4f8';
+                });
+                document.getElementById('fileUploadArea').addEventListener('dragleave', (e) => {
+                    e.preventDefault();
+                    e.currentTarget.style.borderColor = '#e1e8ed';
+                    e.currentTarget.style.background = 'transparent';
+                });
+                document.getElementById('fileUploadArea').addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    e.currentTarget.style.borderColor = '#e1e8ed';
+                    e.currentTarget.style.background = 'transparent';
+                    this.handleFiles(e.dataTransfer.files);
+                });
+
+                document.getElementById('resetIndexingFormBtn').addEventListener('click', () => this.resetForm());
+                document.getElementById('indexDocumentsBtn').addEventListener('click', () => this.handleSubmit());
+            }
+
+            populateStatusOptions() {
+                const statusSelect = document.getElementById('updateRecordStatus');
+                statusSelect.innerHTML = '<option value="">Değiştirmeyin</option>';
+                const allStatuses = [
+                    'application', 'pending', 'approved', 'rejected', 'expired',
+                    'published', 'partial_refusal', 'refused', 'opposition_received',
+                    'opposition_filed', 'registered', 'not_renewed', 'invalid_void'
+                ];
+                allStatuses.forEach(status => {
+                    statusSelect.innerHTML += `<option value="${status}">${status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</option>`;
+                });
+            }
+
+            async loadRecords() {
+                const result = await ipRecordsService.getRecords();
+                if (result.success) {
+                    this.allRecords = result.data;
+                    this.renderSearchResults(this.allRecords); // İlk başta tüm kayıtları göster
+                } else {
+                    this.showNotification('Kayıtlar yüklenemedi: ' + result.error, 'error');
+                }
+            }
+
+            searchRecords(query) {
+                const searchResultsContainer = document.getElementById('searchResultsContainer');
+                searchResultsContainer.innerHTML = '';
+                if (query.length < 3) {
+                    searchResultsContainer.innerHTML = '<p class="no-results-message">Arama yapmak için yukarıya yazın.</p>';
+                    this.toggleIndexButton();
+                    return;
+                }
+
+                const searchLower = query.toLowerCase();
+                const filtered = this.allRecords.filter(record => 
+                    (record.title && record.title.toLowerCase().includes(searchLower)) ||
+                    (record.applicationNumber && record.applicationNumber.toLowerCase().includes(searchLower))
+                );
+                
+                this.renderSearchResults(filtered);
+            }
+
+            renderSearchResults(records) {
+                const searchResultsContainer = document.getElementById('searchResultsContainer');
+                searchResultsContainer.innerHTML = '';
+                if (records.length === 0) {
+                    searchResultsContainer.innerHTML = '<p class="no-results-message">Kayıt bulunamadı.</p>';
+                    return;
+                }
+
+                records.forEach(record => {
+                    const item = document.createElement('div');
+                    item.className = 'record-search-item';
+                    item.dataset.id = record.id;
+                    item.innerHTML = `
+                        <div class="record-info">
+                            <div class="record-title">${record.title}</div>
+                            <div class="record-meta">${record.applicationNumber || 'Numara Yok'} | ${record.type}</div>
+                        </div>
+                    `;
+                    item.addEventListener('click', () => this.selectRecord(record.id));
+                    searchResultsContainer.appendChild(item);
+                });
+            }
+
+            selectRecord(recordId) {
+                this.selectedRecord = this.allRecords.find(r => r.id === recordId);
+                if (!this.selectedRecord) return;
+
+                document.getElementById('selectedRecordDisplay').value = `${this.selectedRecord.title} (${this.selectedRecord.applicationNumber || 'Numara Yok'})`;
+                
+                // Seçim yapıldığında ilgili bölümleri görünür yap
+                document.getElementById('documentUploadSection').style.display = 'block';
+                document.getElementById('recordUpdateSection').style.display = 'block';
+                document.getElementById('indexingTransactionHistorySection').style.display = 'block';
+                
+                // Hata mesajını gizle
+                document.getElementById('recordSelectError').style.display = 'none';
+
+                // Dosya listesini temizle ve transaction geçmişini yükle
+                this.uploadedFiles = [];
+                this.updateFileList();
+                this.renderTransactionHistory(this.selectedRecord.id, this.selectedRecord.transactions, this.selectedRecord.files);
+
+                this.toggleIndexButton(); // Buton durumunu kontrol et
+            }
+            
+            showNotification(message, type = 'info') {
+                const successMessage = document.getElementById('formSuccessMessage');
+                const errorMessage = document.getElementById('formErrorMessage');
+                const infoMessage = document.getElementById('formInfoMessage');
+
+                successMessage.style.display = 'none';
+                errorMessage.style.display = 'none';
+                infoMessage.style.display = 'none';
+
+                let targetMessage;
+                let targetText;
+
+                switch (type) {
+                    case 'success':
+                        targetMessage = successMessage;
+                        targetText = document.getElementById('formSuccessText');
+                        break;
+                    case 'error':
+                        targetMessage = errorMessage;
+                        targetText = document.getElementById('formErrorText');
+                        break;
+                    case 'info':
+                        targetMessage = infoMessage;
+                        targetText = document.getElementById('formInfoText');
+                        break;
+                    default:
+                        targetMessage = infoMessage;
+                        targetText = document.getElementById('formInfoText');
+                }
+
+                if (targetMessage && targetText) {
+                    targetText.textContent = message;
+                    targetMessage.style.display = 'flex';
+                    setTimeout(() => {
+                        targetMessage.style.display = 'none';
+                    }, 5000); // 5 saniye sonra bildirimi kapat
+                }
+            }
+
+            toggleLoading(isLoading) {
+                const btn = document.getElementById('indexDocumentsBtn');
+                const text = document.getElementById('indexBtnText');
+                const spinner = document.getElementById('indexBtnLoading');
+                
+                if (btn) btn.disabled = isLoading;
+                if (text) text.style.display = isLoading ? 'none' : 'inline';
+                if (spinner) spinner.style.display = isLoading ? 'inline-block' : 'none';
+            }
+
+            toggleIndexButton() {
+                // Sadece kayıt seçiliyse ve yüklenecek dosya varsa butonu etkinleştir
+                document.getElementById('indexDocumentsBtn').disabled = !(this.selectedRecord && this.uploadedFiles.length > 0);
+            }
+
+            handleFiles(files) {
+                for (const file of files) {
+                    if (file.size > 10 * 1024 * 1024) { // 10MB limit
+                        this.showNotification(`"${file.name}" dosyası 10MB'tan büyük ve yüklenemedi.`, 'error');
+                        continue;
+                    }
+                    if (this.uploadedFiles.some(f => f.name === file.name && f.size === file.size)) {
+                        this.showNotification(`"${file.name}" dosyası zaten eklenmiş.`, 'info');
+                        continue;
+                    }
+
+                    this.readFileAsDataURL(file).then(dataUrl => {
+                        this.uploadedFiles.push({
+                            id: generateUUID(),
+                            name: file.name,
+                            size: file.size,
+                            type: file.type,
+                            content: dataUrl,
+                            uploadedAt: new Date().toISOString(),
+                            documentDesignation: this.allDocumentDesignations[0] || 'Diğer Belge', // Varsayılan değer
+                            subDesignation: ''
+                        });
+                        this.updateFileList();
+                        this.toggleIndexButton();
+                    }).catch(error => {
+                        console.error("Dosya okuma hatası:", error);
+                        this.showNotification(`"${file.name}" dosyası okunamadı.`, 'error');
+                    });
+                }
+            }
+
+            updateFileList() {
+                const fileList = document.getElementById('fileList');
+                fileList.innerHTML = '';
+                if (this.uploadedFiles.length === 0) {
+                    return;
+                }
+
+                this.uploadedFiles.forEach(file => {
+                    const fileItem = document.createElement('div');
+                    fileItem.className = 'file-item';
+                    fileItem.dataset.id = file.id;
+
+                    const fileInfo = document.createElement('span');
+                    fileInfo.textContent = `${file.name} (${this.formatFileSize(file.size)})`;
+                    fileItem.appendChild(fileInfo);
+
+                    const controls = document.createElement('div');
+                    controls.className = 'file-item-controls';
+
+                    const select = document.createElement('select');
+                    select.className = 'file-item-select';
+                    
+                    this.allDocumentDesignations.forEach(designation => {
+                        const option = document.createElement('option');
+                        option.value = designation;
+                        option.textContent = designation;
+                        select.appendChild(option);
+                    });
+
+                    select.value = file.documentDesignation || 'Diğer Belge'; 
+                    select.addEventListener('change', (e) => {
+                        const updatedFile = this.uploadedFiles.find(f => f.id === file.id);
+                        if (updatedFile) {
+                            updatedFile.documentDesignation = e.target.value;
+                        }
+                    });
+                    controls.appendChild(select);
+
+                    const removeBtn = document.createElement('button');
+                    removeBtn.className = 'remove-file';
+                    removeBtn.textContent = '×';
+                    removeBtn.dataset.id = file.id;
+                    removeBtn.addEventListener('click', () => this.removeFile(file.id));
+                    controls.appendChild(removeBtn);
+
+                    fileItem.appendChild(controls);
+                    fileList.appendChild(fileItem);
+                });
+            }
+
+
+            removeFile(id) {
+                this.uploadedFiles = this.uploadedFiles.filter(file => file.id !== id);
+                this.updateFileList();
+                this.toggleIndexButton();
+            }
+
+            readFileAsDataURL(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                });
+            }
+
+            formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+
+            async handleSubmit() {
+                if (!this.selectedRecord) {
+                    document.getElementById('recordSelectError').style.display = 'block';
+                    return;
+                }
+                if (this.uploadedFiles.length === 0) {
+                    this.showNotification('Lütfen en az bir belge yükleyin.', 'error');
+                    return;
+                }
+                document.getElementById('recordSelectError').style.display = 'none';
+
+                this.toggleLoading(true);
+
+                const updates = {
+                    files: this.uploadedFiles.map(file => ({
+                        id: file.id,
+                        name: file.name,
+                        type: file.type,
+                        content: file.content,
+                        uploadedAt: file.uploadedAt,
+                        documentDesignation: file.documentDesignation,
+                        subDesignation: file.subDesignation || null,
+                        parentTransactionId: null // Belge indekslemede parent transaction her zaman null, child'lar için set edilecek
+                    })),
+                    status: document.getElementById('updateRecordStatus').value || this.selectedRecord.status,
+                    notes: document.getElementById('updateRecordNotes').value.trim() || null
+                };
+
+                try {
+                    const result = await ipRecordsService.updateRecord(this.selectedRecord.id, updates);
+                    if (result.success) {
+                        this.showNotification('Belgeler başarıyla indekslendi ve kayıt güncellendi!', 'success');
+                        this.resetForm(); // Formu temizle
+                        await this.loadRecords(); // Kayıtları yeniden yükle
+                    } else {
+                        throw new Error(result.error);
+                    }
+                } catch (error) {
+                    console.error('Belge indeksleme hatası:', error);
+                    this.showNotification('Belge indeksleme sırasında bir hata oluştu: ' + error.message, 'error');
+                } finally {
+                    this.toggleLoading(false);
+                }
+            }
+
+            resetForm() {
+                this.selectedRecord = null;
+                this.uploadedFiles = [];
+                document.getElementById('recordSearchInput').value = '';
+                document.getElementById('selectedRecordDisplay').value = '';
+                document.getElementById('documentUploadSection').style.display = 'none';
+                document.getElementById('recordUpdateSection').style.display = 'none';
+                document.getElementById('indexingTransactionHistorySection').style.display = 'none';
+                document.getElementById('fileList').innerHTML = '';
+                document.getElementById('updateRecordStatus').value = '';
+                document.getElementById('updateRecordNotes').value = '';
+                document.getElementById('recordSelectError').style.display = 'none';
+                this.toggleIndexButton();
+                this.showNotification('Form temizlendi.', 'info');
+            }
+            
+            renderTransactionHistory(recordId, transactions, recordFiles) {
+                const historyContainer = document.getElementById('indexingTransactionHistory');
+                historyContainer.innerHTML = '';
+
+                if (!transactions || transactions.length === 0) {
+                    historyContainer.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">İşlem geçmişi bulunmuyor.</p>';
+                    return;
+                }
+
+                // Sadece belge indeksleme sonucu oluşan transaction'lar ve iş oluşturma sonucu kaydedilen transaction'lar
+                const displayableTransactionTypes = [
+                    "Document Indexed",
+                    "Document Sub-Indexed",
+                    // create-task.html'den gelen iş tipleri (portfolio.html'deki ile aynı liste)
+                    'Başvuru', 'İtiraza Karşı Görüş (YIDD)', 'Yenileme', 'Eksiklik Giderme', 'Yayına İtiraz',
+                    'Karara İtiraz', 'Yayıma İtirazın Yeniden İncelenmesi', 'İtiraza Karşı Görüş (Markalar)',
+                    'Devir', 'Lisans', 'Birleşme', 'Veraset ile İntikal', 'Tescil Belgesi Sureti',
+                    'Sicil Sureti', 'Menşe Memleket Belgesi', 'Rehin/Teminat', 'Bölünme', 'Vazgeçme',
+                    'Tanınmışlık Tespiti', '3.Kişi Görüşü', 'Yayına İtirazı Geri Çekme',
+                    'Madrid Başvurusu Ücret Ödeme', 'Muvaffakat Sunumu', 'Kullanım İspatı Sunma',
+                    'İtiraza Ek Belge', 'Eşya Sınırlandırma'
+                ];
+
+                const relevantTransactions = transactions.filter(tx => 
+                    displayableTransactionTypes.includes(tx.type) || // Ana iş tipi olarak gelenler
+                    (tx.type === "Document Indexed" || tx.type === "Document Sub-Indexed") // Belge indeksleme tipleri
+                ).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)); // Tarihe göre sırala
+
+
+                if (relevantTransactions.length === 0) {
+                    historyContainer.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Gösterilebilir işlem bulunmuyor.</p>';
+                    return;
+                }
+
+                const transactionsMap = new Map(relevantTransactions.map(tx => [tx.transactionId, tx]));
+                const childrenMap = new Map();
+                
+                relevantTransactions.forEach(tx => {
+                    if (tx.parentId && transactionsMap.has(tx.parentId)) { // Sadece parent'ı da listede olanları child yap
+                        if (!childrenMap.has(tx.parentId)) childrenMap.set(tx.parentId, []);
+                        childrenMap.get(tx.parentId).push(tx);
+                    }
+                });
+
+                const buildTreeHtml = (transactionsToBuild) => {
+                    let html = '';
+                    transactionsToBuild.forEach(tx => {
+                        const children = childrenMap.get(tx.transactionId) || [];
+                        const hasChildren = children.length > 0;
+                        let documentLinkHtml = '';
+                        if (tx.documentId && recordFiles) {
+                            const relatedFile = recordFiles.find(file => file.id === tx.documentId);
+                            if (relatedFile) documentLinkHtml = ` | <a href="${relatedFile.content}" download="${relatedFile.name}" class="transaction-document-link">📄 Belge</a>`;
+                        }
+                        html += `
+                            <div class="transaction-node" data-id="${tx.transactionId}">
+                                ${hasChildren ? `<button class="transaction-toggle-btn" data-target-id="${tx.transactionId}">+</button>` : ''}
+                                <div class="transaction-node-content">
+                                    <div class="transaction-info">
+                                        <div class="transaction-description">${tx.description || tx.type}</div> 
+                                        <div class="transaction-meta">${new Date(tx.timestamp).toLocaleString('tr-TR')} by ${tx.userEmail}${documentLinkHtml}</div>
+                                    </div>
+                                    <div class="transaction-actions">
+                                        </div>
+                                </div>
+                            </div>
+                            ${hasChildren ? `<div class="child-transactions" id="children-of-${tx.transactionId}">${buildTreeHtml(children)}</div>` : ''}`;
+                    });
+                    return html;
+                };
+
+                const rootTransactions = relevantTransactions.filter(tx => !tx.parentId || !transactionsMap.has(tx.parentId));
+                historyContainer.innerHTML = buildTreeHtml(rootTransactions);
+
+                if (rootTransactions.length === 0) {
+                    historyContainer.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Gösterilebilir işlem bulunmuyor.</p>';
+                }
+            }
         }
 
-        // Modül başlatma
-        auth.onAuthStateChanged((user) => {
-            if (user || authService.getCurrentUser()) {
-                if (!window.indexingModule) window.indexingModule = new IndexingModule();
-            } else {
-                window.location.href = 'index.html';
-            }
-        });
+        window.indexingModule = new IndexingModule();
 
         // YENİ AKORDİYON MENÜ İÇİN JAVASCRIPT
         document.addEventListener('DOMContentLoaded', function() {
