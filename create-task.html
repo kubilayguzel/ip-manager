@@ -10,9 +10,11 @@
         
         /* === ANA SAYFA YAPISI === */
         .page-wrapper { flex-grow: 1; display: flex; flex-direction: column; height: 100vh; overflow-y: auto; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); }
-        .main-container { width: 100%; /* Genişliği tamamen doldurmasını sağlar */
-        padding: 30px; /* İçeriğin kenarlara yapışmaması için boşluk bırakır */
-        margin: 0; /* Otomatik ortalamayı kaldırır */ }
+        .main-container { 
+            width: 100%; /* Genişliği tamamen doldurmasını sağlar */
+            padding: 30px; /* İçeriğin kenarlara yapışmaması için boşluk bırakır */
+            margin: 0; /* Otomatik ortalamayı kaldırır */
+        }
         
         /* === SOL MENÜ (SIDEBAR) === */
         .sidebar { width: 260px; background: #1e3c72; color: white; display: flex; flex-direction: column; height: 100vh; position: sticky; top: 0; z-index: 1002; flex-shrink: 0; }
@@ -265,7 +267,7 @@
                 const partyLabel = partyLabels[taskType] || 'İlgili Taraf';
 
                 container.innerHTML = `
-                    <div class="form-section"><h3 class="section-title">2. İşleme Konu Varlık</h3><div class="form-group full-width"><label for="portfolioSearchInput" class="form-label">Portföyden Ara</label><input type="text" id="portfolioSearchInput" class="form-input" placeholder="Aramak için en az 3 karakter..."><div id="portfolioSearchResults" class="search-results-list"></div><div id="selectedIpRecordDisplay" class="search-result-display" style="display:none;"></div></div></div>
+                    <div class="form-section"><h3 class="section-title">2. İşleme Konu Varlık</h3><div class="form-group full-width"><label for="portfolioSearchInput" class="form-label">Portföyden Ara</label><input type="text" id="portfolioSearchInput" class="form-input" placeholder="Aramak için en az 3 karakter..."><div id="portfolioSearchResults" class="search-results-list"></div><div id="selectedIpRecordDisplay" class="search-result-display" style="display:none; align-items: center;"></div></div></div>
                     <div class="form-section"><h3 class="section-title">3. ${partyLabel}</h3><div class="form-group full-width"><label for="personSearchInput" class="form-label">Sistemdeki Kişilerden Ara</label><div style="display: flex; gap: 10px;"><input type="text" id="personSearchInput" class="form-input" placeholder="Aramak için en az 2 karakter..."><button type="button" id="addNewPersonBtn" class="btn-secondary btn-small">➕ Yeni Kişi</button></div><div id="personSearchResults" class="search-results-list"></div><div id="selectedRelatedPartyDisplay" class="search-result-display" style="display:none;"></div></div></div>
                     <div class="form-section"><h3 class="section-title">4. Gerekli Dokümanlar</h3><div class="form-group full-width"><div class="file-upload-area" id="fileUploadArea"><p>Dosyaları buraya sürükleyin veya tıklayın</p><input type="file" id="fileInput" multiple hidden></div><div class="file-list" id="fileList"></div></div></div>
                     <div class="form-section"><h3 class="section-title">5. İş Detayları</h3><div class="form-grid"><div class="form-group"><label for="taskPriority" class="form-label">Öncelik</label><select id="taskPriority" class="form-select"><option value="medium">Orta</option><option value="high">Yüksek</option><option value="low">Düşük</option></select></div><div class="form-group"><label for="assignedTo" class="form-label">Atanacak Kullanıcı</label><select id="assignedTo" class="form-select">${this.allUsers.map(u => `<option value="${u.id}">${u.displayName || u.email}</option>`).join('')}</select></div><div class="form-group full-width"><label for="taskDueDate" class="form-label">Operasyonel Son Tarih</label><input type="date" id="taskDueDate" class="form-input"></div></div></div>`;
@@ -275,7 +277,7 @@
 
             renderSimpleTransactionForm(container, taskType) {
                 container.innerHTML = `
-                    <div class="form-section"><h3 class="section-title">2. İşleme Konu Varlık</h3><div class="form-group full-width"><label for="portfolioSearchInput" class="form-label">Portföyden Ara</label><input type="text" id="portfolioSearchInput" class="form-input" placeholder="Aramak için en az 3 karakter..."><div id="portfolioSearchResults" class="search-results-list"></div><div id="selectedIpRecordDisplay" class="search-result-display" style="display:none;"></div></div></div>
+                    <div class="form-section"><h3 class="section-title">2. İşleme Konu Varlık</h3><div class="form-group full-width"><label for="portfolioSearchInput" class="form-label">Portföyden Ara</label><input type="text" id="portfolioSearchInput" class="form-input" placeholder="Aramak için en az 3 karakter..."><div id="portfolioSearchResults" class="search-results-list"></div><div id="selectedIpRecordDisplay" class="search-result-display" style="display:none; align-items: center;"></div></div></div>
                     <div class="form-section"><h3 class="section-title">3. İş Detayları</h3><div class="form-grid"><div class="form-group"><label for="taskPriority" class="form-label">Öncelik</label><select id="taskPriority" class="form-select"><option value="medium">Orta</option><option value="high">Yüksek</option><option value="low">Düşük</option></select></div><div class="form-group"><label for="assignedTo" class="form-label">Atanacak Kullanıcı</label><select id="assignedTo" class="form-select">${this.allUsers.map(u => `<option value="${u.id}">${u.displayName || u.email}</option>`).join('')}</select></div><div class="form-group full-width"><label for="taskDueDate" class="form-label">Operasyonel Son Tarih</label><input type="date" id="taskDueDate" class="form-input"></div></div></div>`;
 
                 document.getElementById('portfolioSearchInput').addEventListener('input', (e) => this.searchPortfolio(e.target.value));
@@ -337,11 +339,33 @@
 
             searchPortfolio(query) {
                 const container = document.getElementById('portfolioSearchResults');
-                if (query.length < 3) { container.innerHTML = ''; return; }
+                container.innerHTML = ''; // Önceki sonuçları temizle
+                if (query.length < 3) { container.innerHTML = '<p class="no-results-message">Aramak için en az 3 karakter...</p>'; return; }
+                
                 const mainIpType = document.getElementById('mainIpType').value;
-                const filtered = this.allIpRecords.filter(r => r.type === mainIpType && (r.title.toLowerCase().includes(query.toLowerCase()) || r.applicationNumber?.includes(query)));
-                container.innerHTML = filtered.map(r => `<div class="search-result-item" data-id="${r.id}">${r.title} (${r.applicationNumber || 'No Yok'})</div>`).join('');
-                container.querySelectorAll('.search-result-item').forEach(item => item.addEventListener('click', (e) => this.selectIpRecord(e.currentTarget.dataset.id)));
+                const filtered = this.allIpRecords.filter(r => 
+                    r.type === mainIpType && 
+                    (r.title.toLowerCase().includes(query.toLowerCase()) || r.applicationNumber?.includes(query))
+                );
+
+                if (filtered.length === 0) {
+                    container.innerHTML = '<p class="no-results-message">Kayıt bulunamadı.</p>';
+                    return;
+                }
+
+                filtered.forEach(r => {
+                    const item = document.createElement('div');
+                    item.className = 'search-result-item';
+                    item.dataset.id = r.id;
+                    item.innerHTML = `
+                        <div>
+                            <b>${r.title}</b> (${r.applicationNumber || 'Numara Yok'})<br>
+                            <small>Durum: ${r.status}, Hak Sahipleri: ${r.owners.map(o => o.name).join(', ') || '-'}</small>
+                        </div>
+                    `;
+                    item.addEventListener('click', () => this.selectIpRecord(r.id));
+                    container.appendChild(item);
+                });
             }
 
             selectIpRecord(recordId) {
@@ -349,23 +373,40 @@
                 const display = document.getElementById('selectedIpRecordDisplay');
                 let imageHtml = '';
                 if (this.selectedIpRecord.type === 'marka' && this.selectedIpRecord.trademarkImage?.content) {
-                    imageHtml = `<img src="${this.selectedIpRecord.trademarkImage.content}" alt="Marka Görseli">`;
+                    imageHtml = `<img src="${this.selectedIpRecord.trademarkImage.content}" alt="Marka Görseli" style="width: 40px; height: 40px; object-fit: contain; margin-right: 10px; border-radius: 4px; border: 1px solid #ddd;">`;
                 }
                 display.innerHTML = `${imageHtml}<div><p><b>Seçilen Varlık:</b> ${this.selectedIpRecord.title}</p><p><small>Mevcut Sahip: ${this.selectedIpRecord.owners.map(o=>o.name).join(', ')}</small></p></div>`;
                 display.style.display = 'flex';
-                document.getElementById('portfolioSearchResults').innerHTML = '';
-                document.getElementById('portfolioSearchInput').value = '';
+                document.getElementById('portfolioSearchResults').innerHTML = ''; // Sonuçları temizle
+                document.getElementById('portfolioSearchInput').value = ''; // Arama kutusunu temizle
                 this.checkFormCompleteness();
             }
 
             searchPersons(query) {
                 const container = document.getElementById('personSearchResults');
-                if (query.length < 2) { container.innerHTML = ''; return; }
+                container.innerHTML = ''; // Önceki sonuçları temizle
+                if (query.length < 2) { container.innerHTML = '<p class="no-results-message">Aramak için en az 2 karakter...</p>'; return; }
+                
                 const filtered = this.allPersons.filter(p => p.name.toLowerCase().includes(query.toLowerCase()));
-                container.innerHTML = filtered.map(p => `<div class="search-result-item" data-id="${p.id}">${p.name}</div>`).join('');
-                container.querySelectorAll('.search-result-item').forEach(item => item.addEventListener('click', (e) => {
-                    this.selectRelatedParty(this.allPersons.find(p => p.id === e.currentTarget.dataset.id));
-                }));
+                
+                if (filtered.length === 0) {
+                    container.innerHTML = '<p class="no-results-message">Kişi bulunamadı.</p>';
+                    return;
+                }
+
+                filtered.forEach(p => {
+                    const item = document.createElement('div');
+                    item.className = 'search-result-item';
+                    item.dataset.id = p.id;
+                    item.innerHTML = `
+                        <div>
+                            <b>${p.name}</b><br>
+                            <small>${p.email || '-'}</small>
+                        </div>
+                    `;
+                    item.addEventListener('click', () => this.selectRelatedParty(p));
+                    container.appendChild(item);
+                });
             }
             
             selectRelatedParty(person) {
@@ -380,7 +421,11 @@
                 this.checkFormCompleteness();
             }
 
-            showAddPersonModal() { document.getElementById('addPersonModal').style.display = 'flex'; }
+            showAddPersonModal() {
+                document.getElementById('addPersonModal').style.display = 'flex';
+                document.getElementById('personForm').reset(); // Formu temizle
+            }
+
             hideAddPersonModal() { document.getElementById('addPersonModal').style.display = 'none'; }
             
             async saveNewPerson() {
@@ -389,9 +434,9 @@
                 const result = await personsService.addPerson({ name, email, type, userId: this.currentUser.uid, userEmail: this.currentUser.email });
                 if (result.success) {
                     alert('Yeni kişi başarıyla eklendi.');
-                    const addedPerson = { name, email, type, id: result.id };
-                    this.allPersons.push(addedPerson);
-                    this.selectRelatedParty(addedPerson);
+                    const addedPerson = { ...result.data, id: result.data.id }; // Firebase id'sini al
+                    this.allPersons.push(addedPerson); // allPersons listesini güncelle
+                    this.selectRelatedParty(addedPerson); // Yeni kişiyi seç
                     this.hideAddPersonModal();
                 } else { alert('Hata: ' + result.error); }
             }
