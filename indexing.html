@@ -5,8 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IP Manager - Belge İndeksleme</title>
     <style>
-        /* Common styles from your existing HTML files (header, main-container etc.) */
-        /* If you have a common CSS file, you can link it here. */
         * {
             margin: 0;
             padding: 0;
@@ -107,7 +105,7 @@
             padding: 15px;
             border-radius: 10px;
             margin-bottom: 20px;
-            display: flex;
+            display: none; /* Varsayılan olarak gizli */
             align-items: center;
             gap: 10px;
         }
@@ -157,10 +155,10 @@
             box-shadow: 0 0 0 3px rgba(30, 60, 114, 0.1);
         }
 
-        .form-input.error-field { /* Hata durumunda input stili */
+        .form-input.error-field {
             border-color: #ff6b6b;
         }
-        .error-message { /* Hata mesajı stili */
+        .error-message {
             color: #ff6b6b;
             font-size: 0.85em;
             margin-top: 5px;
@@ -168,7 +166,7 @@
         }
 
 
-        .file-upload-area { /* Re-used from data-entry for image upload */
+        .file-upload-area {
             border: 2px dashed #e1e8ed;
             border-radius: 10px;
             padding: 30px;
@@ -194,32 +192,32 @@
 
         .file-item {
             display: flex;
-            flex-direction: column; /* Dikey düzen için */
+            flex-direction: column; 
             justify-content: space-between;
-            align-items: flex-start; /* Kontrolleri sola yasla */
+            align-items: flex-start;
             padding: 10px;
             background: #f8f9fa;
             border-radius: 8px;
             margin-bottom: 10px;
         }
-        .file-item > span { /* Dosya adı */
+        .file-item > span {
             font-weight: 500;
             color: #333;
-            margin-bottom: 5px; /* Kontrollerle arasında boşluk */
+            margin-bottom: 5px;
         }
         
         .file-item-controls {
             display: flex;
-            flex-direction: column; /* Changed to column for stacking dropdowns */
-            align-items: flex-start; /* Align dropdowns to the start */
+            flex-direction: column;
+            align-items: flex-start;
             gap: 10px;
-            flex-wrap: wrap; /* Small screens will wrap */
-            width: 100%; /* Ensure full width */
+            flex-wrap: wrap;
+            width: 100%;
         }
         .file-item-select {
-            flex-grow: 1; /* Dropdown'ın mümkün olduğunca genişlemesini sağla */
-            min-width: 150px; /* Minimum genişlik */
-            width: 100%; /* Make dropdowns take full width in flex column */
+            flex-grow: 1; 
+            min-width: 150px;
+            width: 100%;
             padding: 5px 8px;
             border: 1px solid #ccc;
             border-radius: 5px;
@@ -232,14 +230,14 @@
             border-radius: 50%;
             width: 25px;
             height: 25px;
-            font-size: 0.9em; /* Boyutu küçültüldü */
+            font-size: 0.9em;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             transition: background 0.3s ease;
-            flex-shrink: 0; /* Küçülmesini engelle */
-            margin-top: 5px; /* Add some space below dropdowns */
+            flex-shrink: 0;
+            margin-top: 5px;
         }
         .remove-file:hover {
             background: #c82333;
@@ -308,7 +306,6 @@
             to { transform: rotate(360deg); }
         }
         
-        /* Search/Select Record Section */
         .record-search-section {
             padding-bottom: 20px;
             margin-bottom: 30px;
@@ -351,26 +348,12 @@
             font-size: 0.8em;
             color: #666;
         }
-        .record-select-btn {
-            background-color: #28a745;
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.85em;
-            transition: background-color 0.2s ease;
-        }
-        .record-select-btn:hover {
-            background-color: #218838;
-        }
         .no-results-message {
             text-align: center;
             color: #999;
             padding: 20px;
         }
 
-        /* --- YENİ EKLENEN AKORDİYON/TREE CSS --- */
         .indexing-transaction-history {
             margin-top: 20px;
             padding: 10px;
@@ -380,7 +363,7 @@
         }
         .transaction-node {
             position: relative;
-            padding: 8px 0 8px 25px; /* Buton için solda boşluk */
+            padding: 8px 0 8px 25px; 
             border-bottom: 1px dashed #eee;
         }
         .transaction-node:last-child {
@@ -445,9 +428,7 @@
         .btn-edit-transaction:hover { background: #e0a800; }
         .btn-delete-transaction { background: #dc3545; color: white; }
         .btn-delete-transaction:hover { background: #c82333; }
-        /* --- AKORDİYON CSS SONU --- */
-
-        /* Responsive */
+        
         @media (max-width: 768px) {
             .form-actions {
                 flex-direction: column;
@@ -551,13 +532,6 @@
                         <label class="form-label" for="updateRecordStatus">Durum</label>
                         <select id="updateRecordStatus" class="form-select">
                             <option value="">Değiştirmeyin</option>
-                            <option value="application">Başvuru</option>
-                            <option value="pending">Beklemede</option>
-                            <option value="approved">Onaylandı</option>
-                            <option value="rejected">Reddedildi</option>
-                            <option value="expired">Süresi Doldu</option>
-                            <option value="published">Yayınlandı (Marka)</option>
-                            <option value="registered">Tescilli (Marka)</option>
                             </select>
                     </div>
                     <div class="form-group">
@@ -589,39 +563,17 @@
             </form>
         </div>
     </main>
-
-    <div class="modal" id="editTransactionModal" style="display: none;">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">İşlem Düzenle</h3>
-                <button class="close-btn" id="closeEditTransactionModal">&times;</button>
-            </div>
-            <form id="editTransactionForm">
-                <input type="hidden" id="editTransactionRecordId">
-                <input type="hidden" id="editTransactionId">
-                <div class="form-group">
-                    <label class="form-label" for="editTransactionDescription">Açıklama</label>
-                    <textarea id="editTransactionDescription" class="form-input" rows="3"></textarea>
-                </div>
-                <div class="form-actions">
-                    <button type="button" class="btn btn-secondary" id="cancelEditTransactionBtn">İptal</button>
-                    <button type="submit" class="btn btn-primary" id="saveTransactionBtn">Kaydet</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-
+    
     <script type="module">
         import { authService, ipRecordsService, auth, generateUUID, subDesignationTranslations, documentDesignationTranslations } from './firebase-config.js';
 
         class IndexingModule {
             constructor() {
                 this.currentUser = null;
-                this.allRecords = []; // Tüm IP kayıtları
-                this.selectedRecord = null; // Seçili IP kaydı
-                this.uploadedFiles = []; // Yüklenecek belgeler (yeni yapı)
-                this.originalRecordData = null; // Güncelleme için orijinal kayıt verisi
+                this.allRecords = []; 
+                this.selectedRecord = null; 
+                this.uploadedFiles = [];
+                this.originalRecordData = null; 
 
                 this.allDocumentDesignations = [
                     { name: 'Atama Seçiniz', value: '', ipTypes: ['all'], required: true },
@@ -683,7 +635,11 @@
 
             initializeEventListeners() {
                 document.getElementById('backBtn').addEventListener('click', () => {
-                    if (confirm('Değişiklikler kaybolacak. Devam etmek istiyorunuz mı?')) {
+                    if (this.uploadedFiles.length > 0 || this.selectedRecord) {
+                        if (confirm('Kaydedilmemiş değişiklikler kaybolacak. Devam etmek istiyor musunuz?')) {
+                            window.location.href = 'portfolio.html';
+                        }
+                    } else {
                         window.location.href = 'portfolio.html';
                     }
                 });
@@ -691,13 +647,6 @@
                 document.getElementById('recordSearchInput').addEventListener('input', (e) => this.searchRecords(e.target.value));
                 document.getElementById('indexDocumentsBtn').addEventListener('click', () => this.handleIndexingSubmit());
                 document.getElementById('resetIndexingFormBtn').addEventListener('click', () => this.resetForm());
-                document.getElementById('updateRecordStatus').addEventListener('change', () => this.clearFieldError('updateRecordStatus'));
-                document.getElementById('closeEditTransactionModal').addEventListener('click', () => this.hideEditTransactionModal());
-                document.getElementById('cancelEditTransactionBtn').addEventListener('click', () => this.hideEditTransactionModal());
-                document.getElementById('editTransactionForm').addEventListener('submit', (e) => {
-                    e.preventDefault();
-                    this.saveTransactionChanges();
-                });
 
                 const historyContainer = document.getElementById('indexingTransactionHistory');
                 historyContainer.addEventListener('click', (e) => {
@@ -714,17 +663,19 @@
                 });
             }
 
-            showNotification(message, type = 'info') {
+            showNotification(message, type = 'info', duration = 5000) {
+                const container = document.querySelector('.form-container');
+                const existingNotification = container.querySelector('.notification-message');
+
                 const successDiv = document.getElementById('formSuccessMessage');
                 const errorDiv = document.getElementById('formErrorMessage');
                 const infoDiv = document.getElementById('formInfoMessage');
 
-                if (successDiv) successDiv.style.display = 'none';
-                if (errorDiv) errorDiv.style.display = 'none';
-                if (infoDiv) infoDiv.style.display = 'none';
+                successDiv.style.display = 'none';
+                errorDiv.style.display = 'none';
+                infoDiv.style.display = 'none';
 
                 let targetDiv, targetTextSpan;
-
                 if (type === 'success') {
                     targetDiv = successDiv;
                     targetTextSpan = document.getElementById('formSuccessText');
@@ -736,15 +687,12 @@
                     targetTextSpan = document.getElementById('formInfoText');
                 }
 
-                if (targetTextSpan) {
-                    targetTextSpan.textContent = message;
-                }
-                if (targetDiv) {
-                    targetDiv.style.display = 'flex';
-                    setTimeout(() => {
-                        targetDiv.style.display = 'none';
-                    }, 5000);
-                }
+                targetTextSpan.textContent = message;
+                targetDiv.style.display = 'flex';
+                
+                setTimeout(() => {
+                    targetDiv.style.display = 'none';
+                }, duration);
             }
 
             setLoading(isLoading) {
@@ -758,89 +706,374 @@
             }
             
             async loadAllRecords() {
-                // ... (Bu metodun içeriği aynı kalacak) ...
+                try {
+                    const result = await ipRecordsService.getRecords();
+                    if (result.success) {
+                        this.allRecords = result.data;
+                        console.log('✅ All records loaded for indexing:', this.allRecords.length);
+                    } else {
+                        this.showNotification('Portföy kayıtları yüklenemedi: ' + result.error, 'error');
+                    }
+                } catch(e) {
+                    this.showNotification('Portföy kayıtları yüklenirken bir ağ hatası oluştu.', 'error');
+                    console.error(e);
+                }
             }
 
             searchRecords(query) {
-                // ... (Bu metodun içeriği aynı kalacak) ...
+                const container = document.getElementById('searchResultsContainer');
+                container.innerHTML = '';
+                const searchTerm = query.toLowerCase().trim();
+
+                if (searchTerm.length < 2) {
+                    container.innerHTML = '<p class="no-results-message">Arama yapmak için en az 2 karakter girin.</p>';
+                    return;
+                }
+
+                const results = this.allRecords.filter(record => 
+                    (record.title && record.title.toLowerCase().includes(searchTerm)) ||
+                    (record.applicationNumber && record.applicationNumber.toLowerCase().includes(searchTerm))
+                );
+
+                if (results.length === 0) {
+                    container.innerHTML = '<p class="no-results-message">Sonuç bulunamadı.</p>';
+                    return;
+                }
+
+                results.forEach(record => {
+                    const item = document.createElement('div');
+                    item.className = 'record-search-item';
+                    item.innerHTML = `
+                        <div class="record-info">
+                            <div class="record-title">${record.title}</div>
+                            <div class="record-meta">No: ${record.applicationNumber || '-'} | Tür: ${record.type}</div>
+                        </div>
+                    `;
+                    item.addEventListener('click', () => this.selectRecord(record.id));
+                    container.appendChild(item);
+                });
             }
             
             selectRecord(recordId) {
-                // ... (Bu metodun içeriği aynı kalacak) ...
+                this.selectedRecord = this.allRecords.find(r => r.id === recordId);
+                if (!this.selectedRecord) {
+                    this.showNotification('Seçilen kayıt bulunamadı.', 'error');
+                    return;
+                }
+                
+                this.originalRecordData = JSON.parse(JSON.stringify(this.selectedRecord));
+                
+                document.getElementById('selectedRecordDisplay').value = `${this.selectedRecord.title} (${this.selectedRecord.applicationNumber || 'No yok'})`;
+                document.getElementById('searchResultsContainer').innerHTML = '';
+                document.getElementById('recordSearchInput').value = '';
+                
+                this.clearFieldError('recordSelect');
+                this.showNotification(`Kayıt seçildi: ${this.selectedRecord.title}`, 'success');
+
+                document.getElementById('documentUploadSection').style.display = 'block';
+                document.getElementById('recordUpdateSection').style.display = 'block';
+                document.getElementById('indexingTransactionHistorySection').style.display = 'block';
+                document.getElementById('indexDocumentsBtn').disabled = false;
+
+                this.filterDocumentDesignationsByRecordType(this.selectedRecord.type);
+                this.updateStatusOptionsForRecord(this.selectedRecord.type, this.selectedRecord.status);
+                this.renderIndexingTransactions(this.selectedRecord.transactions, this.selectedRecord.files, this.selectedRecord.id);
             }
 
             filterDocumentDesignationsByRecordType(ipType) {
-                // ... (Bu metodun içeriği aynı kalacak) ...
+                this.currentDocumentDesignations = this.allDocumentDesignations.filter(des => 
+                    des.ipTypes.includes('all') || des.ipTypes.includes(ipType)
+                );
             }
 
             updateStatusOptionsForRecord(recordType, currentStatus) {
-                // ... (Bu metodun içeriği aynı kalacak) ...
+                const statusSelect = document.getElementById('updateRecordStatus');
+                statusSelect.innerHTML = '<option value="">Değiştirmeyin</option>';
+
+                const allStatuses = {
+                    general: [
+                        { value: 'application', text: 'Başvuru' }, { value: 'pending', text: 'Beklemede' },
+                        { value: 'approved', text: 'Onaylandı' }, { value: 'rejected', text: 'Reddedildi' },
+                        { value: 'expired', text: 'Süresi Doldu' }
+                    ],
+                    trademark: [
+                        { value: 'published', text: 'Yayınlandı (Marka)' }, { value: 'registered', text: 'Tescilli (Marka)' },
+                        { value: 'partial_refusal', text: 'Kısmi Ret' }, { value: 'refused', text: 'Ret' },
+                        { value: 'opposition_received', text: 'İtiraz Geldi' }, { value: 'opposition_filed', text: 'İtiraz Edildi' },
+                        { value: 'not_renewed', text: 'Yenilenmedi' }, { value: 'invalid_void', text: 'Başvuru Geçersiz/Hükümsüz' }
+                    ]
+                };
+
+                let options = [...allStatuses.general];
+                if (recordType === 'trademark') {
+                    options = [...options, ...allStatuses.trademark];
+                }
+
+                options.forEach(opt => {
+                    const optionEl = document.createElement('option');
+                    optionEl.value = opt.value;
+                    optionEl.textContent = opt.text;
+                    if (opt.value === currentStatus) {
+                        optionEl.textContent += ' (Mevcut)';
+                    }
+                    statusSelect.appendChild(optionEl);
+                });
             }
             
             setupFileUpload() {
-                // ... (Bu metodun içeriği aynı kalacak) ...
+                const fileUploadArea = document.getElementById('fileUploadArea');
+                const fileInput = document.getElementById('fileInput');
+
+                fileUploadArea.addEventListener('click', () => fileInput.click());
+                fileInput.addEventListener('change', (e) => {
+                    this.handleFiles(e.target.files);
+                    e.target.value = '';
+                });
+
+                fileUploadArea.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    fileUploadArea.style.borderColor = '#1e3c72';
+                });
+                fileUploadArea.addEventListener('dragleave', (e) => {
+                    e.preventDefault();
+                    fileUploadArea.style.borderColor = '#e1e8ed';
+                });
+                fileUploadArea.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    fileUploadArea.style.borderColor = '#e1e8ed';
+                    this.handleFiles(e.dataTransfer.files);
+                });
             }
             
             handleFiles(files) {
-                // ... (Bu metodun içeriği aynı kalacak) ...
+                 for (const file of files) {
+                    if (this.validateFile(file)) {
+                        this.readFileAsDataURL(file).then(dataUrl => {
+                            const newFileObj = {
+                                id: generateUUID(),
+                                name: file.name,
+                                type: file.type,
+                                size: file.size,
+                                content: dataUrl,
+                                documentDesignation: '',
+                                subDesignation: '',
+                                parentTransactionId: null,
+                                uploadedAt: new Date().toISOString()
+                            };
+                            this.uploadedFiles.push(newFileObj);
+                            this.updateFileList();
+                        });
+                    }
+                }
             }
             
             validateFile(file) {
-                // ... (Bu metodun içeriği aynı kalacak) ...
+                const maxFileSize = 10 * 1024 * 1024; // 10MB
+                const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'image/jpeg', 'image/png'];
+
+                if (!allowedTypes.includes(file.type)) {
+                    this.showNotification(`Desteklenmeyen dosya türü: ${file.name}`, 'error');
+                    return false;
+                }
+                if (file.size > maxFileSize) {
+                    this.showNotification(`Dosya boyutu çok büyük (Maks 10MB): ${file.name}`, 'error');
+                    return false;
+                }
+                return true;
             }
             
-            addFileToList(file) {
-                // ... (Bu metodun içeriği aynı kalacak) ...
+            updateFileList() {
+                const fileListContainer = document.getElementById('fileList');
+                fileListContainer.innerHTML = '';
+                this.uploadedFiles.forEach(file => {
+                    const fileItem = document.createElement('div');
+                    fileItem.className = 'file-item';
+                    fileItem.dataset.fileId = file.id;
+
+                    const fileNameSpan = document.createElement('span');
+                    fileNameSpan.textContent = `${file.name} (${this.formatFileSize(file.size)})`;
+
+                    const controlsDiv = document.createElement('div');
+                    controlsDiv.className = 'file-item-controls';
+
+                    const mainDesignationSelect = this.createDesignationSelect(file.id, this.currentDocumentDesignations, file.documentDesignation);
+                    controlsDiv.appendChild(mainDesignationSelect);
+
+                    const removeBtn = document.createElement('button');
+                    removeBtn.className = 'remove-file';
+                    removeBtn.textContent = '×';
+                    removeBtn.title = "Dosyayı Kaldır";
+                    removeBtn.onclick = () => this.removeFile(file.id);
+                    controlsDiv.appendChild(removeBtn);
+
+                    fileItem.appendChild(fileNameSpan);
+                    fileItem.appendChild(controlsDiv);
+                    fileListContainer.appendChild(fileItem);
+                    
+                    this.updateSpecificFileItem(file.id);
+                });
+            }
+
+            createDesignationSelect(fileId, designations, selectedValue) {
+                const select = document.createElement('select');
+                select.className = 'file-item-select main-designation';
+                select.dataset.fileId = fileId;
+                
+                designations.forEach(des => {
+                    const option = document.createElement('option');
+                    option.value = des.value;
+                    option.textContent = des.name;
+                    if (des.value === selectedValue) {
+                        option.selected = true;
+                    }
+                    select.appendChild(option);
+                });
+
+                select.onchange = (e) => {
+                    const file = this.uploadedFiles.find(f => f.id === fileId);
+                    if (file) {
+                        file.documentDesignation = e.target.value;
+                        this.updateSpecificFileItem(fileId);
+                    }
+                };
+                return select;
             }
             
             updateSpecificFileItem(fileId) {
-                // ... (Bu metodun içeriği aynı kalacak) ...
+                const file = this.uploadedFiles.find(f => f.id === fileId);
+                const fileItemElement = document.querySelector(`.file-item[data-file-id="${fileId}"]`);
+                if (!file || !fileItemElement) return;
+
+                const selectedDesignation = this.currentDocumentDesignations.find(d => d.value === file.documentDesignation);
+                let subDesignationContainer = fileItemElement.querySelector('.sub-designation-container');
+                if (subDesignationContainer) {
+                    subDesignationContainer.remove();
+                }
+
+                if (selectedDesignation && selectedDesignation.subDesignations) {
+                    subDesignationContainer = document.createElement('div');
+                    subDesignationContainer.className = 'sub-designation-container';
+
+                    const subSelect = document.createElement('select');
+                    subSelect.className = 'file-item-select sub-designation';
+                    
+                    selectedDesignation.subDesignations.forEach(sub => {
+                        const option = document.createElement('option');
+                        option.value = sub.value;
+                        option.textContent = sub.name;
+                        if (sub.value === file.subDesignation) option.selected = true;
+                        subSelect.appendChild(option);
+                    });
+
+                    subSelect.onchange = (e) => { file.subDesignation = e.target.value; };
+                    subDesignationContainer.appendChild(subSelect);
+                    fileItemElement.querySelector('.file-item-controls').insertBefore(subDesignationContainer, fileItemElement.querySelector('.remove-file'));
+                } else {
+                    file.subDesignation = '';
+                }
             }
 
             removeFile(fileIdToRemove) {
-                // ... (Bu metodun içeriği aynı kalacak) ...
-            }
-
-            updateFileList() {
-                // ... (Bu metodun içeriği aynı kalacak) ...
+                this.uploadedFiles = this.uploadedFiles.filter(f => f.id !== fileIdToRemove);
+                this.updateFileList();
             }
 
             formatFileSize(bytes) {
-                // ... (Bu metodun içeriği aynı kalacak) ...
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + ['Bytes', 'KB', 'MB', 'GB', 'TB'][i];
             }
 
             readFileAsDataURL(file) {
-                // ... (Bu metodun içeriği aynı kalacak) ...
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = error => reject(error);
+                    reader.readAsDataURL(file);
+                });
+            }
+
+            clearFieldError(id) {
+                const errorEl = document.getElementById(`${id}Error`);
+                if (errorEl) errorEl.style.display = 'none';
             }
             
             validateForm() {
-                // ... (Bu metodun içeriği aynı kalacak) ...
+                let isValid = true;
+                if (!this.selectedRecord) {
+                    this.showNotification('Lütfen önce bir kayıt seçin.', 'error');
+                    this.clearFieldError('recordSelect');
+                    isValid = false;
+                }
+                if (this.uploadedFiles.length === 0) {
+                     this.showNotification('Lütfen en az bir belge yükleyin.', 'error');
+                     isValid = false;
+                }
+                this.uploadedFiles.forEach(file => {
+                    const des = this.currentDocumentDesignations.find(d => d.value === file.documentDesignation);
+                    if (!file.documentDesignation || (des && des.required)) {
+                        isValid = false;
+                    }
+                });
+                if (!isValid) {
+                     this.showNotification('Lütfen yüklenen tüm belgeler için bir atama seçin.', 'error');
+                }
+                return isValid;
             }
 
             async handleIndexingSubmit() {
-                // ... (Bu metodun içeriği aynı kalacak) ...
+                if (!this.validateForm()) return;
+                
+                this.setLoading(true);
+
+                const updates = {};
+                const newStatus = document.getElementById('updateRecordStatus').value;
+                const newNotes = document.getElementById('updateRecordNotes').value.trim();
+
+                if (newStatus) {
+                    updates.status = newStatus;
+                }
+                if (newNotes) {
+                    updates.description = (this.originalRecordData.description ? this.originalRecordData.description + '\n\n' : '') + `[${new Date().toLocaleString('tr-TR')}] NOT: ${newNotes}`;
+                }
+
+                updates.files = [...this.originalRecordData.files, ...this.uploadedFiles];
+                
+                try {
+                    const result = await ipRecordsService.updateRecord(this.selectedRecord.id, updates);
+                    if (result.success) {
+                        this.showNotification('Belgeler başarıyla indekslendi ve kayıt güncellendi!', 'success');
+                        this.resetForm();
+                    } else {
+                        throw new Error(result.error);
+                    }
+                } catch (error) {
+                    console.error('Indexing submit error:', error);
+                    this.showNotification('İşlem sırasında bir hata oluştu: ' + error.message, 'error');
+                } finally {
+                    this.setLoading(false);
+                }
             }
 
             resetForm() {
-                // ... (Bu metodun içeriği aynı kalacak) ...
+                document.getElementById('indexingForm').reset();
+                this.selectedRecord = null;
+                this.originalRecordData = null;
+                this.uploadedFiles = [];
+                this.updateFileList();
+
+                document.getElementById('selectedRecordDisplay').value = '';
+                document.getElementById('searchResultsContainer').innerHTML = '<p class="no-results-message">Arama yapmak için yukarıya yazın.</p>';
+                
+                document.getElementById('documentUploadSection').style.display = 'none';
+                document.getElementById('recordUpdateSection').style.display = 'none';
+                document.getElementById('indexingTransactionHistorySection').style.display = 'none';
+                
+                document.getElementById('indexDocumentsBtn').disabled = true;
+                this.showNotification('Form temizlendi. Yeni bir indeksleme işlemi için kayıt arayın.', 'info', 2000);
             }
             
-            openEditTransactionModal(recordId, transactionId) {
-                // ... (Bu metodun içeriği aynı kalacak) ...
-            }
-            
-            hideEditTransactionModal() {
-                // ... (Bu metodun içeriği aynı kalacak) ...
-            }
-
-            async saveTransactionChanges() {
-                // ... (Bu metodun içeriği aynı kalacak) ...
-            }
-
-            async deleteTransaction(recordId, transactionId) {
-                // ... (Bu metodun içeriği aynı kalacak) ...
-            }
-
             renderIndexingTransactions(transactions, recordFiles, currentRecordId) {
                 const historyContainer = document.getElementById('indexingTransactionHistory');
                 if (!historyContainer) return;
@@ -907,7 +1140,7 @@
                                             ${documentLinkHtml ? ' | ' + documentLinkHtml : ''}
                                         </div>
                                     </div>
-                                    <div class="transaction-actions">
+                                    <div class="transaction-actions" style="display:none;">
                                         <button class="transaction-action-btn btn-edit-transaction" onclick="indexingModule.openEditTransactionModal('${currentRecordId}', '${tx.transactionId}')" title="Düzenle">✏️</button>
                                         <button class="transaction-action-btn btn-delete-transaction" onclick="indexingModule.deleteTransaction('${currentRecordId}', '${tx.transactionId}')" title="Sil">🗑️</button>
                                     </div>
@@ -924,7 +1157,6 @@
             }
         }
 
-        // Modülü başlat
         auth.onAuthStateChanged((user) => {
             if (user) {
                 if (!window.indexingModule) {
