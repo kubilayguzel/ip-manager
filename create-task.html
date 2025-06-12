@@ -651,24 +651,25 @@
                 let filteredTransactions = [];
                 const allTransactions = this.selectedIpRecord.transactions.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp)); 
 
+                // Transaction filtreleme mantığı güncellendi: Sadece parent olanları al
                 if (specificTaskType === 'İtirazı Geri Çekme' || specificTaskType === 'İtiraza Ek Belge') {
                     filteredTransactions = allTransactions.filter(tx => 
                         tx.description && (
                             tx.description.includes('Yayına İtiraz') || 
                             tx.description.includes('Karara İtiraz')
-                        ) && !tx.parentId // Sadece parent olanları al
+                        ) && tx.parentId === null // Sadece parent olanları al
                     );
                 } else if (specificTaskType === 'İtiraza Karşı Görüş (YIDD)') {
                     filteredTransactions = allTransactions.filter(tx => 
-                        tx.description && tx.description.includes('Karara İtiraz') && !tx.parentId // Sadece parent olanları al
+                        tx.description && tx.description.includes('Karara İtiraz') && tx.parentId === null // Sadece parent olanları al
                     );
                 } else if (specificTaskType === 'İtiraza Karşı Görüş (Markalar)' || specificTaskType === 'Kullanım İspatı Sunma') {
                     filteredTransactions = allTransactions.filter(tx => 
-                        tx.description && tx.description.includes('Yayına İtiraz') && !tx.parentId // Sadece parent olanları al
+                        tx.description && tx.description.includes('Yayına İtiraz') && tx.parentId === null // Sadece parent olanları al
                     );
                 } else if (specificTaskType === 'Yayına İtiraz' || specificTaskType === 'Karara İtiraz') {
                     // Bu işlem tipleri için ilgili bir transaction seçimi beklenmiyor.
-                    // Bu senaryoda selectElement boş kalacak ve disabled olacak.
+                    // Dolayısıyla selectElement boş kalacak ve disabled olacak.
                     selectElement.innerHTML = '<option value="">Uygun İşlem Yok</option>';
                     selectElement.disabled = true;
                     return; 
@@ -902,19 +903,18 @@
                 const result = await taskService.createTask(taskData);
                 if(result.success) {
                     // Portföy kaydına parent transaction ekle
-                    // Bu transaction, iş tipinin kendisiyle bir parent transaction olarak oluşturulacak
                     const transactionTypeToRecord = specificTaskType; 
-                    const transactionDescriptionToRecord = taskData.title; // İş başlığı açıklama olarak kullanılacak
+                    // transactionDescriptionToRecord artık sadece spesifik iş tipinin adı olacak
+                    const transactionDescriptionToRecord = specificTaskType; 
                     
                     let parentTransactionIdForChildLink = null;
-                    // Eğer ilgili bir transaction seçilmişse, bu yeni transaction'ın parent'ı o olacak
                     if (taskData.details && taskData.details.relatedTransactionId) {
                         parentTransactionIdForChildLink = taskData.details.relatedTransactionId;
                     }
 
                     const transactionData = {
                         type: transactionTypeToRecord, 
-                        description: transactionDescriptionToRecord,
+                        description: transactionDescriptionToRecord, 
                         parentId: parentTransactionIdForChildLink || null 
                     };
                     const addTxResult = await ipRecordsService.addTransactionToRecord(this.selectedIpRecord.id, transactionData);
