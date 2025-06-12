@@ -20,8 +20,8 @@ import {
     where,
     getDoc, 
     setDoc,
-    arrayUnion, // arrayUnion'ı burada tutmaya devam edelim, belki başka yerlerde kullanılır
-    arrayRemove // arrayRemove da lazım olabilir
+    arrayUnion, 
+    arrayRemove 
 } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
 // --- Firebase App Initialization ---
@@ -228,8 +228,6 @@ export const ipRecordsService = {
         const user = authService.getCurrentUser();
         if(!user) return {success: false, error: "Not logged in"};
         const timestamp = new Date().toISOString();
-        // Yeni kayıt oluşturulduğunda varsayılan "Record Created" transaction'ını buradan kaldırıyoruz
-        // Bu transaction artık create-task.html içinden iş tipiyle oluşturulacak.
         const newRecord = { ...record, userId: user.uid, userEmail: user.email, createdAt: timestamp, updatedAt: timestamp, transactions: [], files: (record.files || []).map(f => ({ ...f, id: generateUUID() })) };
         
         if (isFirebaseAvailable) {
@@ -253,20 +251,20 @@ export const ipRecordsService = {
             const currentDoc = await getDoc(recordRef);
             if (!currentDoc.exists()) return { success: false, error: "Record not found" };
 
-            let currentTransactions = currentDoc.data().transactions || []; // Mevcut transaction'ları al
+            let currentTransactions = currentDoc.data().transactions || []; 
             
             const newTransaction = {
                 transactionId: generateUUID(),
                 timestamp: new Date().toISOString(),
                 userId: user.uid,
                 userEmail: user.email,
-                ...transactionData // description, type, parentId gibi datalar buraya gelecek
+                ...transactionData 
             };
 
-            currentTransactions.push(newTransaction); // Yeni transaction'ı diziye ekle
+            currentTransactions.push(newTransaction); 
 
             await updateDoc(recordRef, {
-                transactions: currentTransactions, // Tüm diziyi güncel olarak geri yaz
+                transactions: currentTransactions, 
                 updatedAt: new Date().toISOString()
             });
             return { success: true, transaction: newTransaction };
@@ -294,63 +292,50 @@ export const ipRecordsService = {
             const currentDoc = await getDoc(recordRef);
             if (!currentDoc.exists()) return { success: false, error: "Record not found" };
             const currentData = currentDoc.data();
-            let newTransactions = [...(currentData.transactions || [])]; // Mevcut transaction'ları al
+            let newTransactions = [...(currentData.transactions || [])]; 
 
             // Dosya ekleme mantığını düzenliyoruz: sadece yeni dosyalar için transaction oluştur.
             // Bu kısım, belge indeksleme modülünde child transaction oluşturmak için kullanılıyor.
             (updates.files || []).forEach(newFile => {
                 const isExistingFile = (currentData.files || []).some(oldFile => oldFile.id === newFile.id);
-                if (!isExistingFile) { // Sadece yeni eklenen dosyalar için transaction oluştur
-                    // Eğer dosyanın bir parentTransactionId'si varsa, bu zaten child olarak ekleniyor demektir.
-                    // Yoksa, bu dosya için yeni bir "Document Indexed" transaction oluştururuz.
-                    // Belge indeksleme modülü bu parentId'yi set edebilir.
-                    const isChildFile = newFile.parentTransactionId; // parentTransactionId varsa child'dır
+                if (!isExistingFile) { 
+                    const isChildFile = newFile.parentTransactionId; 
 
                     // Eğer bu dosya için zaten bir transaction yoksa ve bir parent'ı yoksa, yeni bir parent transaction oluştur
                     const existingFileTransaction = newTransactions.find(tx => tx.documentId === newFile.id);
-                    if (!existingFileTransaction && !isChildFile) {
+                    if (!existingFileTransaction) { // Sadece yoksa ve bu dosya için hiç transaction oluşturulmamışsa
+                        const transactionType = isChildFile ? "Document Sub-Indexed" : "Document Indexed";
+                        const transactionDescription = isChildFile 
+                            ? `Belge yüklendi (alt): ${newFile.indexingName || newFile.name}` 
+                            : `${newFile.indexingType || 'Belge'} yüklendi: ${newFile.indexingName || newFile.name}`;
+
                         newTransactions.push({ 
                             transactionId: generateUUID(), 
-                            type: "Document Indexed", 
-                            description: `Belge yüklendi: ${newFile.name}`, // Genel bir açıklama
+                            type: transactionType, // 'Document Indexed' veya 'Document Sub-Indexed'
+                            description: transactionDescription, 
                             documentId: newFile.id, 
                             documentName: newFile.name, 
+                            documentDesignation: newFile.documentDesignation, // Added
+                            subDesignation: newFile.subDesignation, // Added
                             timestamp: newFile.uploadedAt || timestamp, 
                             userId: user.uid, 
                             userEmail: user.email, 
-                            parentId: null // Parent transaction
-                        });
-                    }
-                    // Eğer child bir dosya ise ve parent id'si varsa, transaction'ı ekle.
-                    else if (!existingFileTransaction && isChildFile) {
-                         newTransactions.push({ 
-                            transactionId: generateUUID(), 
-                            type: "Document Sub-Indexed", // Veya daha spesifik bir tip
-                            description: `Belge yüklendi (alt): ${newFile.name}`,
-                            documentId: newFile.id, 
-                            documentName: newFile.name, 
-                            timestamp: newFile.uploadedAt || timestamp, 
-                            userId: user.uid, 
-                            userEmail: user.email, 
-                            parentId: newFile.parentTransactionId // Belirtilen parentId ile child transaction
+                            parentId: newFile.parentTransactionId || null // Belirtilen parentId ile child transaction
                         });
                     }
                 }
             });
             
-            // Eğer updates içinde files varsa, güncellenmiş files dizisini kullan
-            // Yoksa, mevcut files dizisini koru (veya boş array eğer yoksa)
             const updatedFiles = updates.files !== undefined ? updates.files : currentData.files;
 
 
             await updateDoc(recordRef, { 
                 ...updates, 
-                files: updatedFiles, // Güncellenmiş files dizisini ata
+                files: updatedFiles, 
                 updatedAt: timestamp, 
-                transactions: newTransactions // Güncellenmiş transaction dizisini ata
+                transactions: newTransactions 
             });
         } else {
-            // Local storage logic (burası güncellenmedi, isFirebaseAvailable true varsayımıyla çalışıyoruz)
             let records = JSON.parse(localStorage.getItem('ipRecords') || '[]');
             let record = records.find(r => r.id === recordId);
             if (record) {
@@ -360,7 +345,40 @@ export const ipRecordsService = {
         }
         return { success: true };
     },
-    // ... (Diğer metodlar: deleteRecord, deleteTransaction, updateTransaction) ...
+    async deleteRecord(recordId) {
+        if (isFirebaseAvailable) {
+            await deleteDoc(doc(db, 'ipRecords', recordId));
+        } else {
+            const records = JSON.parse(localStorage.getItem('ipRecords') || '[]').filter(r => r.id !== recordId);
+            localStorage.setItem('ipRecords', JSON.stringify(records));
+        }
+        return { success: true };
+    },
+    async deleteTransaction(recordId, txId) {
+        if (isFirebaseAvailable) {
+            const recordRef = doc(db, 'ipRecords', recordId);
+            const currentDoc = await getDoc(recordRef);
+            if (!currentDoc.exists()) return { success: false, error: "Record not found" };
+            const transactions = currentDoc.data().transactions || [];
+            const idsToDelete = new Set([txId, ...this.findAllDescendants(txId, transactions)]);
+            const newTransactions = transactions.filter(tx => !idsToDelete.has(tx.transactionId));
+            await updateDoc(recordRef, { transactions: newTransactions });
+            return { success: true, remainingTransactions: newTransactions };
+        }
+        return { success: false, error: 'Local mode not supported' };
+    },
+    async updateTransaction(recordId, txId, updates) {
+        if (isFirebaseAvailable) {
+            const recordRef = doc(db, 'ipRecords', recordId);
+            const currentDoc = await getDoc(recordRef);
+            if (!currentDoc.exists()) return { success: false, error: "Record not found" };
+            const transactions = currentDoc.data().transactions || [];
+            const newTransactions = transactions.map(tx => tx.transactionId === txId ? { ...tx, ...updates, timestamp: new Date().toISOString() } : tx);
+            await updateDoc(recordRef, { transactions: newTransactions });
+            return { success: true };
+        }
+        return { success: false, error: 'Local mode not supported' };
+    }
 };
 
 // --- Task Service (For Workflow Management) ---
@@ -502,7 +520,7 @@ export async function createDemoData() {
                     name: 'logo_ornek.jpg',
                     type: 'image/jpeg',
                     size: 1024,
-                    content: 'data:image/jpeg;base64,iVBORw0KGgoAAAANSUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='
+                    content: 'data:image/jpeg;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='
                 },
             }
         ];
