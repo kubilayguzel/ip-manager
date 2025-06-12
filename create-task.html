@@ -121,7 +121,7 @@
         .file-upload-area:hover { background: #f0f4f8; }
         .file-list { margin-top: 15px; display: flex; flex-direction: column; gap: 8px; }
         .file-item { display: flex; align-items: center; justify-content: space-between; background: #f8f9fa; padding: 8px 12px; border-radius: 6px; font-size: 0.9em; }
-        .remove-file { background: #ff6b6b; color: white; border: none; border-radius: 50%; width: 22px; height: 22px; cursor: pointer; }
+        .remove-file { background: #ff6b6b; color: white; border: none; border-radius: 50%; width: 22px; height: 22px; cursor: }
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6); z-index: 1003; align-items: center; justify-content: center; }
         .modal.show { display: flex; }
         .modal-content { background: white; padding: 30px; border-radius: 20px; max-width: 500px; width: 90%; }
@@ -211,7 +211,7 @@
                     <div class="form-section">
                         <h3 class="section-title">1. İş Tipi Seçimi</h3>
                         <div class="form-grid">
-                            <div class="form-group"><label for="mainIpType" class="form-label">İşin Ana Türü</label><select id="mainIpType" class="form-select"><option value="">Seçiniz...</option><option value="patent">Patent</option><option value="marka">Marka</option><option value="tasarim">Tasarım</option></select></div>
+                            <div class="form-group"><label for="mainIpType" class="form-label">İşin Ana Türü</label><select id="mainIpType" class="form-select"><option value="">Seçiniz...</option><option value="patent">Patent</option><option value="trademark">Marka</option><option value="design">Tasarım</option></select></div>
                             <div class="form-group"><label for="specificTaskType" class="form-label">Spesifik İş Tipi</label><select id="specificTaskType" class="form-select" disabled><option value="">Önce İşin Ana Türünü Seçin</option></select></div>
                         </div>
                     </div>
@@ -297,6 +297,7 @@
                     this.allIpRecords = ipRecordsResult.data || [];
                     this.allPersons = personsResult.data || [];
                     this.allUsers = usersResult.data || [];
+                    console.log('Tüm IP Kayıtları Yüklendi:', this.allIpRecords); // Debugging için
                 } catch (error) {
                     console.error("Veri yüklenirken hata oluştu:", error);
                     alert("Gerekli veriler yüklenemedi, lütfen sayfayı yenileyin.");
@@ -447,8 +448,11 @@
                     console.log(`\nKaydı kontrol ediliyor: ID=${r.id}, Type=${r.type}, Title="${r.title}", AppNumber="${r.applicationNumber}"`);
                     
                     // 1. Tip eşleşmesi kontrolü
-                    const matchesType = r.type === mainIpType;
-                    console.log(`  Tür eşleşiyor mu (${mainIpType} vs ${r.type}): ${matchesType}`);
+                    // r.type değerini de küçük harfe çevirerek karşılaştırma yapalım, garantili olsun.
+                    const rTypeLower = r.type ? r.type.toLowerCase() : '';
+                    const mainIpTypeLower = mainIpType ? mainIpType.toLowerCase() : '';
+                    const matchesType = rTypeLower === mainIpTypeLower;
+                    console.log(`  Tür eşleşiyor mu ("${mainIpTypeLower}" vs "${rTypeLower}"): ${matchesType}`); // Debugging için güncellendi
 
                     // 2. Başlık eşleşmesi kontrolü
                     const rTitleLower = r.title ? r.title.toLowerCase() : '';
@@ -495,7 +499,7 @@
                 const display = document.getElementById('selectedIpRecordDisplay');
                 let imageHtml = '';
                 // Marka tipi ise ve görseli varsa göster
-                if (this.selectedIpRecord.type === 'marka' && this.selectedIpRecord.trademarkImage && this.selectedIpRecord.trademarkImage.content) {
+                if (this.selectedIpRecord.type === 'trademark' && this.selectedIpRecord.trademarkImage && this.selectedIpRecord.trademarkImage.content) {
                     imageHtml = `<img src="${this.selectedIpRecord.trademarkImage.content}" alt="Marka Görseli" style="width: 40px; height: 40px; object-fit: contain; margin-right: 10px; border-radius: 4px; border: 1px solid #ddd;">`;
                 }
                 display.innerHTML = `${imageHtml}<div><p><b>Seçilen Varlık:</b> ${this.selectedIpRecord.title}</p><p><small>Mevcut Sahip: ${this.selectedIpRecord.owners.map(o=>o.name).join(', ')}</small></p></div>`;
