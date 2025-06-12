@@ -435,10 +435,40 @@
                 }
                 
                 const mainIpType = document.getElementById('mainIpType').value;
-                const filtered = this.allIpRecords.filter(r => 
-                    r.type === mainIpType && 
-                    (r.title.toLowerCase().includes(query.toLowerCase()) || (r.applicationNumber && r.applicationNumber.toLowerCase().includes(query.toLowerCase())))
-                );
+                const searchLower = query.toLowerCase(); 
+                
+                console.log("--- Portföy Arama Başladı ---");
+                console.log("Arama Sorgusu (küçük harf):", searchLower);
+                console.log("Seçilen Ana IP Türü:", mainIpType);
+                console.log("Yüklü tüm IP Kayıtları (allIpRecords boyutu):", this.allIpRecords.length);
+
+                const filtered = this.allIpRecords.filter(r => {
+                    // Kaydın türünü, başlığını ve başvuru numarasını debug için logla
+                    console.log(`\nKaydı kontrol ediliyor: ID=${r.id}, Type=${r.type}, Title="${r.title}", AppNumber="${r.applicationNumber}"`);
+                    
+                    // 1. Tip eşleşmesi kontrolü
+                    const matchesType = r.type === mainIpType;
+                    console.log(`  Tür eşleşiyor mu (${mainIpType} vs ${r.type}): ${matchesType}`);
+
+                    // 2. Başlık eşleşmesi kontrolü
+                    const rTitleLower = r.title ? r.title.toLowerCase() : '';
+                    const matchesTitle = rTitleLower.includes(searchLower);
+                    console.log(`  Başlık eşleşiyor mu ("${rTitleLower}" includes "${searchLower}"): ${matchesTitle}`);
+
+                    // 3. Başvuru Numarası eşleşmesi kontrolü
+                    const rAppNumberLower = r.applicationNumber ? r.applicationNumber.toLowerCase() : '';
+                    const matchesApplicationNumber = rAppNumberLower.includes(searchLower);
+                    console.log(`  Başvuru No eşleşiyor mu ("${rAppNumberLower}" includes "${searchLower}"): ${matchesApplicationNumber}`);
+                    
+                    const isMatch = matchesType && (matchesTitle || matchesApplicationNumber);
+                    console.log(`  Genel eşleşme sonucu: ${isMatch}`);
+
+                    return isMatch;
+                });
+
+                console.log("--- Portföy Arama Sonuçlandı ---");
+                console.log("Bulunan kayıt sayısı:", filtered.length);
+
 
                 if (filtered.length === 0) {
                     container.innerHTML = '<p class="no-results-message">Kayıt bulunamadı.</p>';
