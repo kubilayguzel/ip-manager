@@ -494,8 +494,8 @@
             background: white;
             padding: 30px;
             border-radius: 20px;
-            max-width: 1200px; /* GÜNCELLEME: Modal genişletildi */
-            width: 95%; /* GÜNCELLEME: Responsive genişlik */
+            max-width: 1200px; 
+            width: 95%;
             max-height: 90vh;
             overflow-y: auto;
             box-shadow: 0 10px 40px rgba(0,0,0,0.2);
@@ -526,7 +526,7 @@
 
         .detail-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* GÜNCELLEME: Daha fazla alan için ayarlandı */
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
             gap: 15px 25px;
         }
 
@@ -545,6 +545,22 @@
             margin-left: 5px;
             cursor: pointer;
         }
+        
+        /* GÜNCELLEME: Modal içindeki marka örneği için stil */
+        .detail-trademark-image-container {
+            grid-column: 1 / -1; /* Tam genişlik kaplasın */
+            text-align: center;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+        }
+        .detail-trademark-image {
+            max-width: 250px;
+            max-height: 250px;
+            border: 1px solid #e1e8ed;
+            border-radius: 8px;
+        }
+
 
         .detail-section-title {
             grid-column: 1 / -1;
@@ -605,7 +621,6 @@
             transform: translateX(-50%) scale(1);
         }
         
-        /* GÜNCELLEME: Transaction stilleri güncellendi */
         .transaction-history {
             margin-top: 20px;
             padding-top: 20px;
@@ -665,7 +680,6 @@
             display: block; 
         }
 
-        /* GÜNCELLEME: Yeni eklenen transaction buton stilleri */
         .transaction-actions {
             display: flex;
             gap: 5px;
@@ -987,7 +1001,6 @@
                 document.getElementById('prevBtn').addEventListener('click', () => { if (this.currentPage > 1) { this.currentPage--; this.renderTable(); } });
                 document.getElementById('nextBtn').addEventListener('click', () => { const totalPages = Math.ceil(this.filteredRecords.length / this.recordsPerPage); if (this.currentPage < totalPages) { this.currentPage++; this.renderTable(); } });
                 
-                // GÜNCELLEME: Yeni modal için event listener'lar
                 document.getElementById('closeEditTransactionModal').addEventListener('click', () => this.hideEditTransactionModal());
                 document.getElementById('cancelEditTransactionBtn').addEventListener('click', () => this.hideEditTransactionModal());
                 document.getElementById('editTransactionForm').addEventListener('submit', (e) => { e.preventDefault(); this.saveTransactionChanges(); });
@@ -1140,7 +1153,6 @@
                 return row;
             }
             
-            // GÜNCELLEME: Tüm verileri gösterecek şekilde güncellendi
             viewRecord(recordId) {
                 const record = this.records.find(r => r.id === recordId);
                 if (!record) return;
@@ -1152,21 +1164,26 @@
                 const statusNames = { application: 'Başvuru', pending: 'Beklemede', approved: 'Onaylandı', rejected: 'Reddedildi', expired: 'Süresi Doldu', published: 'Yayınlandı', partial_refusal: 'Kısmi Ret', refused: 'Ret', opposition_received: 'İtiraz Geldi', opposition_filed: 'İtiraz Edildi', registered: 'Tescilli', not_renewed: 'Yenilenmedi', invalid_void: 'Geçersiz' };
 
                 const formatDate = (dateString) => dateString ? new Date(dateString).toLocaleDateString('tr-TR') : '-';
-                const renderField = (label, value) => value ? `<div class="detail-item"><div class="detail-label">${label}</div><div class="detail-value">${value}</div></div>` : '';
+                const renderField = (label, value) => value || value === 0 ? `<div class="detail-item"><div class="detail-label">${label}</div><div class="detail-value">${value}</div></div>` : '';
                 const renderLongTextField = (label, value) => value ? `<div class="detail-item" style="grid-column: 1 / -1;"><div class="detail-label">${label}</div><div class="detail-value long-text">${value}</div></div>` : '';
 
                 let modalContentHtml = `<div class="detail-grid">`;
+                
+                // --- Genel Bilgiler ---
                 modalContentHtml += `<h4 class="detail-section-title">Genel Bilgiler</h4>`;
                 modalContentHtml += renderField('Tür', `<span class="ip-type ${record.type}">${typeNames[record.type] || 'Bilinmiyor'}</span>`);
                 modalContentHtml += renderField('Başlık', record.title);
                 modalContentHtml += renderField('Durum', `<span class="status-badge ${record.status}">${statusNames[record.status] || record.status}</span>`);
                 modalContentHtml += renderField('Başvuru Numarası', record.applicationNumber);
+                modalContentHtml += renderField('Tescil Numarası', record.registrationNumber);
                 modalContentHtml += renderField('Başvuru Tarihi', formatDate(record.applicationDate));
+                modalContentHtml += renderField('Tescil Tarihi', formatDate(record.registrationDate));
                 modalContentHtml += renderField('Hak Sahipleri', (record.owners || []).map(o => o.name).join(', '));
-                if(this.currentUser.role === 'superadmin') {
+                if(this.currentUser && this.currentUser.role === 'superadmin') {
                     modalContentHtml += renderField('Oluşturan Kullanıcı', record.userEmail);
                 }
 
+                // --- Türe Özel Bilgiler ---
                 if (record.type === 'patent') {
                     modalContentHtml += `<h4 class="detail-section-title">Patent Detayları</h4>`;
                     modalContentHtml += renderField('Patent Sınıfı', record.patentClass);
@@ -1176,9 +1193,15 @@
                 }
                 if (record.type === 'trademark') {
                     modalContentHtml += `<h4 class="detail-section-title">Marka Detayları</h4>`;
+                    if (record.trademarkImage && record.trademarkImage.content) {
+                        modalContentHtml += `
+                            <div class="detail-item detail-trademark-image-container">
+                                <div class="detail-label">Marka Örneği</div>
+                                <img src="${record.trademarkImage.content}" class="detail-trademark-image" alt="Marka Örneği">
+                            </div>`;
+                    }
                     modalContentHtml += renderField('Marka Türü', record.trademarkType);
                     modalContentHtml += renderField('Nice Sınıfı', record.niceClass);
-                    modalContentHtml += renderField('Tescil Numarası', record.registrationNumber);
                     modalContentHtml += renderField('Yenileme Tarihi', formatDate(record.renewalDate));
                     modalContentHtml += renderField('Bülten Tarihi', formatDate(record.bulletinDate));
                     modalContentHtml += renderField('Bülten Numarası', record.bulletinNumber);
@@ -1199,17 +1222,19 @@
                     modalContentHtml += renderLongTextField('Tasarım Özellikleri', record.designFeatures);
                 }
                 
-                modalContentHtml += `<h4 class="detail-section-title">Notlar ve Açıklama</h4>`;
+                // --- Açıklama ve Notlar ---
+                modalContentHtml += `<h4 class="detail-section-title">Açıklama</h4>`;
                 modalContentHtml += renderLongTextField('Açıklama', record.description);
                 
                 modalContentHtml += `</div>`;
                 document.getElementById('modalBody').innerHTML = modalContentHtml;
 
+                // --- İşlem Geçmişi ---
                 this.renderTransactionHistory(record.id, record.transactions, record.files);
+                
                 modal.classList.add('show');
             }
 
-            // GÜNCELLEME: Transaction geçmişine düzenleme/silme butonları eklendi
             renderTransactionHistory(recordId, transactions, recordFiles) {
                 const historyContainer = document.getElementById('transactionHistory');
                 historyContainer.innerHTML = '';
@@ -1293,7 +1318,6 @@
                 document.getElementById('noRecords').style.display = 'block';
             }
 
-            // GÜNCELLEME: Yeni eklenen transaction yönetimi fonksiyonları
             openEditTransactionModal(recordId, transactionId) {
                 const record = this.records.find(r => r.id === recordId);
                 const transaction = record?.transactions.find(t => t.transactionId === transactionId);
@@ -1303,13 +1327,13 @@
                 document.getElementById('editTransactionId').value = transactionId;
                 document.getElementById('editTransactionDescription').value = transaction.description;
 
-                this.closeModal('detailModal'); // Arka planı temiz tutmak için ana modalı kapat
+                this.closeModal('detailModal'); 
                 document.getElementById('editTransactionModal').classList.add('show');
             }
 
             hideEditTransactionModal() {
                 this.closeModal('editTransactionModal');
-                this.viewRecord(document.getElementById('editTransactionRecordId').value); // Ana modalı tekrar aç
+                this.viewRecord(document.getElementById('editTransactionRecordId').value); 
             }
 
             async saveTransactionChanges() {
@@ -1321,9 +1345,9 @@
                 try {
                     await ipRecordsService.updateTransaction(recordId, transactionId, { description: newDescription });
                     alert('İşlem başarıyla güncellendi.');
-                    await this.loadRecords(); // Tüm veriyi yenile
+                    await this.loadRecords(); 
                     this.closeModal('editTransactionModal');
-                    this.viewRecord(recordId); // Güncel haliyle ana modalı tekrar aç
+                    this.viewRecord(recordId); 
                 } catch (error) {
                     alert('İşlem güncellenirken hata: ' + error.message);
                 }
@@ -1335,7 +1359,6 @@
                     const result = await ipRecordsService.deleteTransaction(recordId, transactionId);
                     if (result.success) {
                         alert('İşlem başarıyla silindi.');
-                        // Veriyi yeniden yükleyerek güncel halini alalım
                         const recordIndex = this.records.findIndex(r => r.id === recordId);
                         if(recordIndex !== -1) {
                             this.records[recordIndex].transactions = result.remainingTransactions;
@@ -1350,7 +1373,6 @@
             }
         }
 
-        // Initialize the module
         auth.onAuthStateChanged((user) => {
             if (user || authService.getCurrentUser()) {
                 if (!window.portfolio) window.portfolio = new PortfolioModule();
