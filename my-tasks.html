@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IP Manager - İşlerim</title>
+    <style>
+        /* Common styles from dashboard.html */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); min-height: 100vh; color: #333; }
+        .header { background: rgba(255, 255, 255, 0.95); padding: 15px 0; box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 100; }
+        .header-content { max-width: 1400px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; }
+        .logo { font-size: 1.8em; font-weight: bold; color: #1e3c72; }
+        .nav-menu { display: flex; gap: 30px; }
+        .nav-item { color: #666; text-decoration: none; font-weight: 500; padding: 8px 16px; border-radius: 8px; transition: all 0.3s ease; }
+        .nav-item:hover, .nav-item.active { background: #1e3c72; color: white; }
+        .user-section { display: flex; align-items: center; gap: 15px; }
+        .user-avatar { width: 40px; height: 40px; background: linear-gradient(45deg, #1e3c72, #2a5298); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; }
+        .logout-btn { background: #ff6b6b; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 0.9em; transition: all 0.3s ease; }
+        .logout-btn:hover { background: #ff5252; }
+        .main-container { max-width: 1400px; margin: 30px auto; padding: 0 20px; }
+        .page-header { background: rgba(255, 255, 255, 0.95); padding: 30px; border-radius: 20px; margin-bottom: 30px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); }
+        .page-title { font-size: 2em; color: #1e3c72; margin-bottom: 10px; }
+        .page-subtitle { color: #666; font-size: 1.1em; }
+        .tasks-container { background: rgba(255, 255, 255, 0.95); border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); overflow: hidden; }
+        .tasks-header { padding: 20px 30px; border-bottom: 1px solid #e1e8ed; display: flex; justify-content: space-between; align-items: center; }
+        .filter-group { display: flex; gap: 10px; align-items: center; }
+        .filter-label { font-weight: 500; }
+        .filter-select { padding: 8px 12px; border-radius: 8px; border: 1px solid #ccc; }
+        .task-table { width: 100%; border-collapse: collapse; }
+        .task-table th, .task-table td { padding: 15px; text-align: left; border-bottom: 1px solid #f0f0f0; }
+        .task-table th { background: #f8f9fa; font-weight: 600; }
+        .task-table tr:hover { background: #f8f9fa; }
+        .priority-high { color: #dc3545; font-weight: bold; }
+        .priority-medium { color: #ffc107; font-weight: bold; }
+        .priority-low { color: #28a745; font-weight: bold; }
+        .status-badge { padding: 4px 10px; border-radius: 12px; font-size: 0.8em; font-weight: 500; color: white; }
+        .status-open { background-color: #007bff; }
+        .status-in_progress { background-color: #ffc107; color: #333; }
+        .status-completed { background-color: #28a745; }
+        .status-pending_review { background-color: #17a2b8; }
+        .action-btn { background: #6c757d; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; }
+        .no-tasks { text-align: center; padding: 50px; color: #666; }
+        .loading { text-align: center; padding: 50px; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">IP Manager</div>
+            <nav class="nav-menu">
+                <a href="dashboard.html" class="nav-item">Dashboard</a>
+                <a href="portfolio.html" class="nav-item">Portföy</a>
+                <a href="my-tasks.html" class="nav-item active">İşlerim</a>
+                <a href="task-management.html" class="nav-item">İş Yönetimi</a>
+            </nav>
+            <div class="user-section">
+                <div class="user-avatar" id="userAvatar">?</div>
+                <button class="logout-btn" id="logoutBtn">Çıkış</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <section class="page-header">
+            <h1 class="page-title">Bana Atanan İşler</h1>
+            <p class="page-subtitle">Size atanmış olan tüm görevleri buradan takip edebilirsiniz.</p>
+        </section>
+
+        <div class="tasks-container">
+            <div class="tasks-header">
+                <div class="filter-group">
+                    <label class="filter-label" for="statusFilter">Duruma Göre Filtrele:</label>
+                    <select id="statusFilter" class="filter-select">
+                        <option value="all">Tümü</option>
+                        <option value="open">Açık</option>
+                        <option value="in_progress">Devam Ediyor</option>
+                        <option value="pending_review">Gözden Geçiriliyor</option>
+                        <option value="completed">Tamamlandı</option>
+                    </select>
+                </div>
+            </div>
+            <div class="table-container">
+                <table class="task-table">
+                    <thead>
+                        <tr>
+                            <th>Öncelik</th>
+                            <th>İş Başlığı</th>
+                            <th>İlgili Kayıt</th>
+                            <th>Bitiş Tarihi</th>
+                            <th>Durum</th>
+                            <th>İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tasksTableBody">
+                        </tbody>
+                </table>
+                 <div id="loadingIndicator" class="loading">Yükleniyor...</div>
+                 <div id="noTasksMessage" class="no-tasks" style="display: none;">Size atanmış aktif bir iş bulunmamaktadır.</div>
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        import { authService, taskService } from './firebase-config.js';
+
+        class MyTasksModule {
+            constructor() {
+                this.currentUser = null;
+                this.tasks = [];
+                this.init();
+            }
+
+            init() {
+                authService.auth.onAuthStateChanged(user => {
+                    if (user) {
+                        this.currentUser = authService.getCurrentUser();
+                        document.getElementById('userAvatar').textContent = (this.currentUser.displayName || 'U').charAt(0);
+                        this.loadTasks();
+                        this.setupEventListeners();
+                    } else {
+                        window.location.href = 'index.html';
+                    }
+                });
+            }
+            
+            setupEventListeners() {
+                document.getElementById('logoutBtn').addEventListener('click', () => authService.signOut().then(() => window.location.href = 'index.html'));
+                document.getElementById('statusFilter').addEventListener('change', (e) => this.renderTasks(e.target.value));
+            }
+
+            async loadTasks() {
+                document.getElementById('loadingIndicator').style.display = 'block';
+                const result = await taskService.getTasksForUser(this.currentUser.uid);
+                document.getElementById('loadingIndicator').style.display = 'none';
+
+                if(result.success) {
+                    this.tasks = result.data;
+                    this.renderTasks();
+                } else {
+                    alert('İşler yüklenirken hata: ' + result.error);
+                }
+            }
+
+            renderTasks(filter = 'all') {
+                const tableBody = document.getElementById('tasksTableBody');
+                const noTasksMessage = document.getElementById('noTasksMessage');
+                tableBody.innerHTML = '';
+
+                const filteredTasks = this.tasks.filter(task => {
+                    if (filter === 'all') return true;
+                    return task.status === filter;
+                });
+                
+                if (filteredTasks.length === 0) {
+                    noTasksMessage.style.display = 'block';
+                    return;
+                }
+                noTasksMessage.style.display = 'none';
+
+                const priorityMap = { high: 'Yüksek', medium: 'Orta', low: 'Düşük' };
+                const statusMap = { open: 'Açık', in_progress: 'Devam Ediyor', completed: 'Tamamlandı', pending_review: 'Gözden Geçiriliyor' };
+
+                filteredTasks.forEach(task => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td><span class="priority-${task.priority}">${priorityMap[task.priority] || 'Normal'}</span></td>
+                        <td>${task.title}</td>
+                        <td><a href="portfolio.html?recordId=${task.relatedIpRecordId}">${task.relatedIpRecordTitle || '-'}</a></td>
+                        <td>${task.dueDate ? new Date(task.dueDate).toLocaleDateString() : '-'}</td>
+                        <td><span class="status-badge status-${task.status}">${statusMap[task.status] || task.status}</span></td>
+                        <td>
+                            <button class="action-btn" onclick="window.myTasksModule.viewTask('${task.id}')">Detaylar</button>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            }
+            
+            viewTask(taskId) {
+                // Bu özellik için bir modal pencere veya ayrı bir detay sayfası tasarlanabilir.
+                // Şimdilik yönetim sayfasına yönlendirelim.
+                window.location.href = `task-management.html?taskId=${taskId}`;
+            }
+        }
+
+        window.myTasksModule = new MyTasksModule();
+    </script>
+</body>
+</html>
