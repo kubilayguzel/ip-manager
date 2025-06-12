@@ -202,6 +202,13 @@
     
                     <div class="form-section document-upload-section" id="documentUploadSection" style="display: none;">
                         <h2 class="section-title"><span class="section-icon">📁</span>2. Belgeleri Yükleyin ve İndeksleyin</h2>
+                        <div class="form-group">
+                            <label class="form-label" for="parentTransactionSelect">İlgili Üst İşlem Seçin (Opsiyonel)</label>
+                            <select id="parentTransactionSelect" class="form-select">
+                                <option value="">Yok (Ana Belge)</option>
+                            </select>
+                            <p class="help-text">Yüklediğiniz belgeler, seçtiğiniz üst işlem altında alt işlem olarak ilişkilendirilecektir.</p>
+                        </div>
                         <div class="form-group"><div class="file-upload-area" id="fileUploadArea"><div class="upload-icon">📄</div><div>Dosyaları buraya sürükleyin veya tıklayın</div><div class="help-text">PDF, DOC, JPG, PNG formatları (Maks. 10MB)</div><input type="file" id="fileInput" multiple hidden accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"></div><div class="file-list" id="fileList"></div></div>
                     </div>
     
@@ -213,13 +220,6 @@
     
                     <div class="form-section transaction-history-indexing-section" id="indexingTransactionHistorySection" style="display: none;">
                         <h2 class="section-title"><span class="section-icon">📜</span>4. Kayıt Geçmişi</h2>
-                        <div class="form-group">
-                            <label class="form-label" for="parentTransactionSelect">İlgili Üst İşlem Seçin (Opsiyonel)</label>
-                            <select id="parentTransactionSelect" class="form-select">
-                                <option value="">Yok (Ana Belge)</option>
-                            </select>
-                            <p class="help-text">Yüklediğiniz belgeler, seçtiğiniz üst işlem altında alt işlem olarak ilişkilendirilecektir.</p>
-                        </div>
                         <div class="indexing-transaction-history" id="indexingTransactionHistory">
                             <p style="text-align: center; color: #666;">İşlem geçmişi yükleniyor...</p>
                         </div>
@@ -696,12 +696,14 @@
                     'Sicil Sureti', 'Menşe Memleket Belgesi', 'Rehin/Teminat', 'Bölünme', 'Vazgeçme',
                     'Tanınmışlık Tespiti', '3.Kişi Görüşü', 'Yayına İtirazı Geri Çekme',
                     'Madrid Başvurusu Ücret Ödeme', 'Muvaffakat Sunumu', 'Kullanım İspatı Sunma',
-                    'İtiraza Ek Belge', 'Eşya Sınırlandırma'
+                    'İtiraza Ek Belge', 'Eşya Sınırlandırma',
+                    // İndeksleme Tipleri (Belge İndeksleme modülüne özel)
+                    'Kabul Kararı', 'Ret Kararı', 'Eksiklik Bildirimi'
                 ];
 
                 const relevantTransactions = transactions.filter(tx => 
-                    displayableTransactionTypes.includes(tx.type) || // Ana iş tipi olarak gelenler
-                    (tx.type === "Document Indexed" || tx.type === "Document Sub-Indexed") // Belge indeksleme tipleri
+                    displayableTransactionTypes.includes(tx.type) || // Ana iş tipi olarak gelenler (create-task'ten)
+                    displayableTransactionTypes.includes(tx.description) // İndeksleme tipleri (indexing.html'den)
                 ).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)); // Tarihe göre sırala
 
 
