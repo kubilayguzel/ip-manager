@@ -885,13 +885,52 @@
                     return;
                 }
 
-                // Parent'ı null olan veya başka bir transaction'ın child'ı olmayanları kök kabul et
-                const allTransactions = transactions.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-                const transactionsMap = new Map(allTransactions.map(tx => [tx.transactionId, tx]));
+                const allTransactions = transactions.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)); // Tarihe göre sırala
+                
+                // YENİ FİLTRELEME: Sadece belirli transaction tiplerini göster
+                const displayableTransactionTypes = [
+                    "Document Indexed", // Belge indeksleme transaction'ları
+                    "Document Sub-Indexed", // Alt belge indeksleme transaction'ları
+                    // create-task.html'den gelen iş tipleri
+                    'Başvuru',
+                    'İtiraza Karşı Görüş (YIDD)',
+                    'Yenileme',
+                    'Eksiklik Giderme',
+                    'Yayına İtiraz',
+                    'Karara İtiraz',
+                    'Yayıma İtirazın Yeniden İncelenmesi',
+                    'İtiraza Karşı Görüş (Markalar)',
+                    'Devir',
+                    'Lisans',
+                    'Birleşme',
+                    'Veraset ile İntikal',
+                    'Tescil Belgesi Sureti',
+                    'Sicil Sureti',
+                    'Menşe Memleket Belgesi',
+                    'Rehin/Teminat',
+                    'Bölünme',
+                    'Vazgeçme',
+                    'Tanınmışlık Tespiti',
+                    '3.Kişi Görüşü',
+                    'Yayına İtirazı Geri Çekme',
+                    'Madrid Başvurusu Ücret Ödeme',
+                    'Muvaffakat Sunumu',
+                    'Kullanım İspatı Sunma',
+                    'İtiraza Ek Belge',
+                    'Eşya Sınırlandırma'
+                ];
+
+                // Sadece gösterilebilir tipleri filtrele
+                const filteredTransactionsToDisplay = allTransactions.filter(tx => 
+                    displayableTransactionTypes.includes(tx.type) // transaction'ın 'type' özelliğini kontrol et
+                );
+
+
+                const transactionsMap = new Map(filteredTransactionsToDisplay.map(tx => [tx.transactionId, tx])); // Filtrelenmiş olanlar üzerinden map oluştur
                 const childrenMap = new Map();
                 
-                allTransactions.forEach(tx => {
-                    if (tx.parentId) {
+                filteredTransactionsToDisplay.forEach(tx => { // Filtrelenmiş olanlar üzerinden childrenMap oluştur
+                    if (tx.parentId && transactionsMap.has(tx.parentId)) { // Sadece parent'ı da gösterilen transaction'lar için child oluştur
                         if (!childrenMap.has(tx.parentId)) childrenMap.set(tx.parentId, []);
                         childrenMap.get(tx.parentId).push(tx);
                     }
@@ -912,7 +951,8 @@
                                 ${hasChildren ? `<button class="transaction-toggle-btn" data-target-id="${tx.transactionId}">+</button>` : ''}
                                 <div class="transaction-node-content">
                                     <div class="transaction-info">
-                                        <div class="transaction-description">${tx.description || tx.type}</div> <div class="transaction-meta">${new Date(tx.timestamp).toLocaleString('tr-TR')} by ${tx.userEmail}${documentLinkHtml}</div>
+                                        <div class="transaction-description">${tx.description || tx.type}</div> 
+                                        <div class="transaction-meta">${new Date(tx.timestamp).toLocaleString('tr-TR')} by ${tx.userEmail}${documentLinkHtml}</div>
                                     </div>
                                     <div class="transaction-actions">
                                         <button class="transaction-action-btn btn-edit-transaction" onclick="portfolio.openEditTransactionModal('${recordId}', '${tx.transactionId}')" title="Düzenle">✏️</button>
@@ -925,8 +965,13 @@
                     return html;
                 };
 
-                const rootTransactions = allTransactions.filter(tx => !tx.parentId || !transactionsMap.has(tx.parentId));
+                // Sadece filtrelenmiş transaction'lar içinden kökleri bul
+                const rootTransactions = filteredTransactionsToDisplay.filter(tx => !tx.parentId || !transactionsMap.has(tx.parentId));
                 historyContainer.innerHTML = buildTreeHtml(rootTransactions);
+
+                if (rootTransactions.length === 0 && filteredTransactionsToDisplay.length === 0) {
+                    historyContainer.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Belge işlem geçmişi bulunmuyor veya gösterilebilir işlem yok.</p>';
+                }
             }
 
 
