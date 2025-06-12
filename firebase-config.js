@@ -294,13 +294,12 @@ export const ipRecordsService = {
             const currentData = currentDoc.data();
             let newTransactions = [...(currentData.transactions || [])]; 
 
-            // Dosya ekleme mantığını düzenliyoruz: sadece yeni dosyalar için transaction oluştur.
-            // Bu kısım, belge indeksleme modülünde child transaction oluşturmak için kullanılıyor.
+            // Dosya ekleme mantığını güncellendi: sadece yeni dosyalar için transaction oluştur.
             (updates.files || []).forEach(newFile => {
                 const isExistingFile = (currentData.files || []).some(oldFile => oldFile.id === newFile.id);
                 if (!isExistingFile) { 
-                    const transactionType = newFile.indexingType || (newFile.parentTransactionId ? "Document Sub-Indexed" : "Document Indexed"); // indexingType varsa onu kullan
-                    const transactionDescription = newFile.indexingName || newFile.name; // indexingName varsa onu kullan
+                    const transactionType = newFile.indexingType || (newFile.parentTransactionId ? "Document Sub-Indexed" : "Document Indexed");
+                    const transactionDescription = newFile.indexingName || newFile.name; // indexingName veya dosya adı
 
                     newTransactions.push({ 
                         transactionId: generateUUID(), 
@@ -512,7 +511,7 @@ export async function createDemoData() {
                     name: 'logo_ornek.jpg',
                     type: 'image/jpeg',
                     size: 1024,
-                    content: 'data:image/jpeg;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='
+                    content: 'data:image/jpeg;base64,iVBORw0KGgoAAAANSUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='
                 },
             }
         ];
