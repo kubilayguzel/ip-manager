@@ -224,7 +224,7 @@
             }
             
             setupEventListeners() {
-                document.getElementById('createTaskBtn').addEventListener('click', () => this.showTaskForm());
+                document.getElementById('createTaskBtn').addEventListener('click', () => {window.location.href = 'create-task.html';});
                 document.getElementById('cancelTaskFormBtn').addEventListener('click', () => this.showTaskList());
                 document.getElementById('taskForm').addEventListener('submit', (e) => this.handleFormSubmit(e));
                 document.getElementById('userFilter').addEventListener('change', () => this.renderTasks());
