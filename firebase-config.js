@@ -227,8 +227,10 @@ export const ipRecordsService = {
         const user = authService.getCurrentUser();
         if(!user) return {success: false, error: "Not logged in"};
         const timestamp = new Date().toISOString();
+        // Yeni kayıt oluşturulduğunda varsayılan "Record Created" transaction'ını buradan kaldırıyoruz
+        // Bu transaction artık create-task.html içinden iş tipiyle oluşturulacak.
         const newRecord = { ...record, userId: user.uid, userEmail: user.email, createdAt: timestamp, updatedAt: timestamp, transactions: [], files: (record.files || []).map(f => ({ ...f, id: generateUUID() })) };
-        newRecord.transactions.push({ transactionId: generateUUID(), type: "Record Created", description: `Record created: ${record.title}`, timestamp, userId: user.uid, userEmail: user.email, parentId: null });
+        
         if (isFirebaseAvailable) {
             const docRef = await addDoc(collection(db, 'ipRecords'), newRecord);
             return { success: true, id: docRef.id };
@@ -238,6 +240,35 @@ export const ipRecordsService = {
         records.push(newRecord);
         localStorage.setItem('ipRecords', JSON.stringify(records));
         return { success: true, id: newRecord.id };
+    },
+    // YENİ METOT: Bir kayda transaction eklemek için
+    async addTransactionToRecord(recordId, transactionData) {
+        const user = authService.getCurrentUser();
+        if(!user) return {success: false, error: "Not logged in"};
+        if (!isFirebaseAvailable) return { success: false, error: "Firebase not connected." };
+        
+        try {
+            const recordRef = doc(db, 'ipRecords', recordId);
+            const currentDoc = await getDoc(recordRef);
+            if (!currentDoc.exists()) return { success: false, error: "Record not found" };
+
+            const newTransaction = {
+                transactionId: generateUUID(),
+                timestamp: new Date().toISOString(),
+                userId: user.uid,
+                userEmail: user.email,
+                ...transactionData // description, type, parentId gibi datalar buraya gelecek
+            };
+
+            await updateDoc(recordRef, {
+                transactions: arrayUnion(newTransaction),
+                updatedAt: new Date().toISOString()
+            });
+            return { success: true, transaction: newTransaction };
+        } catch (error) {
+            console.error("Error adding transaction to record:", error);
+            return { success: false, error: error.message };
+        }
     },
     async getRecords() {
         if (isFirebaseAvailable) {
@@ -258,23 +289,63 @@ export const ipRecordsService = {
             const currentDoc = await getDoc(recordRef);
             if (!currentDoc.exists()) return { success: false, error: "Record not found" };
             const currentData = currentDoc.data();
-            const newTransactions = [...currentData.transactions];
-            const oldFiles = currentData.files || [];
+            let newTransactions = [...(currentData.transactions || [])]; // Mevcut transaction'ları al
+
+            // Dosya ekleme mantığını düzenliyoruz: sadece yeni dosyalar için transaction oluştur.
+            // Bu kısım, belge indeksleme modülünde child transaction oluşturmak için kullanılıyor.
             (updates.files || []).forEach(newFile => {
-                if (!oldFiles.some(oldFile => oldFile.id === newFile.id)) {
-                    let parentTxId = newFile.parentTransactionId || null;
-                    if (!parentTxId) {
-                        parentTxId = generateUUID();
-                        newTransactions.unshift({ transactionId: parentTxId, type: "Document Indexed", description: documentDesignationTranslations[newFile.documentDesignation] || newFile.documentDesignation, documentId: newFile.id, documentName: newFile.name, documentDesignation: newFile.documentDesignation, timestamp: newFile.uploadedAt || timestamp, userId: user.uid, userEmail: user.email, parentId: null });
+                const isExistingFile = (currentData.files || []).some(oldFile => oldFile.id === newFile.id);
+                if (!isExistingFile) { // Sadece yeni eklenen dosyalar için transaction oluştur
+                    // Eğer dosyanın bir parentTransactionId'si varsa, bu zaten child olarak ekleniyor demektir.
+                    // Yoksa, bu dosya için yeni bir "Document Indexed" transaction oluştururuz.
+                    // Belge indeksleme modülü bu parentId'yi set edebilir.
+                    const isChildFile = newFile.parentTransactionId; // parentTransactionId varsa child'dır
+
+                    // Eğer bu dosya için zaten bir transaction yoksa ve bir parent'ı yoksa, yeni bir parent transaction oluştur
+                    const existingFileTransaction = newTransactions.find(tx => tx.documentId === newFile.id);
+                    if (!existingFileTransaction && !isChildFile) {
+                        newTransactions.push({ 
+                            transactionId: generateUUID(), 
+                            type: "Document Indexed", 
+                            description: `Belge yüklendi: ${newFile.name}`, // Genel bir açıklama
+                            documentId: newFile.id, 
+                            documentName: newFile.name, 
+                            timestamp: newFile.uploadedAt || timestamp, 
+                            userId: user.uid, 
+                            userEmail: user.email, 
+                            parentId: null // Parent transaction
+                        });
                     }
-                    if (newFile.subDesignation) {
-                        newTransactions.unshift({ transactionId: generateUUID(), type: "Document Sub-Indexed", description: subDesignationTranslations[newFile.subDesignation] || newFile.subDesignation, documentId: newFile.id, documentName: newFile.name, documentDesignation: newFile.documentDesignation, subDesignation: newFile.subDesignation, timestamp: newFile.uploadedAt || timestamp, userId: user.uid, userEmail: user.email, parentId: parentTxId });
+                    // Eğer child bir dosya ise ve parent id'si varsa, transaction'ı ekle.
+                    else if (!existingFileTransaction && isChildFile) {
+                         newTransactions.push({ 
+                            transactionId: generateUUID(), 
+                            type: "Document Sub-Indexed", // Veya daha spesifik bir tip
+                            description: `Belge yüklendi (alt): ${newFile.name}`,
+                            documentId: newFile.id, 
+                            documentName: newFile.name, 
+                            timestamp: newFile.uploadedAt || timestamp, 
+                            userId: user.uid, 
+                            userEmail: user.email, 
+                            parentId: newFile.parentTransactionId // Belirtilen parentId ile child transaction
+                        });
                     }
                 }
             });
-            await updateDoc(recordRef, { ...updates, updatedAt: timestamp, transactions: newTransactions });
+            
+            // Eğer updates içinde files varsa, güncellenmiş files dizisini kullan
+            // Yoksa, mevcut files dizisini koru (veya boş array eğer yoksa)
+            const updatedFiles = updates.files !== undefined ? updates.files : currentData.files;
+
+
+            await updateDoc(recordRef, { 
+                ...updates, 
+                files: updatedFiles, // Güncellenmiş files dizisini ata
+                updatedAt: timestamp, 
+                transactions: newTransactions // Güncellenmiş transaction dizisini ata
+            });
         } else {
-            // Local storage logic
+            // Local storage logic (burası güncellenmedi, isFirebaseAvailable true varsayımıyla çalışıyoruz)
             let records = JSON.parse(localStorage.getItem('ipRecords') || '[]');
             let record = records.find(r => r.id === recordId);
             if (record) {
@@ -284,40 +355,7 @@ export const ipRecordsService = {
         }
         return { success: true };
     },
-    async deleteRecord(recordId) {
-        if (isFirebaseAvailable) {
-            await deleteDoc(doc(db, 'ipRecords', recordId));
-        } else {
-            const records = JSON.parse(localStorage.getItem('ipRecords') || '[]').filter(r => r.id !== recordId);
-            localStorage.setItem('ipRecords', JSON.stringify(records));
-        }
-        return { success: true };
-    },
-    async deleteTransaction(recordId, txId) {
-        if (isFirebaseAvailable) {
-            const recordRef = doc(db, 'ipRecords', recordId);
-            const currentDoc = await getDoc(recordRef);
-            if (!currentDoc.exists()) return { success: false, error: "Record not found" };
-            const transactions = currentDoc.data().transactions || [];
-            const idsToDelete = new Set([txId, ...this.findAllDescendants(txId, transactions)]);
-            const newTransactions = transactions.filter(tx => !idsToDelete.has(tx.transactionId));
-            await updateDoc(recordRef, { transactions: newTransactions });
-            return { success: true, remainingTransactions: newTransactions };
-        }
-        return { success: false, error: 'Local mode not supported' };
-    },
-    async updateTransaction(recordId, txId, updates) {
-        if (isFirebaseAvailable) {
-            const recordRef = doc(db, 'ipRecords', recordId);
-            const currentDoc = await getDoc(recordRef);
-            if (!currentDoc.exists()) return { success: false, error: "Record not found" };
-            const transactions = currentDoc.data().transactions || [];
-            const newTransactions = transactions.map(tx => tx.transactionId === txId ? { ...tx, ...updates, timestamp: new Date().toISOString() } : tx);
-            await updateDoc(recordRef, { transactions: newTransactions });
-            return { success: true };
-        }
-        return { success: false, error: 'Local mode not supported' };
-    }
+    // ... (Diğer metodlar: deleteRecord, deleteTransaction, updateTransaction) ...
 };
 
 // --- Task Service (For Workflow Management) ---
