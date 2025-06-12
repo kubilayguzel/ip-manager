@@ -324,8 +324,6 @@
                     this.allIpRecords = ipRecordsResult.data || [];
                     this.allPersons = personsResult.data || [];
                     this.allUsers = usersResult.data || [];
-                    // Debugging için kullanılan console.log satırı kaldırıldı
-                    // console.log('Tüm IP Kayıtları Yüklendi:', this.allIpRecords); 
                 } catch (error) {
                     console.error("Veri yüklenirken hata oluştu:", error);
                     alert("Gerekli veriler yüklenemedi, lütfen sayfayı yenileyin.");
@@ -370,8 +368,19 @@
                 this.resetSelections();
                 document.getElementById('saveTaskBtn').disabled = true;
 
-                const transactionLikeTasks = ['Devir', 'Lisans', 'Birleşme', 'Rehin'];
-                const simpleTasks = ['Yenileme', 'Tescil Belgesi Talebi'];
+                const transactionLikeTasks = ['Devir', 'Lisans', 'Birleşme', 'Rehin', 'Veraset ile İntikal', 'Rehin/Teminat']; // Yeni tipler eklendi
+                const simpleTasks = [
+                    'Yenileme',
+                    'Tescil Belgesi Talebi',
+                    'Tescil Belgesi Sureti', // Yeni tip eklendi
+                    'Sicil Sureti',          // Yeni tip eklendi
+                    'Menşe Memleket Belgesi',// Yeni tip eklendi
+                    'Bölünme',               // Yeni tip eklendi
+                    'Vazgeçme',              // Yeni tip eklendi
+                    '3.Kişi Görüşü',         // Yeni tip eklendi
+                    'Muvaffakat Sunumu',     // Yeni tip eklendi
+                    'Eşya Sınırlandırma'     // Yeni tip eklendi
+                ];
 
                 if (transactionLikeTasks.includes(taskType)) {
                     this.renderGenericTransactionForm(container, taskType);
@@ -381,7 +390,7 @@
             }
 
             renderGenericTransactionForm(container, taskType) {
-                const partyLabels = { 'Devir': 'Devralan Taraf', 'Lisans': 'Lisans Alan Taraf', 'Rehin': 'Rehin Alan Taraf', 'Birleşme': 'Birleşilen Taraf' };
+                const partyLabels = { 'Devir': 'Devralan Taraf', 'Lisans': 'Lisans Alan Taraf', 'Rehin': 'Rehin Alan Taraf', 'Birleşme': 'Birleşilen Taraf', 'Veraset ile İntikal': 'Mirasçı', 'Rehin/Teminat': 'Rehin Alan Taraf' }; // Yeni etiketler eklendi
                 const partyLabel = partyLabels[taskType] || 'İlgili Taraf';
 
                 container.innerHTML = `
@@ -548,7 +557,7 @@
                 this.selectedRelatedParty = person;
                 const display = document.getElementById('selectedRelatedPartyDisplay');
                 const taskType = document.getElementById('specificTaskType').value;
-                const label = { 'Devir': 'Devralan', 'Lisans': 'Lisans Alan', 'Rehin': 'Rehin Alan', 'Birleşme': 'Birleşilen Taraf' }[taskType] || 'İlgili Taraf';
+                const label = { 'Devir': 'Devralan', 'Lisans': 'Lisans Alan', 'Rehin': 'Rehin Alan', 'Birleşme': 'Birleşilen Taraf', 'Veraset ile İntikal': 'Mirasçı', 'Rehin/Teminat': 'Rehin Alan Taraf' }[taskType] || 'İlgili Taraf'; // Yeni etiketler güncellendi
                 display.innerHTML = `<p><b>Seçilen ${label}:</b> ${this.selectedRelatedParty.name}</p>`;
                 display.style.display = 'block';
                 document.getElementById('personSearchResults').innerHTML = '';
@@ -613,8 +622,19 @@
             
             checkFormCompleteness() {
                 const taskType = document.getElementById('specificTaskType').value;
-                const transactionLikeTasks = ['Devir', 'Lisans', 'Birleşme', 'Rehin'];
-                const simpleTasks = ['Yenileme', 'Tescil Belgesi Talebi'];
+                const transactionLikeTasks = ['Devir', 'Lisans', 'Birleşme', 'Rehin', 'Veraset ile İntikal', 'Rehin/Teminat'];
+                const simpleTasks = [
+                    'Yenileme',
+                    'Tescil Belgesi Talebi',
+                    'Tescil Belgesi Sureti',
+                    'Sicil Sureti',
+                    'Menşe Memleket Belgesi',
+                    'Bölünme',
+                    'Vazgeçme',
+                    '3.Kişi Görüşü',
+                    'Muvaffakat Sunumu',
+                    'Eşya Sınırlandırma'
+                ];
                 let isComplete = false;
                 if (transactionLikeTasks.includes(taskType)) {
                     if (this.selectedIpRecord && this.selectedRelatedParty) {
@@ -649,7 +669,7 @@
                     title: `${specificTaskType} İşlemi: ${this.selectedIpRecord.title}`
                 };
 
-                const transactionLikeTasks = ['Devir', 'Lisans', 'Birleşme', 'Rehin'];
+                const transactionLikeTasks = ['Devir', 'Lisans', 'Birleşme', 'Rehin', 'Veraset ile İntikal', 'Rehin/Teminat'];
                 if (transactionLikeTasks.includes(specificTaskType)) {
                     taskData.description = `'${this.selectedIpRecord.title}' adlı varlık için ${specificTaskType} işlemi. İlgili taraf: '${this.selectedRelatedParty.name}'.`;
                     taskData.details = { relatedParty: this.selectedRelatedParty };
