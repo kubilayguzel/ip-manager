@@ -19,7 +19,8 @@ import {
     orderBy,
     where,
     getDoc, 
-    setDoc
+    setDoc,
+    arrayUnion
 } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
 // --- Firebase App Initialization ---
@@ -408,6 +409,73 @@ export const taskService = {
         }
     }
 };
+
+// --- YENİ EKLENEN FONKSİYON ---
+export async function createDemoData() {
+    console.log('🧪 Creating demo data...');
+    const user = authService.getCurrentUser();
+    if (!user) {
+        console.error('No user logged in to create demo data for.');
+        return;
+    }
+
+    try {
+        // 1. Örnek bir kişi oluştur
+        const demoPerson = {
+            name: 'Demo Hak Sahibi',
+            type: 'individual',
+            email: `demo.owner.${Date.now()}@example.com`,
+            phone: '0555 123 4567',
+            address: 'Demo Adres, No:1, İstanbul'
+        };
+        const personResult = await personsService.addPerson(demoPerson);
+        if (!personResult.success) {
+            console.error("Failed to create demo person:", personResult.error);
+            return;
+        }
+        const demoOwner = { id: personResult.data.id, name: personResult.data.name, type: personResult.data.type };
+
+        // 2. Örnek IP kayıtlarını tanımla
+        const demoRecords = [
+            {
+                type: 'patent',
+                title: 'Örnek Mobil Cihaz Batarya Teknolojisi',
+                status: 'application',
+                applicationNumber: 'PT/2024/001',
+                applicationDate: '2024-03-15',
+                description: 'Bu, lityum-iyon pillerin ömrünü uzatan yeni bir batarya teknolojisi için yapılmış bir demo patent başvurusudur.',
+                owners: [demoOwner]
+            },
+            {
+                type: 'trademark',
+                title: 'Hızlı Kargo Lojistik',
+                status: 'registered',
+                applicationNumber: 'TM/2023/105',
+                applicationDate: '2023-11-20',
+                registrationDate: '2024-05-10',
+                description: 'Lojistik ve kargo hizmetleri için tescilli bir marka demosu.',
+                owners: [demoOwner],
+                trademarkImage: {
+                    name: 'logo_ornek.jpg',
+                    type: 'image/jpeg',
+                    size: 1024,
+                    content: 'data:image/jpeg;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='
+                },
+            }
+        ];
+
+        // 3. Kayıtları veritabanına ekle
+        for (const record of demoRecords) {
+            await ipRecordsService.addRecord(record);
+        }
+
+        console.log('✅ Demo data created successfully!');
+
+    } catch (error) {
+        console.error('Error creating demo data:', error);
+    }
+}
+
 
 // --- Exports ---
 export { subDesignationTranslations, documentDesignationTranslations };
