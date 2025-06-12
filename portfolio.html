@@ -546,9 +546,8 @@
             cursor: pointer;
         }
         
-        /* GÜNCELLEME: Modal içindeki marka örneği için stil */
         .detail-trademark-image-container {
-            grid-column: 1 / -1; /* Tam genişlik kaplasın */
+            grid-column: 1 / -1; 
             text-align: center;
             padding: 15px;
             background-color: #f8f9fa;
@@ -866,8 +865,8 @@
                 <button class="close-btn" id="closeModalBtn">&times;</button>
             </div>
             <div id="modalBody">
-                </div>
-            <h4 class="detail-section-title" style="margin-top: 30px;">İşlem Geçmişi</h4>
+            </div>
+            <h4 class="detail-section-title" style="margin-top: 30px;">Belge İşlem Geçmişi</h4>
             <div class="transaction-history" id="transactionHistory">
                 <p style="text-align: center; color: #666;">Yükleniyor...</p>
             </div>
@@ -1169,7 +1168,6 @@
 
                 let modalContentHtml = `<div class="detail-grid">`;
                 
-                // --- Genel Bilgiler ---
                 modalContentHtml += `<h4 class="detail-section-title">Genel Bilgiler</h4>`;
                 modalContentHtml += renderField('Tür', `<span class="ip-type ${record.type}">${typeNames[record.type] || 'Bilinmiyor'}</span>`);
                 modalContentHtml += renderField('Başlık', record.title);
@@ -1183,7 +1181,6 @@
                     modalContentHtml += renderField('Oluşturan Kullanıcı', record.userEmail);
                 }
 
-                // --- Türe Özel Bilgiler ---
                 if (record.type === 'patent') {
                     modalContentHtml += `<h4 class="detail-section-title">Patent Detayları</h4>`;
                     modalContentHtml += renderField('Patent Sınıfı', record.patentClass);
@@ -1222,14 +1219,12 @@
                     modalContentHtml += renderLongTextField('Tasarım Özellikleri', record.designFeatures);
                 }
                 
-                // --- Açıklama ve Notlar ---
                 modalContentHtml += `<h4 class="detail-section-title">Açıklama</h4>`;
                 modalContentHtml += renderLongTextField('Açıklama', record.description);
                 
                 modalContentHtml += `</div>`;
                 document.getElementById('modalBody').innerHTML = modalContentHtml;
 
-                // --- İşlem Geçmişi ---
                 this.renderTransactionHistory(record.id, record.transactions, record.files);
                 
                 modal.classList.add('show');
@@ -1238,19 +1233,33 @@
             renderTransactionHistory(recordId, transactions, recordFiles) {
                 const historyContainer = document.getElementById('transactionHistory');
                 historyContainer.innerHTML = '';
+
                 if (!transactions || transactions.length === 0) {
-                    historyContainer.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">İşlem geçmişi bulunmuyor.</p>';
+                    historyContainer.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Belge işlem geçmişi bulunmuyor.</p>';
                     return;
                 }
-                const sortedTransactions = [...transactions].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+                // GÜNCELLEME: Sadece belge indeksleme ile ilgili transaction'ları filtrele
+                const documentTransactions = transactions.filter(tx => 
+                    tx.type === "Document Indexed" || tx.type === "Document Sub-Indexed"
+                );
+
+                if (documentTransactions.length === 0) {
+                    historyContainer.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Belge işlem geçmişi bulunmuyor.</p>';
+                    return;
+                }
+
+                const sortedTransactions = [...documentTransactions].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
                 const transactionsMap = new Map(sortedTransactions.map(tx => [tx.transactionId, tx]));
                 const childrenMap = new Map();
+                
                 sortedTransactions.forEach(tx => {
                     if (tx.parentId) {
                         if (!childrenMap.has(tx.parentId)) childrenMap.set(tx.parentId, []);
                         childrenMap.get(tx.parentId).push(tx);
                     }
                 });
+
                 const buildTreeHtml = (transactionsToBuild) => {
                     let html = '';
                     transactionsToBuild.forEach(tx => {
@@ -1279,9 +1288,11 @@
                     });
                     return html;
                 };
+
                 const rootTransactions = sortedTransactions.filter(tx => !tx.parentId || !transactionsMap.has(tx.parentId));
                 historyContainer.innerHTML = buildTreeHtml(rootTransactions);
             }
+
 
             editRecord(recordId) { window.location.href = `data-entry.html?recordId=${recordId}`; }
 
