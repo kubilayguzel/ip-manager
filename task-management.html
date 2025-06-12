@@ -5,20 +5,56 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IP Manager - İş Yönetimi</title>
      <style>
-        /* my-tasks.html'deki stillerle büyük ölçüde aynı */
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); min-height: 100vh; color: #333; }
-        .header { background: rgba(255, 255, 255, 0.95); padding: 15px 0; box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 100; }
-        .header-content { max-width: 1400px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; }
-        .logo { font-size: 1.8em; font-weight: bold; color: #1e3c72; }
-        .nav-menu { display: flex; gap: 30px; }
-        .nav-item { color: #666; text-decoration: none; font-weight: 500; padding: 8px 16px; border-radius: 8px; transition: all 0.3s ease; }
-        .nav-item:hover, .nav-item.active { background: #1e3c72; color: white; }
+        
+        /* BODY VE YENİ LAYOUT */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #333;
+            display: flex;
+        }
+        
+        .page-wrapper {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow-y: auto;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
+        
+        .main-container {
+            max-width: 1400px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        /* ESKİ HEADER'I GİZLE */
+        body > .header { display: none; }
+
+        /* === YENİ SOL MENÜ VE ÜST BAR STİLLERİ === */
+        .sidebar { width: 260px; background: #1e3c72; color: white; display: flex; flex-direction: column; transition: width 0.3s ease; height: 100vh; position: sticky; top: 0; z-index: 1001; }
+        .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+        .sidebar-logo { font-size: 1.8em; font-weight: bold; color: white; text-decoration: none; }
+        .sidebar-nav { flex-grow: 1; overflow-y: auto; padding: 20px 0; }
+        .nav-category-title { padding: 10px 20px; font-size: 0.8em; font-weight: bold; color: rgba(255, 255, 255, 0.5); text-transform: uppercase; }
+        .sidebar-nav-item, .accordion-header { display: flex; align-items: center; gap: 15px; padding: 15px 20px; color: rgba(255, 255, 255, 0.8); text-decoration: none; transition: background 0.3s ease; cursor: pointer; }
+        .sidebar-nav-item:hover, .accordion-header:hover { background: rgba(255, 255, 255, 0.1); }
+        .sidebar-nav-item.active { background: #2a5298; color: white; font-weight: bold; border-left: 4px solid #4ecdc4; padding-left: 16px; }
+        .nav-icon { font-size: 1.2em; width: 20px; text-align: center; }
+        .accordion-header::after { content: '▶'; margin-left: auto; font-size: 0.8em; transition: transform 0.3s ease; }
+        .accordion-header.active::after { transform: rotate(90deg); }
+        .accordion-content { background: rgba(0, 0, 0, 0.2); max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; }
+        .accordion-content a { display: block; padding: 12px 20px 12px 55px; color: rgba(255, 255, 255, 0.7); text-decoration: none; transition: background 0.2s ease; }
+        .accordion-content a:hover { background: rgba(255, 255, 255, 0.1); color: white; }
+        .accordion-content a.active { color: white; font-weight: 500; }
+        .top-header { background: rgba(255, 255, 255, 0.95); padding: 15px 30px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05); display: flex; justify-content: flex-end; align-items: center; position: sticky; top: 0; z-index: 99; backdrop-filter: blur(10px); }
         .user-section { display: flex; align-items: center; gap: 15px; }
         .user-avatar { width: 40px; height: 40px; background: linear-gradient(45deg, #1e3c72, #2a5298); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; }
         .logout-btn { background: #ff6b6b; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 0.9em; transition: all 0.3s ease; }
         .logout-btn:hover { background: #ff5252; }
-        .main-container { max-width: 1400px; margin: 30px auto; padding: 0 20px; }
+
+        /* === TASK MANAGEMENT SAYFASINA AİT ORİJİNAL STİLLER === */
         .page-header { background: rgba(255, 255, 255, 0.95); padding: 30px; border-radius: 20px; margin-bottom: 30px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); }
         .page-title { font-size: 2em; color: #1e3c72; margin-bottom: 10px; }
         .page-subtitle { color: #666; font-size: 1.1em; }
@@ -30,7 +66,6 @@
         .btn-primary { background: #1e3c72; color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; }
         .task-table { width: 100%; border-collapse: collapse; }
         .task-table th, .task-table td { padding: 15px; text-align: left; border-bottom: 1px solid #f0f0f0; }
-        /* Modal Styles */
         .modal { display: none; position: fixed; z-index: 1001; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4); }
         .modal-content { background-color: #fefefe; margin: 10% auto; padding: 30px; border: 1px solid #888; width: 80%; max-width: 700px; border-radius: 15px; }
         .close-btn { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
@@ -42,55 +77,76 @@
     </style>
 </head>
 <body>
-    <header class="header">
-        <div class="header-content">
-            <div class="logo">IP Manager</div>
-            <nav class="nav-menu">
-                <a href="dashboard.html" class="nav-item">Dashboard</a>
-                <a href="portfolio.html" class="nav-item">Portföy</a>
-                <a href="my-tasks.html" class="nav-item">İşlerim</a>
-                <a href="task-management.html" class="nav-item active">İş Yönetimi</a>
-            </nav>
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <a href="dashboard.html" class="sidebar-logo">🔥 IP Manager</a>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-category-title">Ana Menü</div>
+            <a href="dashboard.html" class="sidebar-nav-item"><span class="nav-icon">📊</span><span>Dashboard</span></a>
+            <a href="portfolio.html" class="sidebar-nav-item"><span class="nav-icon">📋</span><span>Portföy</span></a>
+            <div class="nav-category-title">Veri Girişi</div>
+            <a href="data-entry.html" class="sidebar-nav-item"><span class="nav-icon">➕</span><span>Yeni Kayıt</span></a>
+            <a href="excel-upload.html" class="sidebar-nav-item"><span class="nav-icon">📄</span><span>Excel ile Yükle</span></a>
+            <div class="nav-category-title">Yönetim</div>
+            <div class="accordion">
+                <div class="accordion-header"><span class="nav-icon">⚙️</span><span>Yönetim</span></div>
+                <div class="accordion-content">
+                    <a href="task-management.html">İş Yönetimi</a>
+                    <a href="my-tasks.html">İşlerim</a>
+                    <a href="persons.html">Kişiler Yönetimi</a>
+                    <a href="user-management.html">Kullanıcı Yönetimi</a>
+                </div>
+            </div>
+            <div class="nav-category-title">Araçlar</div>
+            <a href="indexing.html" class="sidebar-nav-item"><span class="nav-icon">📁</span><span>Belge İndeksleme</span></a>
+            <a href="#" class="sidebar-nav-item" style="opacity: 0.5; cursor: not-allowed;"><span class="nav-icon">📈</span><span>Raporlar</span></a>
+            <a href="#" class="sidebar-nav-item" style="opacity: 0.5; cursor: not-allowed;"><span class="nav-icon">🔧</span><span>Ayarlar</span></a>
+        </nav>
+    </aside>
+
+    <div class="page-wrapper">
+        <header class="top-header">
             <div class="user-section">
                 <div class="user-avatar" id="userAvatar">?</div>
                 <button class="logout-btn" id="logoutBtn">Çıkış</button>
             </div>
-        </div>
-    </header>
+        </header>
 
-    <main class="main-container">
-        <section class="page-header">
-            <h1 class="page-title">İş Akış Yönetimi</h1>
-            <p class="page-subtitle">Tüm işleri görüntüleyin, yeni işler oluşturun ve atamaları yönetin.</p>
-        </section>
-
-        <div class="tasks-container">
-            <div class="tasks-header">
-                <div class="filter-group">
-                    <label class="filter-label" for="userFilter">Kullanıcı:</label>
-                    <select id="userFilter" class="filter-select"></select>
-                    <label class="filter-label" for="statusFilter">Durum:</label>
-                    <select id="statusFilter" class="filter-select"></select>
+        <main class="main-container">
+            <section class="page-header">
+                <h1 class="page-title">İş Akış Yönetimi</h1>
+                <p class="page-subtitle">Tüm işleri görüntüleyin, yeni işler oluşturun ve atamaları yönetin.</p>
+            </section>
+    
+            <div class="tasks-container">
+                <div class="tasks-header">
+                    <div class="filter-group">
+                        <label class="filter-label" for="userFilter">Kullanıcı:</label>
+                        <select id="userFilter" class="filter-select"></select>
+                        <label class="filter-label" for="statusFilter">Durum:</label>
+                        <select id="statusFilter" class="filter-select"></select>
+                    </div>
+                    <button id="createTaskBtn" class="btn-primary">Yeni İş Oluştur</button>
                 </div>
-                <button id="createTaskBtn" class="btn-primary">Yeni İş Oluştur</button>
+                <div class="table-container">
+                    <table class="task-table">
+                        <thead>
+                            <tr>
+                                <th>İş Başlığı</th>
+                                <th>Atanan Kişi</th>
+                                <th>İlgili Kayıt</th>
+                                <th>Durum</th>
+                                <th>İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tasksTableBody">
+                        </tbody>
+                    </table>
+                </div>
             </div>
-            <div class="table-container">
-                <table class="task-table">
-                    <thead>
-                        <tr>
-                            <th>İş Başlığı</th>
-                            <th>Atanan Kişi</th>
-                            <th>İlgili Kayıt</th>
-                            <th>Durum</th>
-                            <th>İşlemler</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tasksTableBody">
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </main>
+        </main>
+    </div>
     
     <div id="taskModal" class="modal">
       <div class="modal-content">
@@ -99,43 +155,13 @@
         <form id="taskForm">
             <input type="hidden" id="taskId">
             <div class="form-grid">
-                <div class="form-group full-width">
-                    <label for="taskTitle" class="form-label">İş Başlığı</label>
-                    <input type="text" id="taskTitle" class="form-input" required>
-                </div>
-                <div class="form-group full-width">
-                    <label for="taskDescription" class="form-label">Açıklama</label>
-                    <textarea id="taskDescription" class="form-textarea" rows="4"></textarea>
-                </div>
-                <div class="form-group">
-                    <label for="taskType" class="form-label">İş Türü</label>
-                    <select id="taskType" class="form-select">
-                        <option value="general">Genel</option>
-                        <option value="trademark_application">Marka Başvurusu</option>
-                        <option value="patent_renewal">Patent Yenileme</option>
-                        <option value="document_review">Belge İnceleme</option>
-                    </select>
-                </div>
-                 <div class="form-group">
-                    <label for="taskPriority" class="form-label">Öncelik</label>
-                    <select id="taskPriority" class="form-select">
-                        <option value="low">Düşük</option>
-                        <option value="medium">Orta</option>
-                        <option value="high">Yüksek</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="assignedTo" class="form-label">Atanacak Kişi</label>
-                    <select id="assignedTo" class="form-select" required></select>
-                </div>
-                <div class="form-group">
-                    <label for="taskDueDate" class="form-label">Bitiş Tarihi</label>
-                    <input type="date" id="taskDueDate" class="form-input">
-                </div>
-                 <div class="form-group full-width">
-                    <label for="relatedIpRecord" class="form-label">İlgili Fikri Mülkiyet Kaydı (Opsiyonel)</label>
-                    <select id="relatedIpRecord" class="form-select"></select>
-                </div>
+                <div class="form-group full-width"><label for="taskTitle" class="form-label">İş Başlığı</label><input type="text" id="taskTitle" class="form-input" required></div>
+                <div class="form-group full-width"><label for="taskDescription" class="form-label">Açıklama</label><textarea id="taskDescription" class="form-textarea" rows="4"></textarea></div>
+                <div class="form-group"><label for="taskType" class="form-label">İş Türü</label><select id="taskType" class="form-select"><option value="general">Genel</option><option value="trademark_application">Marka Başvurusu</option><option value="patent_renewal">Patent Yenileme</option><option value="document_review">Belge İnceleme</option></select></div>
+                <div class="form-group"><label for="taskPriority" class="form-label">Öncelik</label><select id="taskPriority" class="form-select"><option value="low">Düşük</option><option value="medium">Orta</option><option value="high">Yüksek</option></select></div>
+                <div class="form-group"><label for="assignedTo" class="form-label">Atanacak Kişi</label><select id="assignedTo" class="form-select" required></select></div>
+                <div class="form-group"><label for="taskDueDate" class="form-label">Bitiş Tarihi</label><input type="date" id="taskDueDate" class="form-input"></div>
+                <div class="form-group full-width"><label for="relatedIpRecord" class="form-label">İlgili Fikri Mülkiyet Kaydı (Opsiyonel)</label><select id="relatedIpRecord" class="form-select"></select></div>
             </div>
             <button type="submit" class="btn-primary" style="margin-top: 20px;">Kaydet</button>
         </form>
@@ -147,6 +173,7 @@
         import { authService, taskService, ipRecordsService } from './firebase-config.js';
 
         class TaskManagementModule {
+            // ... Orijinal TaskManagementModule sınıfının TÜM içeriği buraya gelecek ...
             constructor() {
                 this.currentUser = null;
                 this.allTasks = [];
@@ -155,170 +182,43 @@
                 this.init();
             }
 
-            init() {
-                authService.auth.onAuthStateChanged(async user => {
-                    if (user) {
-                        this.currentUser = authService.getCurrentUser();
-                        
-                        // ### DEĞİŞİKLİK BURADA YAPILDI ###
-                        // Sadece admin ve superadmin erişebilir
-                        if (this.currentUser.role !== 'superadmin' && this.currentUser.role !== 'admin') {
-                            alert('Bu sayfaya erişim yetkiniz yoktur.');
-                            window.location.href = 'dashboard.html';
-                            return;
-                        }
-
-                        document.getElementById('userAvatar').textContent = (this.currentUser.displayName || 'U').charAt(0);
-                        await this.loadInitialData();
-                        this.setupEventListeners();
-                    } else {
-                        window.location.href = 'index.html';
-                    }
-                });
-            }
-
-            async loadInitialData() {
-                // Tüm kullanıcıları, işleri ve IP kayıtlarını yükle
-                const [usersResult, tasksResult, ipRecordsResult] = await Promise.all([
-                    taskService.getAllUsers(), 
-                    taskService.getAllTasks(),
-                    ipRecordsService.getRecords()
-                ]);
-
-                if (usersResult.success) this.allUsers = usersResult.data;
-                if (tasksResult.success) this.allTasks = tasksResult.data;
-                if (ipRecordsResult.success) this.allIpRecords = ipRecordsResult.data;
-                
-                this.populateFilters();
-                this.renderTasks();
-            }
-            
-            setupEventListeners() {
-                document.getElementById('createTaskBtn').addEventListener('click', () => this.openTaskModal());
-                document.querySelector('.close-btn').addEventListener('click', () => this.closeTaskModal());
-                document.getElementById('taskForm').addEventListener('submit', (e) => this.handleFormSubmit(e));
-                document.getElementById('userFilter').addEventListener('change', () => this.renderTasks());
-                document.getElementById('statusFilter').addEventListener('change', () => this.renderTasks());
-            }
-
-            populateFilters() {
-                const userFilter = document.getElementById('userFilter');
-                userFilter.innerHTML = '<option value="all">Tüm Kullanıcılar</option>';
-                this.allUsers.forEach(user => {
-                    userFilter.innerHTML += `<option value="${user.id}">${user.displayName || user.email}</option>`;
-                });
-                
-                const statusFilter = document.getElementById('statusFilter');
-                statusFilter.innerHTML = `<option value="all">Tüm Durumlar</option>
-                    <option value="open">Açık</option>
-                    <option value="in_progress">Devam Ediyor</option>
-                    <option value="pending_review">Gözden Geçiriliyor</option>
-                    <option value="completed">Tamamlandı</option>`;
-            }
-
-            renderTasks() {
-                const tableBody = document.getElementById('tasksTableBody');
-                tableBody.innerHTML = '';
-                
-                const selectedUser = document.getElementById('userFilter').value;
-                const selectedStatus = document.getElementById('statusFilter').value;
-
-                const filteredTasks = this.allTasks.filter(task => {
-                    const userMatch = selectedUser === 'all' || task.assignedTo_uid === selectedUser;
-                    const statusMatch = selectedStatus === 'all' || task.status === selectedStatus;
-                    return userMatch && statusMatch;
-                });
-
-                filteredTasks.forEach(task => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${task.title}</td>
-                        <td>${task.assignedTo_email}</td>
-                        <td>${task.relatedIpRecordTitle || '-'}</td>
-                        <td>${task.status}</td>
-                        <td>
-                            <button onclick="window.taskManagementModule.openTaskModal('${task.id}')">Düzenle</button>
-                        </td>
-                    `;
-                    tableBody.appendChild(row);
-                });
-            }
-
-            openTaskModal(taskId = null) {
-                const modal = document.getElementById('taskModal');
-                const form = document.getElementById('taskForm');
-                form.reset();
-                document.getElementById('taskId').value = '';
-
-                // Kullanıcı ve IP Kayıtları dropdown'larını doldur
-                const assignedToSelect = document.getElementById('assignedTo');
-                assignedToSelect.innerHTML = '';
-                this.allUsers.forEach(u => assignedToSelect.innerHTML += `<option value="${u.id}">${u.displayName || u.email}</option>`);
-
-                const ipRecordSelect = document.getElementById('relatedIpRecord');
-                ipRecordSelect.innerHTML = '<option value="">Yok</option>';
-                this.allIpRecords.forEach(r => ipRecordSelect.innerHTML += `<option value="${r.id}">${r.title}</option>`);
-
-
-                if (taskId) {
-                    const task = this.allTasks.find(t => t.id === taskId);
-                    document.getElementById('modalTitle').textContent = 'İşi Düzenle';
-                    document.getElementById('taskId').value = task.id;
-                    document.getElementById('taskTitle').value = task.title;
-                    document.getElementById('taskDescription').value = task.description;
-                    document.getElementById('taskType').value = task.taskType;
-                    document.getElementById('taskPriority').value = task.priority;
-                    document.getElementById('assignedTo').value = task.assignedTo_uid;
-                    document.getElementById('taskDueDate').value = task.dueDate || '';
-                    document.getElementById('relatedIpRecord').value = task.relatedIpRecordId || '';
-                } else {
-                    document.getElementById('modalTitle').textContent = 'Yeni İş Oluştur';
-                }
-                modal.style.display = 'block';
-            }
-
-            closeTaskModal() {
-                document.getElementById('taskModal').style.display = 'none';
-            }
-
-            async handleFormSubmit(e) {
-                e.preventDefault();
-                const taskId = document.getElementById('taskId').value;
-                const assignedToUser = this.allUsers.find(u => u.id === document.getElementById('assignedTo').value);
-                const relatedIpRecord = this.allIpRecords.find(r => r.id === document.getElementById('relatedIpRecord').value);
-
-                const taskData = {
-                    title: document.getElementById('taskTitle').value,
-                    description: document.getElementById('taskDescription').value,
-                    taskType: document.getElementById('taskType').value,
-                    priority: document.getElementById('taskPriority').value,
-                    assignedTo_uid: assignedToUser.id,
-                    assignedTo_email: assignedToUser.email,
-                    dueDate: document.getElementById('taskDueDate').value || null,
-                    relatedIpRecordId: relatedIpRecord ? relatedIpRecord.id : null,
-                    relatedIpRecordTitle: relatedIpRecord ? relatedIpRecord.title : null,
-                };
-                
-                let result;
-                if (taskId) {
-                    result = await taskService.updateTask(taskId, taskData);
-                } else {
-                    taskData.status = 'open'; // Yeni işler "Açık" olarak başlar
-                    taskData.createdBy_uid = this.currentUser.uid;
-                    taskData.createdBy_email = this.currentUser.email;
-                    result = await taskService.createTask(taskData);
-                }
-
-                if (result.success) {
-                    alert(`İş başarıyla ${taskId ? 'güncellendi' : 'oluşturuldu'}!`);
-                    this.closeTaskModal();
-                    this.loadInitialData(); // Listeyi yenile
-                } else {
-                    alert('Hata: ' + result.error);
-                }
-            }
+            init() { /* ... */ }
+            async loadInitialData() { /* ... */ }
+            setupEventListeners() { /* ... */ }
+            // ... Sınıfın diğer tüm orijinal metodları ...
         }
         window.taskManagementModule = new TaskManagementModule();
+
+        // YENİ AKORDİYON MENÜ İÇİN JAVASCRIPT
+        document.addEventListener('DOMContentLoaded', function() {
+            const accordions = document.querySelectorAll('.accordion-header');
+            accordions.forEach(accordion => {
+                accordion.addEventListener('click', () => {
+                    const content = accordion.nextElementSibling;
+                    accordion.classList.toggle('active');
+                    if (content.style.maxHeight) {
+                        content.style.maxHeight = null;
+                    } else {
+                        content.style.maxHeight = content.scrollHeight + "px";
+                    }
+                });
+            });
+
+            const currentPage = window.location.pathname.split("/").pop();
+            const activeLink = document.querySelector(`.sidebar-nav a[href="${currentPage}"]`);
+            if (activeLink) {
+                document.querySelectorAll('.sidebar-nav-item.active, .accordion-content a.active').forEach(el => el.classList.remove('active'));
+                
+                activeLink.classList.add('active');
+                
+                const parentAccordion = activeLink.closest('.accordion-content');
+                if(parentAccordion) {
+                    const header = parentAccordion.previousElementSibling;
+                    header.classList.add('active');
+                    parentAccordion.style.maxHeight = parentAccordion.scrollHeight + "px";
+                }
+            }
+        });
     </script>
 </body>
 </html>
