@@ -146,12 +146,25 @@ export const authService = {
     },
 
     async signUp(email, password, displayName, initialRole = 'user') {
-        if (!this.isFirebaseAvailable) return this.localSignUp(email, password, displayName, initialRole);
+        if (!this.isFirebaseAvailable) {
+            // Firebase yoksa sadece local'de işlem yap
+            return this.localSignUp(email, password, displayName, initialRole);
+        }
+        
         try {
+            // 1. Firebase Authentication'a kullanıcıyı kaydet
             const result = await createUserWithEmailAndPassword(auth, email, password);
             const user = result.user;
-            await updateProfile(user, { displayName: displayName });
+            
+            // 2. Kullanıcının profilindeki adını güncelle
+            await updateProfile(user, {
+                displayName: displayName
+            });
+
+            // 3. GÜNCELLEME: Firestore'daki 'users' koleksiyonuna kullanıcıyı ve rolünü kaydet
             await this.setUserRole(user.uid, email, displayName, initialRole);
+            
+            // 4. LocalStorage için kullanıcı verisini hazırla
             const userData = {
                 uid: user.uid,
                 email: user.email,
@@ -160,8 +173,14 @@ export const authService = {
                 isSuperAdmin: initialRole === 'superadmin'
             };
             localStorage.setItem('currentUser', JSON.stringify(userData));
-            return { success: true, user: userData, message: 'Hesap oluşturuldu' };
+
+            return {
+                success: true,
+                user: userData,
+                message: 'Hesap oluşturuldu'
+            };
         } catch (error) {
+            console.error('Firebase sign up error:', error);
             return { success: false, error: error.message || 'Kayıt olurken bir hata oluştu.' };
         }
     },
@@ -396,17 +415,13 @@ export const ipRecordsService = {
                 });
             }
 
-            // YENİ: GÜNCELLENMİŞ Transaction Ekleme Mantığı
             newFiles.forEach(newFile => {
-                // Sadece yeni eklenmiş dosyalar için işlem yap
                 if (!oldFiles.some(oldF => oldF.id === newFile.id)) {
                     
                     let parentTxId = newFile.parentTransactionId || null;
                     
-                    // 1. Adım: Ana işlemi belirle
-                    // Eğer kullanıcı mevcut bir işlemi parent olarak seçmediyse, yeni bir ana işlem oluştur.
                     if (!parentTxId) {
-                        parentTxId = generateUUID(); // Yeni ana işlem için ID oluştur
+                        parentTxId = generateUUID();
                         const mainTxDescription = documentDesignationTranslations[newFile.documentDesignation] || newFile.documentDesignation || "Belge indekslendi.";
                         newTransactions.unshift({
                             transactionId: parentTxId,
@@ -418,12 +433,10 @@ export const ipRecordsService = {
                             timestamp: newFile.uploadedAt || updatedTimestamp,
                             userId: user.uid,
                             userEmail: user.email,
-                            parentId: null // Yeni ana işlemlerin parent'ı olmaz
+                            parentId: null
                         });
                     }
 
-                    // 2. Adım: Varsa, alt işlemi oluştur ve ana işleme bağla
-                    // Eğer dosyanın bir alt ataması varsa, bu her zaman bir alt işlemdir.
                     if (newFile.subDesignation) {
                         const childTxId = generateUUID();
                         const childTxDescription = subDesignationTranslations[newFile.subDesignation] || newFile.subDesignation;
@@ -438,7 +451,7 @@ export const ipRecordsService = {
                             timestamp: newFile.uploadedAt || updatedTimestamp,
                             userId: user.uid,
                             userEmail: user.email,
-                            parentId: parentTxId // Mevcut veya yeni oluşturulan ana işleme bağla
+                            parentId: parentTxId
                         });
                     }
                 }
