@@ -70,7 +70,7 @@
         .page-title { font-size: 2em; color: #1e3c72; margin-bottom: 10px; }
         .page-subtitle { color: #666; font-size: 1.1em; }
         .form-container { background: rgba(255, 255, 255, 0.95); padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); }
-        .notification-message { padding: 15px; border-radius: 10px; margin-bottom: 20px; display: none; align-items: center; gap: 10px; }
+        .notification-message { padding: 15px; border-radius: 10px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
         .notification-message.success { background: #d4edda; color: #155724; border-left: 4px solid #28a745; }
         .notification-message.error { background: #f8d7da; color: #721c24; border-left: 4px solid #dc3545; }
         .notification-message.info { background: #cce5ff; color: #004085; border-left: 4px solid #007bff; }
@@ -85,7 +85,8 @@
         .file-list { margin-top: 15px; }
         .file-item { display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start; padding: 10px; background: #f8f9fa; border-radius: 8px; margin-bottom: 10px; }
         .file-item > span { font-weight: 500; color: #333; margin-bottom: 5px; }
-        .file-item-controls { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; flex-wrap: wrap; width: 100%; }
+        /* Dosya kontrol alanındaki input ve select'i yan yana yapmak için flex kullanıldı */
+        .file-item-controls { display: flex; align-items: flex-start; gap: 10px; flex-wrap: wrap; width: 100%; }
         .file-item-select { flex-grow: 1; min-width: 150px; width: 100%; padding: 5px 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 0.85em; }
         .remove-file { background: #ff6b6b; color: white; border: none; border-radius: 50%; width: 25px; height: 25px; font-size: 0.9em; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.3s ease; flex-shrink: 0; margin-top: 5px; align-self: flex-end; }
         .remove-file:hover { background: #c82333; }
@@ -497,7 +498,7 @@
                             documentDesignation: this.allDocumentDesignations[0] || 'Diğer Belge', // Varsayılan değer
                             subDesignation: '',
                             indexingType: 'Kabul Kararı', // Varsayılan indeksleme tipi
-                            indexingName: file.name.split('.')[0] // Varsayılan indeksleme adı (dosya adı)
+                            indexingName: 'Kabul Kararı' // Varsayılan indeksleme adı (artık tip ile aynı)
                         });
                         this.updateFileList();
                         this.toggleIndexButton();
@@ -526,12 +527,7 @@
                         <div style="flex-grow: 1;">
                             <span>**Dosya Adı:** ${file.name} (${this.formatFileSize(file.size)})</span>
                             <div style="display: flex; gap: 10px; margin-top: 5px; flex-wrap: wrap;">
-                                <div class="form-group" style="margin-bottom: 0; flex-basis: 48%;">
-                                    <label class="form-label" style="font-size: 0.8em; margin-bottom: 2px;">İndeksleme Adı</label>
-                                    <input type="text" class="form-input file-indexing-name" value="${file.indexingName || ''}" data-id="${file.id}" placeholder="Belge adı">
-                                </div>
-                                <div class="form-group" style="margin-bottom: 0; flex-basis: 48%;">
-                                    <label class="form-label" style="font-size: 0.8em; margin-bottom: 2px;">İndeksleme Tipi</label>
+                                <div class="form-group" style="margin-bottom: 0; flex-basis: 98%;"> <label class="form-label" style="font-size: 0.8em; margin-bottom: 2px;">İndeksleme Tipi</label>
                                     <select class="form-select file-indexing-type" data-id="${file.id}">
                                         ${indexingTypes.map(type => `<option value="${type}" ${file.indexingType === type ? 'selected' : ''}>${type}</option>`).join('')}
                                     </select>
@@ -541,13 +537,13 @@
                         <button type="button" class="remove-file" data-id="${file.id}">&times;</button>
                     `;
                     
-                    fileItem.querySelector('.file-indexing-name').addEventListener('input', (e) => {
-                        const updatedFile = this.uploadedFiles.find(f => f.id === file.id);
-                        if (updatedFile) updatedFile.indexingName = e.target.value;
-                    });
+                    // İndeksleme Adı input'u kaldırıldığı için ilgili event listener da kaldırıldı.
                     fileItem.querySelector('.file-indexing-type').addEventListener('change', (e) => {
                         const updatedFile = this.uploadedFiles.find(f => f.id === file.id);
-                        if (updatedFile) updatedFile.indexingType = e.target.value;
+                        if (updatedFile) {
+                            updatedFile.indexingType = e.target.value;
+                            updatedFile.indexingName = e.target.value; // İndeksleme adı artık tip ile aynı
+                        }
                     });
                     fileItem.querySelector('.remove-file').addEventListener('click', () => this.removeFile(file.id));
 
@@ -605,7 +601,7 @@
                     subDesignation: file.subDesignation || null,
                     parentTransactionId: selectedParentTransactionId, // Seçilen parent ID'yi ata
                     indexingType: file.indexingType, // Yeni eklenen indeksleme tipi
-                    indexingName: file.indexingName // Yeni eklenen indeksleme adı
+                    indexingName: file.indexingName // Yeni eklenen indeksleme adı (artık tip ile aynı)
                 }));
 
                 const updates = {
