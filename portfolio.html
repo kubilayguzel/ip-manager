@@ -11,114 +11,151 @@
             box-sizing: border-box;
         }
 
+        /* BODY VE YENİ LAYOUT */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            min-height: 100vh;
             color: #333;
-        }
-
-        .header {
-            background: rgba(255, 255, 255, 0.95);
-            padding: 15px 0;
-            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
-            backdrop-filter: blur(10px);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .header-content {
-            max-width: 1400px;
-            margin: 0 auto;
             display: flex;
-            justify-content: space-between;
-            align-items: center;
+        }
+        
+        .page-wrapper {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow-y: auto;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
+
+        .main-container {
+            max-width: 1400px;
+            margin: 30px auto;
             padding: 0 20px;
         }
 
-        .logo {
+        /* ESKİ HEADER'I GİZLE */
+        body > .header {
+            display: none;
+        }
+
+        /* === YENİ SOL MENÜ VE ÜST BAR STİLLERİ === */
+        .sidebar {
+            width: 260px;
+            background: #1e3c72;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            transition: width 0.3s ease;
+            height: 100vh;
+            position: sticky;
+            top: 0;
+            z-index: 1001; /* Modalların üstünde kalmaması için */
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-logo {
             font-size: 1.8em;
             font-weight: bold;
-            color: #1e3c72;
-        }
-
-        .nav-menu {
-            display: flex;
-            gap: 30px;
-        }
-
-        .nav-item {
-            color: #666;
+            color: white;
             text-decoration: none;
-            font-weight: 500;
-            padding: 8px 16px;
-            border-radius: 8px;
-            transition: all 0.3s ease;
         }
 
-        .nav-item:hover, .nav-item.active {
-            background: #1e3c72;
+        .sidebar-nav {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 20px 0;
+        }
+
+        .nav-category-title {
+            padding: 10px 20px;
+            font-size: 0.8em;
+            font-weight: bold;
+            color: rgba(255, 255, 255, 0.5);
+            text-transform: uppercase;
+        }
+
+        .sidebar-nav-item, .accordion-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px 20px;
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            transition: background 0.3s ease;
+            cursor: pointer;
+        }
+
+        .sidebar-nav-item:hover, .accordion-header:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-nav-item.active {
+            background: #2a5298;
+            color: white;
+            font-weight: bold;
+            border-left: 4px solid #4ecdc4;
+            padding-left: 16px;
+        }
+        
+        .nav-icon {
+            font-size: 1.2em;
+            width: 20px;
+            text-align: center;
+        }
+
+        .accordion-header::after {
+            content: '▶';
+            margin-left: auto;
+            font-size: 0.8em;
+            transition: transform 0.3s ease;
+        }
+
+        .accordion-header.active::after {
+            transform: rotate(90deg);
+        }
+
+        .accordion-content {
+            background: rgba(0, 0, 0, 0.2);
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+
+        .accordion-content a {
+            display: block;
+            padding: 12px 20px 12px 55px; /* İkon boşluğu için girinti */
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            transition: background 0.2s ease;
+        }
+
+        .accordion-content a:hover {
+            background: rgba(255, 255, 255, 0.1);
             color: white;
         }
 
-        .dropdown {
-            position: relative;
-            display: inline-block;
+        .accordion-content a.active {
+            color: white;
+            font-weight: 500;
         }
 
-        .dropdown-content {
-            display: none;
-            position: absolute;
-            background-color: rgba(255, 255, 255, 0.98);
-            min-width: 180px;
-            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-            z-index: 1;
-            border-radius: 8px;
-            padding: 10px 0;
-            top: 100%;
-            left: 0;
-            opacity: 0;
-            transform: translateY(10px);
-            transition: opacity 0.3s ease, transform 0.3s ease;
-            pointer-events: none;
-        }
-
-        .dropdown-content a {
-            color: #333;
-            padding: 12px 16px;
-            text-decoration: none;
-            display: block;
-            font-weight: 400;
-            transition: background-color 0.2s ease;
-            white-space: nowrap;
-        }
-
-        .dropdown-content a:hover {
-            background-color: #f1f1f1;
-            color: #1e3c72;
-        }
-
-        .dropdown:hover .dropdown-content,
-        .dropdown.active .dropdown-content {
-            display: block;
-            opacity: 1;
-            transform: translateY(0);
-            pointer-events: auto;
-        }
-
-        .dropdown .nav-item {
-            cursor: pointer;
+        .top-header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px 30px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
             display: flex;
+            justify-content: flex-end;
             align-items: center;
-            gap: 5px;
+            position: sticky;
+            top: 0;
+            z-index: 99;
+            backdrop-filter: blur(10px);
         }
-        .dropdown .nav-item::after {
-            content: ' ▼';
-            font-size: 0.8em;
-            vertical-align: middle;
-        }
-
 
         .user-section {
             display: flex;
@@ -148,716 +185,317 @@
             font-size: 0.9em;
             transition: all 0.3s ease;
         }
+        .logout-btn:hover { background: #ff5252; }
 
-        .logout-btn:hover {
-            background: #ff5252;
-            transform: translateY(-1px);
-        }
-
-        .main-container {
-            max-width: 1400px;
-            margin: 30px auto;
-            padding: 0 20px;
-        }
-
-        .page-header {
-            background: rgba(255, 255, 255, 0.95);
-            padding: 30px;
-            border-radius: 20px;
-            margin-bottom: 30px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-        }
-
-        .page-title {
-            font-size: 2em;
-            color: #1e3c72;
-            margin-bottom: 10px;
-        }
-
-        .page-subtitle {
-            color: #666;
-            font-size: 1.1em;
-        }
-
-        .portfolio-container {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-        }
-
-        .portfolio-header {
-            padding: 30px;
-            border-bottom: 1px solid #e1e8ed;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 20px;
-        }
-
-        .portfolio-stats {
-            display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
-        }
-
-        .stat-item {
-            text-align: center;
-            padding: 10px 15px;
-            background: #f8f9fa;
-            border-radius: 10px;
-            min-width: 80px;
-        }
-
-        .stat-value {
-            font-size: 1.5em;
-            font-weight: bold;
-            color: #1e3c72;
-        }
-
-        .stat-label {
-            font-size: 0.9em;
-            color: #666;
-            margin-top: 5px;
-        }
-
-        .portfolio-actions {
-            display: flex;
-            gap: 15px;
-            align-items: center;
-        }
-
-        .action-btn {
-            background: #1e3c72;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 0.9em;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .action-btn:hover {
-            background: #2a5298;
-            transform: translateY(-1px);
-        }
-
-        .action-btn.secondary {
-            background: #6c757d;
-        }
-
-        .action-btn.secondary:hover {
-            background: #5a6268;
-        }
-
-        .filters-section {
-            padding: 20px 30px;
-            background: #f8f9fa;
-            border-bottom: 1px solid #e1e8ed;
-        }
-
-        .filters-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            align-items: end;
-        }
-
-        .filter-group {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .filter-label {
-            font-size: 0.9em;
-            color: #666;
-            margin-bottom: 5px;
-            font-weight: 500;
-        }
-
-        .filter-input, .filter-select {
-            padding: 8px 12px;
-            border: 2px solid #e1e8ed;
-            border-radius: 10px;
-            font-size: 0.9em;
-            transition: all 0.3s ease;
-        }
-
-        .filter-input:focus, .filter-select:focus {
-            outline: none;
-            border-color: #1e3c72;
-        }
-
-        .search-input {
-            position: relative;
-        }
-
-        .search-input input {
-            padding-left: 35px;
-        }
-
-        .search-input::before {
-            content: '🔍';
-            position: absolute;
-            left: 10px;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 1em;
-            color: #666;
-        }
-
-        .filter-buttons {
-            display: flex;
-            gap: 10px;
-        }
-
-        .filter-btn {
-            padding: 8px 16px;
-            background: #e9ecef;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.9em;
-            transition: all 0.3s ease;
-        }
-
-        .filter-btn:hover {
-            background: #dee2e6;
-        }
-
-        .filter-btn.active {
-            background: #1e3c72;
-            color: white;
-        }
-
-        .table-container {
-            overflow-x: auto;
-        }
-
-        .portfolio-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.9em;
-        }
-
-        .portfolio-table th {
-            background: #f8f9fa;
-            padding: 15px 12px;
-            text-align: left;
-            font-weight: 600;
-            color: #333;
-            border-bottom: 2px solid #e1e8ed;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            position: relative;
-        }
-
-        .portfolio-table th:hover {
-            background: #e9ecef;
-        }
-
-        .portfolio-table th.sortable::after {
-            content: '↕️';
-            position: absolute;
-            right: 8px;
-            font-size: 0.8em;
-            opacity: 0.5;
-        }
-
-        .portfolio-table th.sort-asc::after {
-            content: '↑';
-            opacity: 1;
-        }
-
-        .portfolio-table th.sort-desc::after {
-            content: '↓';
-            opacity: 1;
-        }
-
-        .portfolio-table td {
-            padding: 15px 12px;
-            border-bottom: 1px solid #f0f0f0;
-            vertical-align: middle;
-        }
-
-        .portfolio-table tr:hover {
-            background: #f8f9fa;
-        }
-
-        .ip-type {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-size: 0.8em;
-            font-weight: 500;
-        }
-
+        /* === PORTFÖY SAYFASINA AİT ORİJİNAL STİLLER === */
+        .page-header { background: rgba(255, 255, 255, 0.95); padding: 30px; border-radius: 20px; margin-bottom: 30px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); }
+        .page-title { font-size: 2em; color: #1e3c72; margin-bottom: 10px; }
+        .page-subtitle { color: #666; font-size: 1.1em; }
+        .portfolio-container { background: rgba(255, 255, 255, 0.95); border-radius: 20px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); overflow: hidden; }
+        .portfolio-header { padding: 30px; border-bottom: 1px solid #e1e8ed; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; }
+        .portfolio-stats { display: flex; gap: 20px; flex-wrap: wrap; }
+        .stat-item { text-align: center; padding: 10px 15px; background: #f8f9fa; border-radius: 10px; min-width: 80px; }
+        .stat-value { font-size: 1.5em; font-weight: bold; color: #1e3c72; }
+        .stat-label { font-size: 0.9em; color: #666; margin-top: 5px; }
+        .portfolio-actions { display: flex; gap: 15px; align-items: center; }
+        .action-btn { background: #1e3c72; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 0.9em; transition: all 0.3s ease; text-decoration: none; display: flex; align-items: center; gap: 8px; }
+        .action-btn:hover { background: #2a5298; transform: translateY(-1px); }
+        .action-btn.secondary { background: #6c757d; }
+        .action-btn.secondary:hover { background: #5a6268; }
+        .filters-section { padding: 20px 30px; background: #f8f9fa; border-bottom: 1px solid #e1e8ed; }
+        .filters-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; align-items: end; }
+        .filter-group { display: flex; flex-direction: column; }
+        .filter-label { font-size: 0.9em; color: #666; margin-bottom: 5px; font-weight: 500; }
+        .filter-input, .filter-select { padding: 8px 12px; border: 2px solid #e1e8ed; border-radius: 10px; font-size: 0.9em; transition: all 0.3s ease; }
+        .filter-input:focus, .filter-select:focus { outline: none; border-color: #1e3c72; }
+        .search-input { position: relative; }
+        .search-input input { padding-left: 35px; }
+        .search-input::before { content: '🔍'; position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 1em; color: #666; }
+        .filter-buttons { display: flex; gap: 10px; }
+        .filter-btn { padding: 8px 16px; background: #e9ecef; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9em; transition: all 0.3s ease; }
+        .filter-btn:hover { background: #dee2e6; }
+        .filter-btn.active { background: #1e3c72; color: white; }
+        .table-container { overflow-x: auto; }
+        .portfolio-table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
+        .portfolio-table th { background: #f8f9fa; padding: 15px 12px; text-align: left; font-weight: 600; color: #333; border-bottom: 2px solid #e1e8ed; cursor: pointer; transition: all 0.3s ease; position: relative; }
+        .portfolio-table th:hover { background: #e9ecef; }
+        .portfolio-table th.sortable::after { content: '↕️'; position: absolute; right: 8px; font-size: 0.8em; opacity: 0.5; }
+        .portfolio-table th.sort-asc::after { content: '↑'; opacity: 1; }
+        .portfolio-table th.sort-desc::after { content: '↓'; opacity: 1; }
+        .portfolio-table td { padding: 15px 12px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
+        .portfolio-table tr:hover { background: #f8f9fa; }
+        .ip-type { display: inline-flex; align-items: center; gap: 5px; padding: 4px 8px; border-radius: 6px; font-size: 0.8em; font-weight: 500; }
         .ip-type.patent { background: #ffebee; color: #c62828; }
         .ip-type.trademark { background: #e0f2f1; color: #00695c; }
         .ip-type.copyright { background: #e3f2fd; color: #1565c0; }
         .ip-type.design { background: #f3e5f5; color: #7b1fa2; }
-
-        .status-badge {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-size: 0.8em;
-            font-weight: 500;
-        }
-        
+        .status-badge { display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 0.8em; font-weight: 500; }
         .status-badge.application, .status-badge.pending, .status-badge.published, .status-badge.opposition_received, .status-badge.opposition_filed  { background: #fff3cd; color: #856404; }
         .status-badge.approved, .status-badge.registered { background: #d4edda; color: #155724; }
         .status-badge.rejected, .status-badge.refused, .status-badge.partial_refusal { background: #f8d7da; color: #721c24; }
         .status-badge.expired, .status-badge.not_renewed, .status-badge.invalid_void { background: #e2e3e5; color: #383d41; }
-
-
         .action-buttons { display: flex; gap: 5px; }
-
-        .table-action-btn {
-            padding: 5px 8px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.8em;
-            transition: all 0.3s ease;
-        }
-
+        .table-action-btn { padding: 5px 8px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8em; transition: all 0.3s ease; }
         .btn-view { background: #17a2b8; color: white; }
         .btn-view:hover { background: #138496; }
         .btn-edit { background: #ffc107; color: #212529; }
         .btn-edit:hover { background: #e0a800; }
         .btn-delete { background: #dc3545; color: white; }
         .btn-delete:hover { background: #c82333; }
-
         .no-records { text-align: center; padding: 60px 20px; color: #666; }
         .no-records-icon { font-size: 3em; margin-bottom: 20px; }
-
-        .pagination {
-            padding: 20px 30px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 10px;
-            border-top: 1px solid #e1e8ed;
-        }
-
-        .page-btn {
-            padding: 8px 12px;
-            border: 1px solid #e1e8ed;
-            background: white;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
+        .pagination { padding: 20px 30px; display: flex; justify-content: center; align-items: center; gap: 10px; border-top: 1px solid #e1e8ed; }
+        .page-btn { padding: 8px 12px; border: 1px solid #e1e8ed; background: white; border-radius: 6px; cursor: pointer; transition: all 0.3s ease; }
         .page-btn:hover { background: #f8f9fa; }
         .page-btn.active { background: #1e3c72; color: white; border-color: #1e3c72; }
         .page-btn:disabled { opacity: 0.5; cursor: not-allowed; }
         .page-info { color: #666; font-size: 0.9em; margin: 0 15px; }
-
         .loading { text-align: center; padding: 40px; color: #666; }
-        .loading-spinner {
-            display: inline-block;
-            width: 30px;
-            height: 30px;
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #1e3c72;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
+        .loading-spinner { display: inline-block; width: 30px; height: 30px; border: 3px solid #f3f3f3; border-top: 3px solid #1e3c72; border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 1000; align-items: center; justify-content: center; padding: 20px; }
         .modal.show { display: flex; }
-
-        .modal-content {
-            background: white;
-            padding: 30px;
-            border-radius: 20px;
-            max-width: 1200px; 
-            width: 95%;
-            max-height: 90vh;
-            overflow-y: auto;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-        }
-        
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #e1e8ed;
-        }
-
+        .modal-content { background: white; padding: 30px; border-radius: 20px; max-width: 1200px; width: 95%; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #e1e8ed; }
         .modal-title { font-size: 1.3em; color: #1e3c72; }
-        
-        .close-btn {
-            background: none;
-            border: none;
-            font-size: 1.5em;
-            cursor: pointer;
-            color: #666;
-            padding: 5px;
-            border-radius: 50%;
-            transition: all 0.3s ease;
-        }
+        .close-btn { background: none; border: none; font-size: 1.5em; cursor: pointer; color: #666; padding: 5px; border-radius: 50%; transition: all 0.3s ease; }
         .close-btn:hover { background: #f0f0f0; }
-
-        .detail-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
-            gap: 15px 25px;
-        }
-
+        .detail-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px 25px; }
         .detail-item { margin-bottom: 10px; }
         .detail-label { font-weight: 600; color: #333; margin-bottom: 5px; font-size: 0.9em; }
         .detail-value { color: #555; word-break: break-word; font-size: 0.95em; }
         .detail-value.long-text { white-space: pre-wrap; background-color: #f8f9fa; padding: 8px; border-radius: 6px; }
-
-        .trademark-image-thumb {
-            width: 40px;
-            height: 40px;
-            object-fit: contain;
-            border: 1px solid #e1e8ed;
-            border-radius: 4px;
-            vertical-align: middle;
-            margin-left: 5px;
-            cursor: pointer;
-        }
-        
-        .detail-trademark-image-container {
-            grid-column: 1 / -1; 
-            text-align: center;
-            padding: 15px;
-            background-color: #f8f9fa;
-            border-radius: 8px;
-        }
-        .detail-trademark-image {
-            max-width: 250px;
-            max-height: 250px;
-            border: 1px solid #e1e8ed;
-            border-radius: 8px;
-        }
-
-
-        .detail-section-title {
-            grid-column: 1 / -1;
-            font-size: 1.1em;
-            color: #1e3c72;
-            margin-top: 20px;
-            margin-bottom: 15px;
-            padding-bottom: 5px;
-            border-bottom: 1px dashed #e1e8ed;
-        }
-        
-        .type-tabs {
-            display: flex;
-            background: #f8f9fa;
-            border-radius: 10px;
-            padding: 5px;
-            margin-bottom: 20px;
-            box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
-        }
-
-        .type-tab-item {
-            flex: 1;
-            padding: 10px 15px;
-            text-align: center;
-            cursor: pointer;
-            font-weight: 500;
-            color: #666;
-            transition: all 0.3s ease;
-            border-radius: 8px;
-            margin: 0 2px;
-        }
-
+        .trademark-image-thumb { width: 40px; height: 40px; object-fit: contain; border: 1px solid #e1e8ed; border-radius: 4px; vertical-align: middle; margin-left: 5px; cursor: pointer; }
+        .detail-trademark-image-container { grid-column: 1 / -1; text-align: center; padding: 15px; background-color: #f8f9fa; border-radius: 8px; }
+        .detail-trademark-image { max-width: 250px; max-height: 250px; border: 1px solid #e1e8ed; border-radius: 8px; }
+        .detail-section-title { grid-column: 1 / -1; font-size: 1.1em; color: #1e3c72; margin-top: 20px; margin-bottom: 15px; padding-bottom: 5px; border-bottom: 1px dashed #e1e8ed; }
+        .type-tabs { display: flex; background: #f8f9fa; border-radius: 10px; padding: 5px; margin-bottom: 20px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.05); }
+        .type-tab-item { flex: 1; padding: 10px 15px; text-align: center; cursor: pointer; font-weight: 500; color: #666; transition: all 0.3s ease; border-radius: 8px; margin: 0 2px; }
         .type-tab-item:hover { background: #e9ecef; }
-        .type-tab-item.active {
-            background: #1e3c72;
-            color: white;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-
+        .type-tab-item.active { background: #1e3c72; color: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         .trademark-image-thumb-container { position: relative; display: inline-block; }
-        .trademark-image-preview-large {
-            position: absolute;
-            bottom: 100%;
-            left: 50%;
-            transform: translateX(-50%) scale(0);
-            max-width: 200px;
-            max-height: 200px;
-            border: 2px solid #1e3c72;
-            border-radius: 8px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-            background: white;
-            z-index: 1001;
-            transition: transform 0.2s ease-out;
-            pointer-events: none;
-            transform-origin: bottom center;
-        }
-        .trademark-image-thumb-container:hover .trademark-image-preview-large {
-            transform: translateX(-50%) scale(1);
-        }
-        
-        .transaction-history {
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid #e1e8ed;
-            max-height: 400px;
-            overflow-y: auto;
-        }
-        .transaction-node {
-            position: relative;
-            padding: 8px 0 8px 25px; 
-            border-bottom: 1px dashed #eee;
-        }
-        .transaction-node:last-child {
-            border-bottom: none;
-        }
-        .transaction-node-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        .transaction-info {
-            flex-grow: 1;
-        }
+        .trademark-image-preview-large { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%) scale(0); max-width: 200px; max-height: 200px; border: 2px solid #1e3c72; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); background: white; z-index: 1001; transition: transform 0.2s ease-out; pointer-events: none; transform-origin: bottom center; }
+        .trademark-image-thumb-container:hover .trademark-image-preview-large { transform: translateX(-50%) scale(1); }
+        .transaction-history { margin-top: 20px; padding-top: 20px; border-top: 1px solid #e1e8ed; max-height: 400px; overflow-y: auto; }
+        .transaction-node { position: relative; padding: 8px 0 8px 25px; border-bottom: 1px dashed #eee; }
+        .transaction-node:last-child { border-bottom: none; }
+        .transaction-node-content { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .transaction-info { flex-grow: 1; }
         .transaction-description { font-size: 0.9em; color: #333; font-weight: 600;}
         .transaction-meta { font-size: 0.8em; color: #666; white-space: nowrap; margin-top: 4px;}
         .transaction-document-link { font-size: 0.8em; color: #007bff; text-decoration: none; }
         .transaction-document-link:hover { text-decoration: underline; }
-        
-        .transaction-toggle-btn {
-            position: absolute;
-            left: 0;
-            top: 10px;
-            background: #e9ecef;
-            border: none;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            font-size: 1em;
-            font-weight: bold;
-            line-height: 20px; 
-            text-align: center;
-            cursor: pointer;
-            transition: background 0.2s ease, transform 0.2s ease;
-        }
+        .transaction-toggle-btn { position: absolute; left: 0; top: 10px; background: #e9ecef; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 1em; font-weight: bold; line-height: 20px; text-align: center; cursor: pointer; transition: background 0.2s ease, transform 0.2s ease; }
         .transaction-toggle-btn:hover { background: #d0d0d0; }
         .transaction-toggle-btn.expanded { transform: rotate(45deg); }
-        
-        .child-transactions {
-            margin-left: 20px;
-            padding-left: 15px;
-            border-left: 2px solid #1e3c72;
-            display: none; 
-        }
-        .child-transactions.show {
-            display: block; 
-        }
-
-        .transaction-actions {
-            display: flex;
-            gap: 5px;
-        }
-        .transaction-action-btn {
-            padding: 4px 8px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.75em;
-            transition: all 0.3s ease;
-        }
+        .child-transactions { margin-left: 20px; padding-left: 15px; border-left: 2px solid #1e3c72; display: none; }
+        .child-transactions.show { display: block; }
+        .transaction-actions { display: flex; gap: 5px; }
+        .transaction-action-btn { padding: 4px 8px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.75em; transition: all 0.3s ease; }
         .btn-edit-transaction { background: #ffc107; color: #212529; }
         .btn-edit-transaction:hover { background: #e0a800; }
         .btn-delete-transaction { background: #dc3545; color: white; }
         .btn-delete-transaction:hover { background: #c82333; }
-        
     </style>
 </head>
 <body>
-    <header class="header">
-        <div class="header-content">
-            <div class="logo">IP Manager</div>
-            <nav class="nav-menu">
-                <a href="dashboard.html" class="nav-item">Dashboard</a>
-                <a href="#" class="nav-item active">Portföy</a>
-                
-<div class="dropdown" id="managementDropdown">
-    <a href="#" class="nav-item dropdown-toggle" onclick="toggleDropdown(event)">Yönetim</a>
-    <div class="dropdown-content">
-        <a href="task-management.html">İş Yönetimi</a>
-        <a href="persons.html">Kişiler Yönetimi</a>
-        <a href="user-management.html">Kullanıcı Yönetimi</a>
-    </div>
-</div>
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <a href="dashboard.html" class="sidebar-logo">🔥 IP Manager</a>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-category-title">Ana Menü</div>
+            <a href="dashboard.html" class="sidebar-nav-item">
+                <span class="nav-icon">📊</span>
+                <span>Dashboard</span>
+            </a>
+            <a href="portfolio.html" class="sidebar-nav-item">
+                <span class="nav-icon">📋</span>
+                <span>Portföy</span>
+            </a>
+            
+            <div class="nav-category-title">Veri Girişi</div>
+            <a href="data-entry.html" class="sidebar-nav-item">
+                <span class="nav-icon">➕</span>
+                <span>Yeni Kayıt</span>
+            </a>
+            <a href="excel-upload.html" class="sidebar-nav-item">
+                <span class="nav-icon">📄</span>
+                <span>Excel ile Yükle</span>
+            </a>
 
-                <a href="indexing.html" class="nav-item">Belge İndeksle</a>
-                <a href="#" class="nav-item">Raporlar</a>
-                <a href="#" class="nav-item">Ayarlar</a>
-            </nav>
+            <div class="nav-category-title">Yönetim</div>
+            <div class="accordion">
+                <div class="accordion-header">
+                    <span class="nav-icon">⚙️</span>
+                    <span>Yönetim</span>
+                </div>
+                <div class="accordion-content">
+                    <a href="task-management.html">İş Yönetimi</a>
+                    <a href="my-tasks.html">İşlerim</a>
+                    <a href="persons.html">Kişiler Yönetimi</a>
+                    <a href="user-management.html">Kullanıcı Yönetimi</a>
+                </div>
+            </div>
+            
+            <div class="nav-category-title">Araçlar</div>
+             <a href="indexing.html" class="sidebar-nav-item">
+                <span class="nav-icon">📁</span>
+                <span>Belge İndeksleme</span>
+            </a>
+
+            <a href="#" class="sidebar-nav-item" style="opacity: 0.5; cursor: not-allowed;">
+                <span class="nav-icon">📈</span>
+                <span>Raporlar</span>
+            </a>
+             <a href="#" class="sidebar-nav-item" style="opacity: 0.5; cursor: not-allowed;">
+                <span class="nav-icon">🔧</span>
+                <span>Ayarlar</span>
+            </a>
+        </nav>
+    </aside>
+
+    <div class="page-wrapper">
+        <header class="top-header">
             <div class="user-section">
                 <div class="user-avatar" id="userAvatar">D</div>
                 <button class="logout-btn" id="logoutBtn">Çıkış</button>
             </div>
-        </div>
-    </header>
+        </header>
 
-    <main class="main-container">
-        <section class="page-header">
-            <h1 class="page-title">Fikri Mülkiyet Portföyü</h1>
-            <p class="page-subtitle">Tüm IP kayıtlarınızı görüntüleyin, filtreleyin ve yönetin</p>
-        </section>
-
-        <div class="portfolio-container">
-            <div class="portfolio-header">
-                <div class="portfolio-stats">
-                    <div class="stat-item">
-                        <div class="stat-value" id="totalRecords">0</div>
-                        <div class="stat-label">Toplam</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value" id="patentCount">0</div>
-                        <div class="stat-label">Patent</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value" id="trademarkCount">0</div>
-                        <div class="stat-label">Marka</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value" id="copyrightCount">0</div>
-                        <div class="stat-label">Telif</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value" id="designCount">0</div>
-                        <div class="stat-label">Tasarım</div>
-                    </div>
-                </div>
-                <div class="portfolio-actions">
-                    <a href="data-entry.html" class="action-btn">
-                        + Yeni Kayıt
-                    </a>
-                    <button class="action-btn secondary" id="exportBtn">
-                        📊 Dışa Aktar
-                    </button>
-                    <button class="action-btn secondary" id="refreshBtn">
-                        🔄 Yenile
-                    </button>
-                </div>
-            </div>
-
-            <div class="type-tabs" id="typeTabs">
-                <div class="type-tab-item active" data-filter-type="all">Hepsi</div>
-                <div class="type-tab-item" data-filter-type="patent">Patent</div>
-                <div class="type-tab-item" data-filter-type="trademark">Marka</div>
-                <div class="type-tab-item" data-filter-type="copyright">Telif Hakkı</div>
-                <div class="type-tab-item" data-filter-type="design">Tasarım</div>
-            </div>
-
-            <div class="filters-section">
-                <div class="filters-grid">
-                    <div class="filter-group">
-                        <label class="filter-label">Arama</label>
-                        <div class="search-input">
-                            <input type="text" id="searchInput" class="filter-input" placeholder="Başlık, numara veya hak sahibi ara...">
+        <main class="main-container">
+            <section class="page-header">
+                <h1 class="page-title">Fikri Mülkiyet Portföyü</h1>
+                <p class="page-subtitle">Tüm IP kayıtlarınızı görüntüleyin, filtreleyin ve yönetin</p>
+            </section>
+    
+            <div class="portfolio-container">
+                <div class="portfolio-header">
+                    <div class="portfolio-stats">
+                        <div class="stat-item">
+                            <div class="stat-value" id="totalRecords">0</div>
+                            <div class="stat-label">Toplam</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="patentCount">0</div>
+                            <div class="stat-label">Patent</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="trademarkCount">0</div>
+                            <div class="stat-label">Marka</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="copyrightCount">0</div>
+                            <div class="stat-label">Telif</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="designCount">0</div>
+                            <div class="stat-label">Tasarım</div>
                         </div>
                     </div>
-                    <div class="filter-group">
-                        <label class="filter-label">Durum</label>
-                        <select id="statusFilter" class="filter-select">
-                            <option value="">Tüm Durumlar</option>
-                            <optgroup label="Genel">
-                                <option value="application">Başvuru</option>
-                                <option value="pending">Beklemede</option>
-                                <option value="approved">Onaylandı</option>
-                                <option value="rejected">Reddedildi</option>
-                                <option value="expired">Süresi Doldu</option>
-                            </optgroup>
-                            <optgroup label="Marka Özel">
-                                <option value="published">Yayınlandı</option>
-                                <option value="partial_refusal">Kısmi Ret</option>
-                                <option value="refused">Ret</option>
-                                <option value="opposition_received">İtiraz Geldi</option>
-                                <option value="opposition_filed">İtiraz Edildi</option>
-                                <option value="registered">Tescilli</option>
-                                <option value="not_renewed">Yenilenmedi</option>
-                                <option value="invalid_void">Başvuru Geçersiz/Hükümsüz</option>
-                            </optgroup>
-                        </select>
+                    <div class="portfolio-actions">
+                        <a href="data-entry.html" class="action-btn">
+                            + Yeni Kayıt
+                        </a>
+                        <button class="action-btn secondary" id="exportBtn">
+                            📊 Dışa Aktar
+                        </button>
+                        <button class="action-btn secondary" id="refreshBtn">
+                            🔄 Yenile
+                        </button>
                     </div>
-                    <div class="filter-group">
-                        <label class="filter-label">Tarih Aralığı (Başvuru)</label>
-                        <div class="filter-buttons">
-                            <button class="filter-btn active" data-period="all">Hepsi</button>
-                            <button class="filter-btn" data-period="month">Bu Ay</button>
-                            <button class="filter-btn" data-period="year">Bu Yıl</button>
+                </div>
+    
+                <div class="type-tabs" id="typeTabs">
+                    <div class="type-tab-item active" data-filter-type="all">Hepsi</div>
+                    <div class="type-tab-item" data-filter-type="patent">Patent</div>
+                    <div class="type-tab-item" data-filter-type="trademark">Marka</div>
+                    <div class="type-tab-item" data-filter-type="copyright">Telif Hakkı</div>
+                    <div class="type-tab-item" data-filter-type="design">Tasarım</div>
+                </div>
+    
+                <div class="filters-section">
+                    <div class="filters-grid">
+                        <div class="filter-group">
+                            <label class="filter-label">Arama</label>
+                            <div class="search-input">
+                                <input type="text" id="searchInput" class="filter-input" placeholder="Başlık, numara veya hak sahibi ara...">
+                            </div>
+                        </div>
+                        <div class="filter-group">
+                            <label class="filter-label">Durum</label>
+                            <select id="statusFilter" class="filter-select">
+                                <option value="">Tüm Durumlar</option>
+                                <optgroup label="Genel">
+                                    <option value="application">Başvuru</option>
+                                    <option value="pending">Beklemede</option>
+                                    <option value="approved">Onaylandı</option>
+                                    <option value="rejected">Reddedildi</option>
+                                    <option value="expired">Süresi Doldu</option>
+                                </optgroup>
+                                <optgroup label="Marka Özel">
+                                    <option value="published">Yayınlandı</option>
+                                    <option value="partial_refusal">Kısmi Ret</option>
+                                    <option value="refused">Ret</option>
+                                    <option value="opposition_received">İtiraz Geldi</option>
+                                    <option value="opposition_filed">İtiraz Edildi</option>
+                                    <option value="registered">Tescilli</option>
+                                    <option value="not_renewed">Yenilenmedi</option>
+                                    <option value="invalid_void">Başvuru Geçersiz/Hükümsüz</option>
+                                </optgroup>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label class="filter-label">Tarih Aralığı (Başvuru)</label>
+                            <div class="filter-buttons">
+                                <button class="filter-btn active" data-period="all">Hepsi</button>
+                                <button class="filter-btn" data-period="month">Bu Ay</button>
+                                <button class="filter-btn" data-period="year">Bu Yıl</button>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-
-            <div class="table-container" id="table-container"> 
-                <div class="loading" id="loadingIndicator">
-                    <div class="loading-spinner"></div>
-                    <div>Kayıtlar yükleniyor...</div>
+    
+                <div class="table-container" id="table-container"> 
+                    <div class="loading" id="loadingIndicator">
+                        <div class="loading-spinner"></div>
+                        <div>Kayıtlar yükleniyor...</div>
+                    </div>
+    
+                    <table class="portfolio-table" id="portfolioTable" style="display: none;">
+                        <thead>
+                            <tr>
+                                <th class="sortable" data-sort="type">Tür</th>
+                                <th class="sortable" data-sort="title">Başlık</th>
+                                <th class="sortable" data-sort="applicationNumber">Başvuru No</th>
+                                <th class="sortable" data-sort="status">Durum</th>
+                                <th class="sortable" data-sort="applicationDate">Başvuru Tarihi</th>
+                                <th class="sortable" data-sort="owners">Hak Sahipleri</th>
+                                <th>İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody id="portfolioTableBody">
+                        </tbody>
+                    </table>
+    
+                    <div class="no-records" id="noRecords" style="display: none;">
+                        <div class="no-records-icon">📋</div>
+                        <h3>Henüz kayıt bulunamadı</h3>
+                        <p>Yeni bir fikri mülkiyet kaydı oluşturmak için "Yeni Kayıt" butonunu kullanın.</p>
+                        <a href="data-entry.html" class="action-btn" style="margin-top: 20px; display: inline-flex;">
+                            + İlk Kaydınızı Oluşturun
+                        </a>
+                    </div>
                 </div>
-
-                <table class="portfolio-table" id="portfolioTable" style="display: none;">
-                    <thead>
-                        <tr>
-                            <th class="sortable" data-sort="type">Tür</th>
-                            <th class="sortable" data-sort="title">Başlık</th>
-                            <th class="sortable" data-sort="applicationNumber">Başvuru No</th>
-                            <th class="sortable" data-sort="status">Durum</th>
-                            <th class="sortable" data-sort="applicationDate">Başvuru Tarihi</th>
-                            <th class="sortable" data-sort="owners">Hak Sahipleri</th>
-                            <th>İşlemler</th>
-                        </tr>
-                    </thead>
-                    <tbody id="portfolioTableBody">
-                    </tbody>
-                </table>
-
-                <div class="no-records" id="noRecords" style="display: none;">
-                    <div class="no-records-icon">📋</div>
-                    <h3>Henüz kayıt bulunamadı</h3>
-                    <p>Yeni bir fikri mülkiyet kaydı oluşturmak için "Yeni Kayıt" butonunu kullanın.</p>
-                    <a href="data-entry.html" class="action-btn" style="margin-top: 20px; display: inline-flex;">
-                        + İlk Kaydınızı Oluşturun
-                    </a>
+    
+                <div class="pagination" id="pagination" style="display: none;">
+                    <button class="page-btn" id="prevBtn">‹ Önceki</button>
+                    <div class="page-info" id="pageInfo">Sayfa 1 / 1</div>
+                    <button class="page-btn" id="nextBtn">Sonraki ›</button>
                 </div>
             </div>
-
-            <div class="pagination" id="pagination" style="display: none;">
-                <button class="page-btn" id="prevBtn">‹ Önceki</button>
-                <div class="page-info" id="pageInfo">Sayfa 1 / 1</div>
-                <button class="page-btn" id="nextBtn">Sonraki ›</button>
-            </div>
-        </div>
-    </main>
+        </main>
+    </div>
 
     <div class="modal" id="detailModal">
         <div class="modal-content">
@@ -900,22 +538,6 @@
         import { authService, ipRecordsService, auth, subDesignationTranslations, documentDesignationTranslations } from './firebase-config.js';
 
         let portfolio;
-
-        function toggleDropdown(event) {
-            event.preventDefault();
-            const dropdown = document.getElementById("managementDropdown");
-            dropdown.classList.toggle("active");
-            
-            window.onclick = function(e) {
-                if (!e.target.matches('.dropdown-toggle') && !e.target.closest('.dropdown-content')) {
-                    if (dropdown.classList.contains('active')) {
-                        dropdown.classList.remove('active');
-                        window.onclick = null;
-                    }
-                }
-            }
-        }
-        window.toggleDropdown = toggleDropdown;
 
         class PortfolioModule {
             constructor() {
@@ -1240,7 +862,6 @@
                     return;
                 }
 
-                // GÜNCELLEME: Sadece belge indeksleme ile ilgili transaction'ları filtrele
                 const documentTransactions = transactions.filter(tx => 
                     tx.type === "Document Indexed" || tx.type === "Document Sub-Indexed"
                 );
@@ -1393,6 +1014,36 @@
             }
         });
 
+        // YENİ AKORDİYON MENÜ İÇİN JAVASCRIPT
+        document.addEventListener('DOMContentLoaded', function() {
+            const accordions = document.querySelectorAll('.accordion-header');
+            accordions.forEach(accordion => {
+                accordion.addEventListener('click', () => {
+                    const content = accordion.nextElementSibling;
+                    accordion.classList.toggle('active');
+                    if (content.style.maxHeight) {
+                        content.style.maxHeight = null;
+                    } else {
+                        content.style.maxHeight = content.scrollHeight + "px";
+                    }
+                });
+            });
+
+            const currentPage = window.location.pathname.split("/").pop() || 'portfolio.html';
+            const activeLink = document.querySelector(`.sidebar-nav a[href="${currentPage}"]`);
+            if (activeLink) {
+                document.querySelectorAll('.sidebar-nav-item.active, .accordion-content a.active').forEach(el => el.classList.remove('active'));
+                
+                activeLink.classList.add('active');
+                
+                const parentAccordion = activeLink.closest('.accordion-content');
+                if(parentAccordion) {
+                    const header = parentAccordion.previousElementSibling;
+                    header.classList.add('active');
+                    parentAccordion.style.maxHeight = parentAccordion.scrollHeight + "px";
+                }
+            }
+        });
     </script>
 </body>
 </html>
