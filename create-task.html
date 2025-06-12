@@ -297,7 +297,7 @@
                     this.allIpRecords = ipRecordsResult.data || [];
                     this.allPersons = personsResult.data || [];
                     this.allUsers = usersResult.data || [];
-                    console.log('Tüm IP Kayıtları Yüklendi:', this.allIpRecords); // Debugging için
+                    // console.log('Tüm IP Kayıtları Yüklendi:', this.allIpRecords); // Debugging için kaldırıldı
                 } catch (error) {
                     console.error("Veri yüklenirken hata oluştu:", error);
                     alert("Gerekli veriler yüklenemedi, lütfen sayfayı yenileyin.");
@@ -326,7 +326,6 @@
                 specificTypeSelect.innerHTML = '<option value="">Önce İşin Ana Türünü Seçin</option>';
                 if (mainType) {
                     specificTypeSelect.innerHTML = '<option value="">Seçiniz...</option>';
-                    // taskTypeMappings anahtarları İngilizceye çevrildi
                     this.taskTypeMappings[mainType].forEach(type => {
                         specificTypeSelect.innerHTML += `<option value="${type}">${type}</option>`;
                     });
@@ -439,40 +438,37 @@
                 const mainIpType = document.getElementById('mainIpType').value;
                 const searchLower = query.toLowerCase(); 
                 
-                console.log("--- Portföy Arama Başladı ---");
-                console.log("Arama Sorgusu (küçük harf):", searchLower);
-                console.log("Seçilen Ana IP Türü:", mainIpType);
-                console.log("Yüklü tüm IP Kayıtları (allIpRecords boyutu):", this.allIpRecords.length);
+                // Debugging satırları kaldırıldı
+                // console.log("--- Portföy Arama Başladı ---");
+                // console.log("Arama Sorgusu (küçük harf):", searchLower);
+                // console.log("Seçilen Ana IP Türü:", mainIpType);
+                // console.log("Yüklü tüm IP Kayıtları (allIpRecords boyutu):", this.allIpRecords.length);
 
                 const filtered = this.allIpRecords.filter(r => {
-                    // Kaydın türünü, başlığını ve başvuru numarasını debug için logla
-                    console.log(`\nKaydı kontrol ediliyor: ID=${r.id}, Type=${r.type}, Title="${r.title}", AppNumber="${r.applicationNumber}"`);
+                    // Debugging satırları kaldırıldı
+                    // console.log(`\nKaydı kontrol ediliyor: ID=${r.id}, Type=${r.type}, Title="${r.title}", AppNumber="${r.applicationNumber}"`);
                     
-                    // 1. Tip eşleşmesi kontrolü
-                    // r.type değerini de küçük harfe çevirerek karşılaştırma yapalım, garantili olsun.
                     const rTypeLower = r.type ? r.type.toLowerCase() : '';
                     const mainIpTypeLower = mainIpType ? mainIpType.toLowerCase() : '';
                     const matchesType = rTypeLower === mainIpTypeLower;
-                    console.log(`  Tür eşleşiyor mu ("${mainIpTypeLower}" vs "${rTypeLower}"): ${matchesType}`); // Debugging için güncellendi
+                    // console.log(`  Tür eşleşiyor mu ("${mainIpTypeLower}" vs "${rTypeLower}"): ${matchesType}`);
 
-                    // 2. Başlık eşleşmesi kontrolü
                     const rTitleLower = r.title ? r.title.toLowerCase() : '';
                     const matchesTitle = rTitleLower.includes(searchLower);
-                    console.log(`  Başlık eşleşiyor mu ("${rTitleLower}" includes "${searchLower}"): ${matchesTitle}`);
+                    // console.log(`  Başlık eşleşiyor mu ("${rTitleLower}" includes "${searchLower}"): ${matchesTitle}`);
 
-                    // 3. Başvuru Numarası eşleşmesi kontrolü
                     const rAppNumberLower = r.applicationNumber ? r.applicationNumber.toLowerCase() : '';
                     const matchesApplicationNumber = rAppNumberLower.includes(searchLower);
-                    console.log(`  Başvuru No eşleşiyor mu ("${rAppNumberLower}" includes "${searchLower}"): ${matchesApplicationNumber}`);
+                    // console.log(`  Başvuru No eşleşiyor mu ("${rAppNumberLower}" includes "${searchLower}"): ${matchesApplicationNumber}`);
                     
                     const isMatch = matchesType && (matchesTitle || matchesApplicationNumber);
-                    console.log(`  Genel eşleşme sonucu: ${isMatch}`);
+                    // console.log(`  Genel eşleşme sonucu: ${isMatch}`);
 
                     return isMatch;
                 });
 
-                console.log("--- Portföy Arama Sonuçlandı ---");
-                console.log("Bulunan kayıt sayısı:", filtered.length);
+                // console.log("--- Portföy Arama Sonuçlandı ---");
+                // console.log("Bulunan kayıt sayısı:", filtered.length);
 
 
                 if (filtered.length === 0) {
