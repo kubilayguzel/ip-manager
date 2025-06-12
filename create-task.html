@@ -391,7 +391,7 @@
                     'İtirazı Geri Çekme',
                     'Kullanım İspatı Sunma', 
                     'İtiraza Ek Belge',
-                    'Yayına İtiraz', // Yayına İtiraz ve Karara İtiraz buraya eklendi
+                    'Yayına İtiraz', 
                     'Karara İtiraz' 
                 ];
 
@@ -651,6 +651,7 @@
                 let filteredTransactions = [];
                 const allTransactions = this.selectedIpRecord.transactions.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp)); 
 
+                // Transaction filtreleme mantığı güncellendi: Sadece parent olanları al
                 if (specificTaskType === 'İtirazı Geri Çekme' || specificTaskType === 'İtiraza Ek Belge') {
                     filteredTransactions = allTransactions.filter(tx => 
                         tx.description && (
