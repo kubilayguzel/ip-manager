@@ -81,7 +81,7 @@
         .form-input.error-field { border-color: #ff6b6b; }
         .error-message { color: #ff6b6b; font-size: 0.85em; margin-top: 5px; display: none; }
         .file-upload-area { border: 2px dashed #e1e8ed; border-radius: 10px; padding: 30px; text-align: center; cursor: pointer; transition: all 0.3s ease; }
-        .file-upload-area:hover { border-color: #1e3c72; background: #f8f9fa; }
+        .file-upload-area:hover { border-color: #1e3c72; background: #f0f4f8; }
         .file-list { margin-top: 15px; }
         .file-item { display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start; padding: 10px; background: #f8f9fa; border-radius: 8px; margin-bottom: 10px; }
         .file-item > span { font-weight: 500; color: #333; margin-bottom: 5px; }
@@ -415,7 +415,7 @@
                 this.updateFileList();
                 
                 // Parent transaction seçeneklerini doldur
-                this.populateParentTransactionSelect(this.selectedRecord.transactions); // Hata burada
+                this.populateParentTransactionSelect(this.selectedRecord.transactions);
                 this.renderTransactionHistory(this.selectedRecord.id, this.selectedRecord.transactions, this.selectedRecord.files);
 
                 this.toggleIndexButton();
@@ -495,7 +495,9 @@
                             content: dataUrl,
                             uploadedAt: new Date().toISOString(),
                             documentDesignation: this.allDocumentDesignations[0] || 'Diğer Belge', // Varsayılan değer
-                            subDesignation: ''
+                            subDesignation: '',
+                            indexingType: 'Kabul Kararı', // Varsayılan indeksleme tipi
+                            indexingName: file.name.split('.')[0] // Varsayılan indeksleme adı (dosya adı)
                         });
                         this.updateFileList();
                         this.toggleIndexButton();
@@ -513,45 +515,42 @@
                     return;
                 }
 
+                const indexingTypes = ['Kabul Kararı', 'Ret Kararı', 'Eksiklik Bildirimi']; // İndeksleme tipleri
+
                 this.uploadedFiles.forEach(file => {
                     const fileItem = document.createElement('div');
                     fileItem.className = 'file-item';
                     fileItem.dataset.id = file.id;
 
-                    const fileInfo = document.createElement('span');
-                    fileInfo.textContent = `${file.name} (${this.formatFileSize(file.size)})`;
-                    fileItem.appendChild(fileInfo);
-
-                    const controls = document.createElement('div');
-                    controls.className = 'file-item-controls';
-
-                    const select = document.createElement('select');
-                    select.className = 'file-item-select';
+                    fileItem.innerHTML = `
+                        <div style="flex-grow: 1;">
+                            <span>**Dosya Adı:** ${file.name} (${this.formatFileSize(file.size)})</span>
+                            <div style="display: flex; gap: 10px; margin-top: 5px; flex-wrap: wrap;">
+                                <div class="form-group" style="margin-bottom: 0; flex-basis: 48%;">
+                                    <label class="form-label" style="font-size: 0.8em; margin-bottom: 2px;">İndeksleme Adı</label>
+                                    <input type="text" class="form-input file-indexing-name" value="${file.indexingName || ''}" data-id="${file.id}" placeholder="Belge adı">
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0; flex-basis: 48%;">
+                                    <label class="form-label" style="font-size: 0.8em; margin-bottom: 2px;">İndeksleme Tipi</label>
+                                    <select class="form-select file-indexing-type" data-id="${file.id}">
+                                        ${indexingTypes.map(type => `<option value="${type}" ${file.indexingType === type ? 'selected' : ''}>${type}</option>`).join('')}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" class="remove-file" data-id="${file.id}">&times;</button>
+                    `;
                     
-                    this.allDocumentDesignations.forEach(designation => {
-                        const option = document.createElement('option');
-                        option.value = designation;
-                        option.textContent = designation;
-                        select.appendChild(option);
-                    });
-
-                    select.value = file.documentDesignation || 'Diğer Belge'; 
-                    select.addEventListener('change', (e) => {
+                    fileItem.querySelector('.file-indexing-name').addEventListener('input', (e) => {
                         const updatedFile = this.uploadedFiles.find(f => f.id === file.id);
-                        if (updatedFile) {
-                            updatedFile.documentDesignation = e.target.value;
-                        }
+                        if (updatedFile) updatedFile.indexingName = e.target.value;
                     });
-                    controls.appendChild(select);
+                    fileItem.querySelector('.file-indexing-type').addEventListener('change', (e) => {
+                        const updatedFile = this.uploadedFiles.find(f => f.id === file.id);
+                        if (updatedFile) updatedFile.indexingType = e.target.value;
+                    });
+                    fileItem.querySelector('.remove-file').addEventListener('click', () => this.removeFile(file.id));
 
-                    const removeBtn = document.createElement('button');
-                    removeBtn.className = 'remove-file';
-                    removeBtn.textContent = '×';
-                    removeBtn.dataset.id = file.id;
-                    removeBtn.addEventListener('click', () => this.removeFile(file.id));
-                    controls.appendChild(removeBtn);
-
-                    fileItem.appendChild(controls);
                     fileList.appendChild(fileItem);
                 });
             }
@@ -595,7 +594,7 @@
 
                 const selectedParentTransactionId = document.getElementById('parentTransactionSelect').value || null;
 
-                // Dosyaları, parentTransactionId bilgisi ile birlikte updates objesine ekle
+                // Dosyaları, parentTransactionId, indexingType ve indexingName bilgileriyle birlikte updates objesine ekle
                 const filesToUpdate = this.uploadedFiles.map(file => ({
                     id: file.id,
                     name: file.name,
@@ -604,7 +603,9 @@
                     uploadedAt: file.uploadedAt,
                     documentDesignation: file.documentDesignation,
                     subDesignation: file.subDesignation || null,
-                    parentTransactionId: selectedParentTransactionId // Seçilen parent ID'yi ata
+                    parentTransactionId: selectedParentTransactionId, // Seçilen parent ID'yi ata
+                    indexingType: file.indexingType, // Yeni eklenen indeksleme tipi
+                    indexingName: file.indexingName // Yeni eklenen indeksleme adı
                 }));
 
                 const updates = {
@@ -654,7 +655,7 @@
             // Bu metot IndexingModule sınıfının içinde doğru yerde olmalı
             populateParentTransactionSelect(transactions) {
                 const selectElement = document.getElementById('parentTransactionSelect');
-                if (!selectElement) { // Element yoksa hata vermeden çık
+                if (!selectElement) { 
                     console.warn("parentTransactionSelect elementi bulunamadı. Bu form tipi için gerekli değil mi?");
                     return;
                 }
