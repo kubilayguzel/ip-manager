@@ -79,6 +79,29 @@
             transform: translateY(-1px);
         }
 
+        /* Yeni eklenecek buton stili */
+        .btn-add-person {
+            background: linear-gradient(45deg, #4CAF50, #66BB6A); /* Yeşil tonlar */
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            box-shadow: 0 4px 8px rgba(0, 123, 255, 0.2); /* Hafif gölge */
+        }
+        .btn-add-person:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 123, 255, 0.3);
+            background: linear-gradient(45deg, #388E3C, #4CAF50); /* Koyu yeşil hover */
+        }
+
+
         .search-results-list { max-height: 200px; overflow-y: auto; border: 1px solid #ccc; border-radius: 8px; margin-top: 5px; }
         .search-result-item { padding: 10px; cursor: pointer; border-bottom: 1px solid #eee; }
         .search-result-item:hover { background-color: #f0f4f8; }
@@ -324,7 +347,7 @@
 
                 container.innerHTML = `
                     <div class="form-section"><h3 class="section-title">2. İşleme Konu Varlık</h3><div class="form-group full-width"><label for="portfolioSearchInput" class="form-label">Portföyden Ara</label><input type="text" id="portfolioSearchInput" class="form-input" placeholder="Aramak için en az 3 karakter..."><div id="portfolioSearchResults" class="search-results-list"></div><div id="selectedIpRecordDisplay" class="search-result-display" style="display:none; align-items: center;"></div></div></div>
-                    <div class="form-section"><h3 class="section-title">3. ${partyLabel}</h3><div class="form-group full-width"><label for="personSearchInput" class="form-label">Sistemdeki Kişilerden Ara</label><div style="display: flex; gap: 10px;"><input type="text" id="personSearchInput" class="form-input" placeholder="Aramak için en az 2 karakter..."><button type="button" id="addNewPersonBtn" class="btn-small">➕ Yeni Kişi</button></div><div id="personSearchResults" class="search-results-list"></div><div id="selectedRelatedPartyDisplay" class="search-result-display" style="display:none;"></div></div></div>
+                    <div class="form-section"><h3 class="section-title">3. ${partyLabel}</h3><div class="form-group full-width"><label for="personSearchInput" class="form-label">Sistemdeki Kişilerden Ara</label><div style="display: flex; gap: 10px;"><input type="text" id="personSearchInput" class="form-input" placeholder="Aramak için en az 2 karakter..."><button type="button" id="addNewPersonBtn" class="btn-small btn-add-person"><span>&#x2795;</span> Yeni Kişi</button></div><div id="personSearchResults" class="search-results-list"></div><div id="selectedRelatedPartyDisplay" class="search-result-display" style="display:none;"></div></div></div>
                     <div class="form-section"><h3 class="section-title">4. Gerekli Dokümanlar</h3><div class="form-group full-width"><div class="file-upload-area" id="fileUploadArea"><p>Dosyaları buraya sürükleyin veya tıklayın</p><input type="file" id="fileInput" multiple hidden></div><div class="file-list" id="fileList"></div></div></div>
                     <div class="form-section"><h3 class="section-title">5. İş Detayları</h3><div class="form-grid"><div class="form-group"><label for="taskPriority" class="form-label">Öncelik</label><select id="taskPriority" class="form-select"><option value="medium">Orta</option><option value="high">Yüksek</option><option value="low">Düşük</option></select></div><div class="form-group"><label for="assignedTo" class="form-label">Atanacak Kullanıcı</label><select id="assignedTo" class="form-select">${this.allUsers.map(u => `<option value="${u.id}">${u.displayName || u.email}</option>`).join('')}</select></div><div class="form-group full-width"><label for="taskDueDate" class="form-label">Operasyonel Son Tarih</label><input type="date" id="taskDueDate" class="form-input"></div></div></div>`;
                 
@@ -404,7 +427,7 @@
                 const mainIpType = document.getElementById('mainIpType').value;
                 const filtered = this.allIpRecords.filter(r => 
                     r.type === mainIpType && 
-                    (r.title.toLowerCase().includes(query.toLowerCase()) || (r.applicationNumber && r.applicationNumber.toLowerCase().includes(query)))
+                    (r.title.toLowerCase().includes(query.toLowerCase()) || (r.applicationNumber && r.applicationNumber.toLowerCase().includes(query.toLowerCase())))
                 );
 
                 if (filtered.length === 0) {
@@ -486,11 +509,13 @@
                 // Formu temizle ve Kişiler Yönetimi sayfasındaki gibi tüm alanları sıfırla
                 const form = document.getElementById('personForm');
                 form.reset();
-                form.querySelectorAll('.error-message').forEach(el => el.style.display = 'none');
-                form.querySelectorAll('.form-input').forEach(el => el.classList.remove('error-field'));
-                document.getElementById('personType').value = ''; // Seçiniz opsiyonunu sıfırla
+                // Hata mesajlarını ve alanları sıfırla (varsa)
+                // form.querySelectorAll('.error-message').forEach(el => el.style.display = 'none'); // Eğer hata mesajı varsa
+                // form.querySelectorAll('.form-input').forEach(el => el.classList.remove('error-field')); // Eğer hata sınıfı varsa
 
-                // Gizli alanları tekrar gizle
+                document.getElementById('personType').value = ''; // 'Seçiniz' opsiyonunu sıfırla
+                
+                // Eklenen gizli alanları tekrar gizle
                 document.querySelector('#addPersonModal .detail-section-title').style.display = 'none';
                 document.getElementById('personCreatedAt').parentElement.style.display = 'none';
                 document.getElementById('personUpdatedAt').parentElement.style.display = 'none';
