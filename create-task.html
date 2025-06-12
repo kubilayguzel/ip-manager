@@ -54,7 +54,17 @@
         .form-group { display: flex; flex-direction: column; }
         .form-group.full-width { grid-column: 1 / -1; }
         .form-label { display: block; margin-bottom: 8px; color: #333; font-weight: 500; }
-        .form-input, .form-select { width: 100%; padding: 12px 15px; border: 2px solid #e1e8ed; border-radius: 10px; font-size: 1em; }
+        /* Font düzenlemesi için form-select'e ekleme */
+        .form-input, .form-select, .form-textarea { 
+            width: 100%; 
+            padding: 12px 15px; 
+            border: 2px solid #e1e8ed; 
+            border-radius: 10px; 
+            font-size: 1em; 
+            transition: all 0.3s ease; 
+            background: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Eklenen stil */
+        }
         .form-actions { display: flex; justify-content: flex-end; gap: 15px; margin-top: 30px; }
         .btn { padding: 12px 25px; border: none; border-radius: 8px; font-size: 1em; font-weight: 600; cursor: pointer; }
         .btn-primary { background: #1e3c72; color: white; }
@@ -79,7 +89,7 @@
             transform: translateY(-1px);
         }
 
-        /* Yeni eklenecek buton stili */
+        /* Yeni Kişi Ekle butonu için estetik dokunuş */
         .btn-add-person {
             background: linear-gradient(45deg, #4CAF50, #66BB6A); /* Yeşil tonlar */
             color: white;
