@@ -22,8 +22,6 @@
         .accordion-header.active::after { transform: rotate(90deg); }
         .accordion-content { background: rgba(0, 0, 0, 0.2); max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; }
         .accordion-content a { display: block; padding: 12px 20px 12px 55px; color: rgba(255, 255, 255, 0.7); text-decoration: none; }
-        .accordion-content a:hover { background: rgba(255, 255, 255, 0.1); color: white; }
-        .accordion-content a.active { color: white; font-weight: 500; }
         .accordion-content a.new-task-link { color: #fff; background-color: rgba(78, 205, 196, 0.25); font-weight: 500; }
         .top-header { background: rgba(255, 255, 255, 0.95); padding: 15px 30px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05); display: flex; justify-content: flex-end; align-items: center; position: sticky; top: 0; z-index: 99; }
         .user-section { display: flex; align-items: center; gap: 15px; }
@@ -50,10 +48,12 @@
         .search-results-list { max-height: 200px; overflow-y: auto; border: 1px solid #ccc; border-radius: 8px; margin-top: 5px; }
         .search-result-item { padding: 10px; cursor: pointer; border-bottom: 1px solid #eee; }
         .search-result-item:hover { background-color: #f0f4f8; }
-        .search-result-item:last-child { border-bottom: none; }
         .search-result-display { background: #e9f5ff; border: 1px solid #bde0fe; padding: 15px; border-radius: 8px; margin-top: 10px; }
-        .file-upload-area { border: 2px dashed #e1e8ed; border-radius: 10px; padding: 30px; text-align: center; cursor: pointer; }
-        .file-list { margin-top: 15px; }
+        .file-upload-area { border: 2px dashed #e1e8ed; border-radius: 10px; padding: 30px; text-align: center; cursor: pointer; transition: background .2s; }
+        .file-upload-area:hover { background: #f0f4f8; }
+        .file-list { margin-top: 15px; display: flex; flex-direction: column; gap: 8px; }
+        .file-item { display: flex; align-items: center; justify-content: space-between; background: #f8f9fa; padding: 8px 12px; border-radius: 6px; font-size: 0.9em; }
+        .remove-file { background: #ff6b6b; color: white; border: none; border-radius: 50%; width: 22px; height: 22px; cursor: pointer; }
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6); z-index: 1001; align-items: center; justify-content: center; }
         .modal-content { background: white; padding: 30px; border-radius: 20px; max-width: 500px; width: 90%; }
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
@@ -88,13 +88,8 @@
                             <div class="form-group"><label for="specificTaskType" class="form-label">Spesifik İş Tipi</label><select id="specificTaskType" class="form-select" disabled><option value="">Önce İşin Ana Türünü Seçin</option></select></div>
                         </div>
                     </div>
-
                     <div id="conditionalFieldsContainer"></div>
-
-                    <div class="form-actions">
-                        <button type="button" id="cancelBtn" class="btn-secondary">İptal</button>
-                        <button type="submit" id="saveTaskBtn" class="btn-primary" disabled>İşi Oluştur</button>
-                    </div>
+                    <div class="form-actions"><button type="button" id="cancelBtn" class="btn-secondary">İptal</button><button type="submit" id="saveTaskBtn" class="btn-primary" disabled>İşi Oluştur</button></div>
                 </form>
             </div>
         </main>
@@ -107,7 +102,7 @@
                 <div class="form-group"><label class="form-label" for="personName">Ad Soyad *</label><input type="text" id="personName" class="form-input" required></div>
                 <div class="form-group"><label class="form-label" for="personEmail">E-posta</label><input type="email" id="personEmail" class="form-input"></div>
                 <div class="form-group"><label class="form-label" for="personType">Kişi Türü *</label><select id="personType" class="form-select" required><option value="individual">Bireysel</option><option value="company">Şirket</option></select></div>
-                <div class="form-actions"><button type="button" class="btn-secondary" id="cancelPersonBtn">İptal</button><button type="button" class="btn-primary" id="savePersonBtn">Kaydet</button></div>
+                <div class="form-actions"><button type="button" id="cancelPersonBtn" class="btn-secondary">İptal</button><button type="button" id="savePersonBtn" class="btn-primary">Kaydet</button></div>
             </form>
         </div>
     </div>
@@ -136,12 +131,16 @@
                 if (!this.currentUser) { window.location.href = 'index.html'; return; }
                 
                 document.getElementById('userAvatar').textContent = (this.currentUser.displayName || 'U').charAt(0);
+                
                 const [ipRecordsResult, personsResult, usersResult] = await Promise.all([
-                    ipRecordsService.getRecords(), personsService.getPersons(), taskService.getAllUsers()
+                    ipRecordsService.getRecords(),
+                    personsService.getPersons(),
+                    taskService.getAllUsers()
                 ]);
                 this.allIpRecords = ipRecordsResult.data;
                 this.allPersons = personsResult.data;
                 this.allUsers = usersResult.data;
+
                 this.setupEventListeners();
             }
 
@@ -157,7 +156,21 @@
             }
 
             handleMainTypeChange(e) {
-                // ... (Önceki yanıttaki kodla aynı)
+                const mainType = e.target.value;
+                const specificTypeSelect = document.getElementById('specificTaskType');
+                document.getElementById('conditionalFieldsContainer').innerHTML = '';
+                document.getElementById('saveTaskBtn').disabled = true;
+
+                specificTypeSelect.innerHTML = '<option value="">Önce İşin Ana Türünü Seçin</option>';
+                if (mainType) {
+                    specificTypeSelect.innerHTML = '<option value="">Seçiniz...</option>';
+                    this.taskTypeMappings[mainType].forEach(type => {
+                        specificTypeSelect.innerHTML += `<option value="${type}">${type}</option>`;
+                    });
+                    specificTypeSelect.disabled = false;
+                } else {
+                    specificTypeSelect.disabled = true;
+                }
             }
 
             handleSpecificTypeChange(e) {
@@ -165,7 +178,10 @@
                 const container = document.getElementById('conditionalFieldsContainer');
                 container.innerHTML = '';
                 document.getElementById('saveTaskBtn').disabled = true;
-                if (taskType === 'Devir') this.renderDevirForm(container);
+
+                if (taskType === 'Devir') {
+                    this.renderDevirForm(container);
+                }
             }
 
             renderDevirForm(container) {
@@ -181,7 +197,7 @@
                     </div>
                     <div class="form-section">
                         <h3 class="section-title">3. Devralan Taraf</h3>
-                        <div class="form-group full-width">
+                         <div class="form-group full-width">
                             <label for="personSearchInput" class="form-label">Sistemdeki Kişilerden Ara (Ad, Soyad)</label>
                             <div style="display: flex; gap: 10px;">
                                 <input type="text" id="personSearchInput" class="form-input" placeholder="Aramak için en az 3 karakter girin...">
@@ -206,23 +222,120 @@
                         <div class="form-grid">
                             <div class="form-group"><label for="taskPriority" class="form-label">Öncelik</label><select id="taskPriority" class="form-select"><option value="medium">Orta</option><option value="high">Yüksek</option><option value="low">Düşük</option></select></div>
                             <div class="form-group"><label for="assignedTo" class="form-label">Atanacak Dahili Kullanıcı</label><select id="assignedTo" class="form-select">${this.allUsers.map(u => `<option value="${u.id}">${u.displayName || u.email}</option>`).join('')}</select></div>
-                            <div class="form-group full-width"><label for="taskDueDate" class="form-label">Operasyonel Son Tarih</label><input type="date" id="taskDueDate" class="form-input"></div>
+                             <div class="form-group full-width"><label for="taskDueDate" class="form-label">Operasyonel Son Tarih</label><input type="date" id="taskDueDate" class="form-input"></div>
                         </div>
-                    </div>`;
-
+                    </div>
+                `;
                 document.getElementById('portfolioSearchInput').addEventListener('input', (e) => this.searchPortfolio(e.target.value));
                 document.getElementById('personSearchInput').addEventListener('input', (e) => this.searchPersons(e.target.value));
                 document.getElementById('addNewPersonBtn').addEventListener('click', () => this.showAddPersonModal());
-                this.setupFileUpload();
+                this.setupFileUpload(); // DOSYA YÜKLEME FONKSİYONUNU ÇAĞIR
+            }
+            
+            // DÜZELTME: Kopyalanan metodlar buraya eklendi
+            // --- DOSYA YÜKLEME METODLARI ---
+            setupFileUpload() {
+                const fileUploadArea = document.getElementById('fileUploadArea');
+                const fileInput = document.getElementById('fileInput');
+                if(!fileUploadArea || !fileInput) return;
+                fileUploadArea.addEventListener('click', () => fileInput.click());
+                fileInput.addEventListener('change', (e) => { this.handleFiles(e.target.files); e.target.value = ''; });
+                fileUploadArea.addEventListener('dragover', (e) => { e.preventDefault(); e.target.style.background = '#f0f4f8'; });
+                fileUploadArea.addEventListener('dragleave', (e) => { e.preventDefault(); e.target.style.background = 'transparent'; });
+                fileUploadArea.addEventListener('drop', (e) => { e.preventDefault(); e.target.style.background = 'transparent'; this.handleFiles(e.dataTransfer.files); });
+            }
+
+            handleFiles(files) {
+                for (const file of files) {
+                    if (this.uploadedFiles.find(f => f.name === file.name && f.size === file.size)) continue;
+                    this.readFileAsDataURL(file).then(dataUrl => {
+                        this.uploadedFiles.push({ id: generateUUID(), name: file.name, size: file.size, type: file.type, content: dataUrl });
+                        this.updateFileList();
+                    });
+                }
+            }
+
+            updateFileList() {
+                const fileListContainer = document.getElementById('fileList');
+                if (!fileListContainer) return;
+                fileListContainer.innerHTML = '';
+                this.uploadedFiles.forEach(file => {
+                    const fileItem = document.createElement('div');
+                    fileItem.className = 'file-item';
+                    fileItem.innerHTML = `<span>${file.name} (${this.formatFileSize(file.size)})</span><button type="button" class="remove-file" data-id="${file.id}">&times;</button>`;
+                    fileListContainer.appendChild(fileItem);
+                });
+                document.querySelectorAll('.remove-file').forEach(btn => btn.addEventListener('click', (e) => this.removeFile(e.target.dataset.id)));
+            }
+            
+            removeFile(fileId) {
+                this.uploadedFiles = this.uploadedFiles.filter(f => f.id !== fileId);
+                this.updateFileList();
+            }
+
+            formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + ['Bytes', 'KB', 'MB', 'GB'][i];
+            }
+
+            readFileAsDataURL(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = error => reject(error);
+                    reader.readAsDataURL(file);
+                });
             }
 
             // --- ARAMA, SEÇME VE YENİ KİŞİ EKLEME METODLARI ---
-            searchPortfolio(query) { /* ... */ }
-            selectIpRecord(recordId) { /* ... */ }
-            searchPersons(query) { /* ... */ }
-            selectNewOwner(person) { /* ... */ }
+            searchPortfolio(query) {
+                const resultsContainer = document.getElementById('portfolioSearchResults');
+                if (query.length < 3) { resultsContainer.innerHTML = ''; return; }
+                const filtered = this.allIpRecords.filter(r => r.title.toLowerCase().includes(query.toLowerCase()) || r.applicationNumber?.includes(query));
+                resultsContainer.innerHTML = filtered.map(r => `<div class="search-result-item" data-id="${r.id}">${r.title} (${r.applicationNumber || 'No Yok'})</div>`).join('');
+                document.querySelectorAll('#portfolioSearchResults .search-result-item').forEach(item => {
+                    item.addEventListener('click', (e) => this.selectIpRecord(e.target.dataset.id));
+                });
+            }
+
+            selectIpRecord(recordId) {
+                this.selectedIpRecord = this.allIpRecords.find(r => r.id === recordId);
+                const display = document.getElementById('selectedIpRecordDisplay');
+                display.innerHTML = `<p><b>Seçilen Varlık:</b> ${this.selectedIpRecord.title}</p><p><small>Mevcut Sahip: ${this.selectedIpRecord.owners.map(o=>o.name).join(', ')}</small></p>`;
+                display.style.display = 'block';
+                document.getElementById('portfolioSearchResults').innerHTML = '';
+                document.getElementById('portfolioSearchInput').value = '';
+                this.checkFormCompleteness();
+            }
+
+            searchPersons(query) {
+                const resultsContainer = document.getElementById('personSearchResults');
+                if (query.length < 2) { resultsContainer.innerHTML = ''; return; }
+                const filtered = this.allPersons.filter(p => p.name.toLowerCase().includes(query.toLowerCase()));
+                resultsContainer.innerHTML = filtered.map(p => `<div class="search-result-item" data-id="${p.id}">${p.name}</div>`).join('');
+                document.querySelectorAll('#personSearchResults .search-result-item').forEach(item => {
+                    item.addEventListener('click', (e) => {
+                        const person = this.allPersons.find(p => p.id === e.target.dataset.id);
+                        this.selectNewOwner(person);
+                    });
+                });
+            }
+
+            selectNewOwner(person) {
+                this.selectedNewOwner = person;
+                const display = document.getElementById('selectedNewOwnerDisplay');
+                display.innerHTML = `<p><b>Seçilen Taraf:</b> ${this.selectedNewOwner.name}</p><p><small>${this.selectedNewOwner.email || 'E-posta yok'}</small></p>`;
+                display.style.display = 'block';
+                document.getElementById('personSearchResults').innerHTML = '';
+                document.getElementById('personSearchInput').value = '';
+                this.checkFormCompleteness();
+            }
+
             showAddPersonModal() { document.getElementById('addPersonModal').style.display = 'flex'; }
             hideAddPersonModal() { document.getElementById('addPersonModal').style.display = 'none'; }
+            
             async saveNewPerson() {
                 const name = document.getElementById('personName').value;
                 const email = document.getElementById('personEmail').value;
@@ -241,20 +354,57 @@
                     alert('Hata: ' + result.error);
                 }
             }
-
-            // --- DOSYA YÜKLEME METODLARI ---
-            setupFileUpload() { /* ... data-entry.html'den kopyalanacak ... */ }
-            handleFiles(files) { /* ... */ }
-            updateFileList() { /* ... */ }
-            removeFile(fileId) { /* ... */ }
-
-            // --- FORM GÖNDERME ---
-            async handleFormSubmit(e) { /* ... Önceki yanıttaki gibi, ama files dizisini de içerecek şekilde güncellenmeli ... */ }
             
-            checkFormCompleteness() { /* ... */ }
+            checkFormCompleteness() {
+                const taskType = document.getElementById('specificTaskType').value;
+                let isComplete = false;
+                if (taskType === 'Devir') {
+                    if (this.selectedIpRecord && this.selectedNewOwner) {
+                        isComplete = true;
+                    }
+                }
+                document.getElementById('saveTaskBtn').disabled = !isComplete;
+            }
+
+            async handleFormSubmit(e) {
+                e.preventDefault();
+                const mainIpType = document.getElementById('mainIpType').value;
+                const specificTaskType = document.getElementById('specificTaskType').value;
+                const assignedToUser = this.allUsers.find(u => u.id === document.getElementById('assignedTo').value);
+
+                let taskData = {
+                    taskType: `${mainIpType}_${specificTaskType.toLowerCase().replace(' ', '_')}`,
+                    priority: document.getElementById('taskPriority').value,
+                    assignedTo_uid: assignedToUser.id,
+                    assignedTo_email: assignedToUser.email,
+                    dueDate: document.getElementById('taskDueDate').value || null,
+                    status: 'open',
+                    createdBy_uid: this.currentUser.uid,
+                    createdBy_email: this.currentUser.email,
+                    files: this.uploadedFiles,
+                };
+
+                if (specificTaskType === 'Devir') {
+                    taskData.title = `Devir İşlemi: ${this.selectedIpRecord.title}`;
+                    taskData.description = `'${this.selectedIpRecord.title}' adlı varlığın, mülkiyetinin '${this.selectedIpRecord.owners.map(o=>o.name).join(', ')}' kişisinden/kişilerinden '${this.selectedNewOwner.name}' adlı kişiye devredilmesi gerekiyor.`;
+                    taskData.relatedIpRecordId = this.selectedIpRecord.id;
+                    taskData.relatedIpRecordTitle = this.selectedIpRecord.title;
+                    taskData.details = {
+                        fromOwner: this.selectedIpRecord.owners,
+                        toOwner: {id: this.selectedNewOwner.id, name: this.selectedNewOwner.name, type: this.selectedNewOwner.type }
+                    };
+                }
+
+                const result = await taskService.createTask(taskData);
+                if(result.success) {
+                    alert('İş başarıyla oluşturuldu!');
+                    window.location.href = 'task-management.html';
+                } else {
+                    alert('Hata: ' + result.error);
+                }
+            }
         }
 
-        // --- SAYFA BAŞLATMA ---
         const module = new CreateTaskModule();
         auth.onAuthStateChanged(user => {
             if(user || authService.getCurrentUser()) {
@@ -264,9 +414,7 @@
                 window.location.href = 'index.html';
             }
         });
-
-        // Sidebar scripti
-        // ...
+        
     </script>
 </body>
 </html>
