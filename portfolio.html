@@ -207,7 +207,7 @@
         .page-header { background: rgba(255, 255, 255, 0.95); padding: 30px; border-radius: 20px; margin-bottom: 30px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); }
         .page-title { font-size: 2em; color: #1e3c72; margin-bottom: 10px; }
         .page-subtitle { color: #666; font-size: 1.1em; }
-        .portfolio-container { background: rgba(255, 255, 255, 0.95); border-radius: 20px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); overflow: hidden; }
+        .portfolio-container { background: rgba(255, 255, 255, 0.95); border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); overflow: hidden; }
         .portfolio-header { padding: 30px; border-bottom: 1px solid #e1e8ed; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; }
         .portfolio-stats { display: flex; gap: 20px; flex-wrap: wrap; }
         .stat-item { text-align: center; padding: 10px 15px; background: #f8f9fa; border-radius: 10px; min-width: 80px; }
@@ -885,20 +885,12 @@
                     return;
                 }
 
-                const documentTransactions = transactions.filter(tx => 
-                    tx.type === "Document Indexed" || tx.type === "Document Sub-Indexed"
-                );
-
-                if (documentTransactions.length === 0) {
-                    historyContainer.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Belge işlem geçmişi bulunmuyor.</p>';
-                    return;
-                }
-
-                const sortedTransactions = [...documentTransactions].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-                const transactionsMap = new Map(sortedTransactions.map(tx => [tx.transactionId, tx]));
+                // Parent'ı null olan veya başka bir transaction'ın child'ı olmayanları kök kabul et
+                const allTransactions = transactions.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                const transactionsMap = new Map(allTransactions.map(tx => [tx.transactionId, tx]));
                 const childrenMap = new Map();
                 
-                sortedTransactions.forEach(tx => {
+                allTransactions.forEach(tx => {
                     if (tx.parentId) {
                         if (!childrenMap.has(tx.parentId)) childrenMap.set(tx.parentId, []);
                         childrenMap.get(tx.parentId).push(tx);
@@ -920,8 +912,7 @@
                                 ${hasChildren ? `<button class="transaction-toggle-btn" data-target-id="${tx.transactionId}">+</button>` : ''}
                                 <div class="transaction-node-content">
                                     <div class="transaction-info">
-                                        <div class="transaction-description">${tx.description}</div>
-                                        <div class="transaction-meta">${new Date(tx.timestamp).toLocaleString('tr-TR')} by ${tx.userEmail}${documentLinkHtml}</div>
+                                        <div class="transaction-description">${tx.description || tx.type}</div> <div class="transaction-meta">${new Date(tx.timestamp).toLocaleString('tr-TR')} by ${tx.userEmail}${documentLinkHtml}</div>
                                     </div>
                                     <div class="transaction-actions">
                                         <button class="transaction-action-btn btn-edit-transaction" onclick="portfolio.openEditTransactionModal('${recordId}', '${tx.transactionId}')" title="Düzenle">✏️</button>
@@ -934,7 +925,7 @@
                     return html;
                 };
 
-                const rootTransactions = sortedTransactions.filter(tx => !tx.parentId || !transactionsMap.has(tx.parentId));
+                const rootTransactions = allTransactions.filter(tx => !tx.parentId || !transactionsMap.has(tx.parentId));
                 historyContainer.innerHTML = buildTreeHtml(rootTransactions);
             }
 
