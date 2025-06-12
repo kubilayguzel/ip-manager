@@ -297,7 +297,8 @@
                     this.allIpRecords = ipRecordsResult.data || [];
                     this.allPersons = personsResult.data || [];
                     this.allUsers = usersResult.data || [];
-                    // console.log('Tüm IP Kayıtları Yüklendi:', this.allIpRecords); // Debugging için kaldırıldı
+                    // Debugging için kullanılan console.log satırı kaldırıldı
+                    // console.log('Tüm IP Kayıtları Yüklendi:', this.allIpRecords); 
                 } catch (error) {
                     console.error("Veri yüklenirken hata oluştu:", error);
                     alert("Gerekli veriler yüklenemedi, lütfen sayfayı yenileyin.");
@@ -438,38 +439,21 @@
                 const mainIpType = document.getElementById('mainIpType').value;
                 const searchLower = query.toLowerCase(); 
                 
-                // Debugging satırları kaldırıldı
-                // console.log("--- Portföy Arama Başladı ---");
-                // console.log("Arama Sorgusu (küçük harf):", searchLower);
-                // console.log("Seçilen Ana IP Türü:", mainIpType);
-                // console.log("Yüklü tüm IP Kayıtları (allIpRecords boyutu):", this.allIpRecords.length);
-
                 const filtered = this.allIpRecords.filter(r => {
-                    // Debugging satırları kaldırıldı
-                    // console.log(`\nKaydı kontrol ediliyor: ID=${r.id}, Type=${r.type}, Title="${r.title}", AppNumber="${r.applicationNumber}"`);
-                    
                     const rTypeLower = r.type ? r.type.toLowerCase() : '';
                     const mainIpTypeLower = mainIpType ? mainIpType.toLowerCase() : '';
                     const matchesType = rTypeLower === mainIpTypeLower;
-                    // console.log(`  Tür eşleşiyor mu ("${mainIpTypeLower}" vs "${rTypeLower}"): ${matchesType}`);
 
                     const rTitleLower = r.title ? r.title.toLowerCase() : '';
                     const matchesTitle = rTitleLower.includes(searchLower);
-                    // console.log(`  Başlık eşleşiyor mu ("${rTitleLower}" includes "${searchLower}"): ${matchesTitle}`);
 
                     const rAppNumberLower = r.applicationNumber ? r.applicationNumber.toLowerCase() : '';
                     const matchesApplicationNumber = rAppNumberLower.includes(searchLower);
-                    // console.log(`  Başvuru No eşleşiyor mu ("${rAppNumberLower}" includes "${searchLower}"): ${matchesApplicationNumber}`);
                     
                     const isMatch = matchesType && (matchesTitle || matchesApplicationNumber);
-                    // console.log(`  Genel eşleşme sonucu: ${isMatch}`);
 
                     return isMatch;
                 });
-
-                // console.log("--- Portföy Arama Sonuçlandı ---");
-                // console.log("Bulunan kayıt sayısı:", filtered.length);
-
 
                 if (filtered.length === 0) {
                     container.innerHTML = '<p class="no-results-message">Kayıt bulunamadı.</p>';
