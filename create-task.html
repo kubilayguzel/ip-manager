@@ -368,29 +368,51 @@
                 this.resetSelections();
                 document.getElementById('saveTaskBtn').disabled = true;
 
-                const transactionLikeTasks = ['Devir', 'Lisans', 'Birleşme', 'Rehin', 'Veraset ile İntikal', 'Rehin/Teminat']; // Yeni tipler eklendi
+                const transactionLikeTasks = ['Devir', 'Lisans', 'Birleşme', 'Rehin', 'Veraset ile İntikal', 'Rehin/Teminat'];
                 const simpleTasks = [
                     'Yenileme',
-                    'Tescil Belgesi Talebi',
-                    'Tescil Belgesi Sureti', // Yeni tip eklendi
-                    'Sicil Sureti',          // Yeni tip eklendi
-                    'Menşe Memleket Belgesi',// Yeni tip eklendi
-                    'Bölünme',               // Yeni tip eklendi
-                    'Vazgeçme',              // Yeni tip eklendi
-                    '3.Kişi Görüşü',         // Yeni tip eklendi
-                    'Muvaffakat Sunumu',     // Yeni tip eklendi
-                    'Eşya Sınırlandırma'     // Yeni tip eklendi
+                    'Eksiklik Giderme',
+                    'Yayına İtiraz',
+                    'Karara İtiraz',
+                    'Yayıma İtirazın Yeniden İncelenmesi',
+                    'Tescil Belgesi Sureti',
+                    'Sicil Sureti',
+                    'Menşe Memleket Belgesi',
+                    'Bölünme',
+                    'Vazgeçme',
+                    'Tanınmışlık Tespiti', // Bu da buraya dahil edilebilir, basit bir form
+                    '3.Kişi Görüşü',
+                    'Madrid Başvurusu Ücret Ödeme', // Basit bir form
+                    'Muvaffakat Sunumu',
+                    'Kullanım İspatı Sunma',
+                    'İtiraza Ek Belge',
+                    'Eşya Sınırlandırma'
+                ];
+                // Transaction odaklı özel tipler (ilgilil transaction'ları listeleyecek olanlar)
+                const transactionSpecificTasks = [
+                    'İtiraza Karşı Görüş (YIDD)',
+                    'İtiraza Karşı Görüş (Markalar)',
+                    'İtirazı Geri Çekme'
                 ];
 
                 if (transactionLikeTasks.includes(taskType)) {
                     this.renderGenericTransactionForm(container, taskType);
                 } else if (simpleTasks.includes(taskType)) {
                     this.renderSimpleTransactionForm(container, taskType);
+                } else if (transactionSpecificTasks.includes(taskType)) {
+                    this.renderTransactionRelatedForm(container, taskType); // Yeni form render metodu
                 }
             }
 
             renderGenericTransactionForm(container, taskType) {
-                const partyLabels = { 'Devir': 'Devralan Taraf', 'Lisans': 'Lisans Alan Taraf', 'Rehin': 'Rehin Alan Taraf', 'Birleşme': 'Birleşilen Taraf', 'Veraset ile İntikal': 'Mirasçı', 'Rehin/Teminat': 'Rehin Alan Taraf' }; // Yeni etiketler eklendi
+                const partyLabels = { 
+                    'Devir': 'Devralan Taraf', 
+                    'Lisans': 'Lisans Alan Taraf', 
+                    'Rehin': 'Rehin Alan Taraf', 
+                    'Birleşme': 'Birleşilen Taraf', 
+                    'Veraset ile İntikal': 'Mirasçı', 
+                    'Rehin/Teminat': 'Rehin Alan Taraf' 
+                }; 
                 const partyLabel = partyLabels[taskType] || 'İlgili Taraf';
 
                 container.innerHTML = `
@@ -405,9 +427,36 @@
             renderSimpleTransactionForm(container, taskType) {
                 container.innerHTML = `
                     <div class="form-section"><h3 class="section-title">2. İşleme Konu Varlık</h3><div class="form-group full-width"><label for="portfolioSearchInput" class="form-label">Portföyden Ara</label><input type="text" id="portfolioSearchInput" class="form-input" placeholder="Aramak için en az 3 karakter..."><div id="portfolioSearchResults" class="search-results-list"></div><div id="selectedIpRecordDisplay" class="search-result-display" style="display:none; align-items: center;"></div></div></div>
-                    <div class="form-section"><h3 class="section-title">3. İş Detayları</h3><div class="form-grid"><div class="form-group"><label for="taskPriority" class="form-label">Öncelik</label><select id="taskPriority" class="form-select"><option value="medium">Orta</option><option value="high">Yüksek</option><option value="low">Düşük</option></select></div><div class="form-group"><label for="assignedTo" class="form-label">Atanacak Kullanıcı</label><select id="assignedTo" class="form-select">${this.allUsers.map(u => `<option value="${u.id}">${u.displayName || u.email}</option>`).join('')}</select></div><div class="form-group full-width"><label for="taskDueDate" class="form-label">Operasyonel Son Tarih</label><input type="date" id="taskDueDate" class="form-input"></div></div></div>`;
+                    <div class="form-section"><h3 class="section-title">3. Gerekli Dokümanlar</h3><div class="form-group full-width"><div class="file-upload-area" id="fileUploadArea"><p>Dosyaları buraya sürükleyin veya tıklayın</p><input type="file" id="fileInput" multiple hidden></div><div class="file-list" id="fileList"></div></div></div>
+                    <div class="form-section"><h3 class="section-title">4. İş Detayları</h3><div class="form-grid"><div class="form-group"><label for="taskPriority" class="form-label">Öncelik</label><select id="taskPriority" class="form-select"><option value="medium">Orta</option><option value="high">Yüksek</option><option value="low">Düşük</option></select></div><div class="form-group"><label for="assignedTo" class="form-label">Atanacak Kullanıcı</label><select id="assignedTo" class="form-select">${this.allUsers.map(u => `<option value="${u.id}">${u.displayName || u.email}</option>`).join('')}</select></div><div class="form-group full-width"><label for="taskDueDate" class="form-label">Operasyonel Son Tarih</label><input type="date" id="taskDueDate" class="form-input"></div></div></div>`;
 
                 document.getElementById('portfolioSearchInput').addEventListener('input', (e) => this.searchPortfolio(e.target.value));
+                this.setupFileUpload(); // Doküman yükleme alanı için listener'ı kur
+            }
+
+            // YENİ METOD: Transaction odaklı formları render etmek için
+            renderTransactionRelatedForm(container, taskType) {
+                const transactionTypeMap = {
+                    'İtiraza Karşı Görüş (YIDD)': 'Karara İtiraz',
+                    'İtiraza Karşı Görüş (Markalar)': 'Yayına İtiraz',
+                    'İtirazı Geri Çekme': 'Yayına İtiraz veya Karara İtiraz',
+                    'Kullanım İspatı Sunma': 'Yayına İtiraz',
+                    'İtiraza Ek Belge': 'Yayına İtiraz veya Karara İtiraz'
+                };
+                const relatedTransactionLabel = `İlgili İşlem Seçin (${transactionTypeMap[taskType] || 'Özel İşlem'})`;
+
+                container.innerHTML = `
+                    <div class="form-section"><h3 class="section-title">2. İşleme Konu Varlık</h3><div class="form-group full-width"><label for="portfolioSearchInput" class="form-label">Portföyden Ara</label><input type="text" id="portfolioSearchInput" class="form-input" placeholder="Aramak için en az 3 karakter..."><div id="portfolioSearchResults" class="search-results-list"></div><div id="selectedIpRecordDisplay" class="search-result-display" style="display:none; align-items: center;"></div></div></div>
+                    <div class="form-section" id="relatedTransactionSection" style="display:none;"><h3 class="section-title">3. ${relatedTransactionLabel}</h3><div class="form-group full-width"><label for="relatedTransactionSelect" class="form-label">Mevcut İşlemler</label><select id="relatedTransactionSelect" class="form-select" disabled><option value="">Önce Varlık Seçin</option></select><p class="help-text">İlgili işlemin türü: ${transactionTypeMap[taskType] || ''}</p></div></div>
+                    <div class="form-section"><h3 class="section-title">4. Gerekli Dokümanlar</h3><div class="form-group full-width"><div class="file-upload-area" id="fileUploadArea"><p>Dosyaları buraya sürükleyin veya tıklayın</p><input type="file" id="fileInput" multiple hidden></div><div class="file-list" id="fileList"></div></div></div>
+                    <div class="form-section"><h3 class="section-title">5. İş Detayları</h3><div class="form-grid"><div class="form-group"><label for="taskPriority" class="form-label">Öncelik</label><select id="taskPriority" class="form-select"><option value="medium">Orta</option><option value="high">Yüksek</option><option value="low">Düşük</option></select></div><div class="form-group"><label for="assignedTo" class="form-label">Atanacak Kullanıcı</label><select id="assignedTo" class="form-select">${this.allUsers.map(u => `<option value="${u.id}">${u.displayName || u.email}</option>`).join('')}</select></div><div class="form-group full-width"><label for="taskDueDate" class="form-label">Operasyonel Son Tarih</label><input type="date" id="taskDueDate" class="form-input"></div></div></div>`;
+
+                // Dinamik event listener'ları kur
+                document.getElementById('portfolioSearchInput').addEventListener('input', (e) => this.searchPortfolio(e.target.value));
+                this.setupFileUpload(); // Doküman yükleme alanı için listener'ı kur
+                
+                // Varlık seçildiğinde ilgili transaction'ları yükle
+                // selectIpRecord metodunu güncelleyerek burayı tetikleyeceğiz
             }
 
             setupDynamicFormListeners() {
@@ -524,6 +573,69 @@
                 document.getElementById('portfolioSearchResults').innerHTML = ''; // Sonuçları temizle
                 document.getElementById('portfolioSearchInput').value = ''; // Arama kutusunu temizle
                 this.checkFormCompleteness();
+
+                // İlgili transaction'ları yükle (eğer ilgili form tipi seçiliyse)
+                const specificTaskType = document.getElementById('specificTaskType').value;
+                const transactionSpecificTasks = [
+                    'İtiraza Karşı Görüş (YIDD)',
+                    'İtiraza Karşı Görüş (Markalar)',
+                    'İtirazı Geri Çekme',
+                    'Kullanım İspatı Sunma', // Bunu da buraya dahil ettim
+                    'İtiraza Ek Belge' // Bunu da buraya dahil ettim
+                ];
+                if (transactionSpecificTasks.includes(specificTaskType) && this.selectedIpRecord.transactions) {
+                    this.populateRelatedTransactions(specificTaskType);
+                } else {
+                    document.getElementById('relatedTransactionSelect').innerHTML = '<option value="">Uygun İşlem Yok</option>';
+                    document.getElementById('relatedTransactionSelect').disabled = true;
+                    document.getElementById('relatedTransactionSection').style.display = 'none';
+                }
+            }
+
+            populateRelatedTransactions(specificTaskType) {
+                const selectElement = document.getElementById('relatedTransactionSelect');
+                const section = document.getElementById('relatedTransactionSection');
+                selectElement.innerHTML = '<option value="">İlgili İşlem Seçin</option>';
+                selectElement.disabled = true;
+                section.style.display = 'block';
+
+                if (!this.selectedIpRecord || !this.selectedIpRecord.transactions) {
+                    selectElement.innerHTML = '<option value="">İşlem geçmişi bulunamadı.</option>';
+                    return;
+                }
+
+                let filteredTransactions = [];
+                const allTransactions = this.selectedIpRecord.transactions.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp)); // En son tarihli olan en üstte
+
+                if (specificTaskType === 'İtirazı Geri Çekme' || specificTaskType === 'İtiraza Ek Belge') {
+                    filteredTransactions = allTransactions.filter(tx => 
+                        tx.description && (
+                            tx.description.includes('Yayına İtiraz') || 
+                            tx.description.includes('Karara İtiraz') || 
+                            tx.description.includes('İtiraz')
+                        )
+                    );
+                } else if (specificTaskType === 'İtiraza Karşı Görüş (YIDD)') {
+                    filteredTransactions = allTransactions.filter(tx => 
+                        tx.description && (tx.description.includes('Karara İtiraz'))
+                    );
+                } else if (specificTaskType === 'İtiraza Karşı Görüş (Markalar)' || specificTaskType === 'Kullanım İspatı Sunma') {
+                    filteredTransactions = allTransactions.filter(tx => 
+                        tx.description && (tx.description.includes('Yayına İtiraz'))
+                    );
+                }
+
+                if (filteredTransactions.length > 0) {
+                    filteredTransactions.forEach(tx => {
+                        const option = document.createElement('option');
+                        option.value = tx.transactionId;
+                        option.textContent = `${new Date(tx.timestamp).toLocaleDateString('tr-TR')} - ${tx.description}`;
+                        selectElement.appendChild(option);
+                    });
+                    selectElement.disabled = false;
+                } else {
+                    selectElement.innerHTML = '<option value="">Uygun İşlem Bulunamadı</option>';
+                }
             }
 
             searchPersons(query) {
@@ -557,7 +669,7 @@
                 this.selectedRelatedParty = person;
                 const display = document.getElementById('selectedRelatedPartyDisplay');
                 const taskType = document.getElementById('specificTaskType').value;
-                const label = { 'Devir': 'Devralan', 'Lisans': 'Lisans Alan', 'Rehin': 'Rehin Alan', 'Birleşme': 'Birleşilen Taraf', 'Veraset ile İntikal': 'Mirasçı', 'Rehin/Teminat': 'Rehin Alan Taraf' }[taskType] || 'İlgili Taraf'; // Yeni etiketler güncellendi
+                const label = { 'Devir': 'Devralan', 'Lisans': 'Lisans Alan', 'Rehin': 'Rehin Alan', 'Birleşme': 'Birleşilen Taraf', 'Veraset ile İntikal': 'Mirasçı', 'Rehin/Teminat': 'Rehin Alan Taraf' }[taskType] || 'İlgili Taraf';
                 display.innerHTML = `<p><b>Seçilen ${label}:</b> ${this.selectedRelatedParty.name}</p>`;
                 display.style.display = 'block';
                 document.getElementById('personSearchResults').innerHTML = '';
@@ -625,16 +737,29 @@
                 const transactionLikeTasks = ['Devir', 'Lisans', 'Birleşme', 'Rehin', 'Veraset ile İntikal', 'Rehin/Teminat'];
                 const simpleTasks = [
                     'Yenileme',
-                    'Tescil Belgesi Talebi',
+                    'Eksiklik Giderme',
+                    'Yayına İtiraz',
+                    'Karara İtiraz',
+                    'Yayıma İtirazın Yeniden İncelenmesi',
                     'Tescil Belgesi Sureti',
                     'Sicil Sureti',
                     'Menşe Memleket Belgesi',
                     'Bölünme',
                     'Vazgeçme',
+                    'Tanınmışlık Tespiti',
                     '3.Kişi Görüşü',
+                    'Madrid Başvurusu Ücret Ödeme',
                     'Muvaffakat Sunumu',
+                    'Kullanım İspatı Sunma',
+                    'İtiraza Ek Belge',
                     'Eşya Sınırlandırma'
                 ];
+                const transactionSpecificTasks = [
+                    'İtiraza Karşı Görüş (YIDD)',
+                    'İtiraza Karşı Görüş (Markalar)',
+                    'İtirazı Geri Çekme'
+                ];
+
                 let isComplete = false;
                 if (transactionLikeTasks.includes(taskType)) {
                     if (this.selectedIpRecord && this.selectedRelatedParty) {
@@ -642,6 +767,11 @@
                     }
                 } else if (simpleTasks.includes(taskType)) {
                     if (this.selectedIpRecord) {
+                        isComplete = true;
+                    }
+                } else if (transactionSpecificTasks.includes(taskType)) {
+                     // Transaction seçimi de zorunlu hale getirilebilir
+                     if (this.selectedIpRecord && document.getElementById('relatedTransactionSelect') && document.getElementById('relatedTransactionSelect').value !== '') {
                         isComplete = true;
                     }
                 }
@@ -670,10 +800,24 @@
                 };
 
                 const transactionLikeTasks = ['Devir', 'Lisans', 'Birleşme', 'Rehin', 'Veraset ile İntikal', 'Rehin/Teminat'];
+                const transactionSpecificTasks = [
+                    'İtiraza Karşı Görüş (YIDD)',
+                    'İtiraza Karşı Görüş (Markalar)',
+                    'İtirazı Geri Çekme',
+                    'Kullanım İspatı Sunma',
+                    'İtiraza Ek Belge'
+                ];
+
                 if (transactionLikeTasks.includes(specificTaskType)) {
                     taskData.description = `'${this.selectedIpRecord.title}' adlı varlık için ${specificTaskType} işlemi. İlgili taraf: '${this.selectedRelatedParty.name}'.`;
                     taskData.details = { relatedParty: this.selectedRelatedParty };
-                } else {
+                } else if (transactionSpecificTasks.includes(specificTaskType)) {
+                    const relatedTransactionId = document.getElementById('relatedTransactionSelect').value;
+                    const relatedTransaction = this.selectedIpRecord.transactions.find(tx => tx.transactionId === relatedTransactionId);
+                    taskData.description = `'${this.selectedIpRecord.title}' adlı varlık için ${specificTaskType} işlemi. İlgili İşlem: '${relatedTransaction ? relatedTransaction.description : 'Bilinmiyor'}'.`;
+                    taskData.details = { relatedTransactionId: relatedTransactionId, relatedTransactionDescription: relatedTransaction ? relatedTransaction.description : null };
+                }
+                else {
                     taskData.description = `'${this.selectedIpRecord.title}' adlı varlık için ${specificTaskType} talebi.`;
                 }
 
