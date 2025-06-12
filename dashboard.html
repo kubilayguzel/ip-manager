@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IP Manager - Dashboard</title>
     <style>
-        /* CSS stilleri burada kalacak */
+        /* Önceki stilleriniz burada... */
         * {
             margin: 0;
             padding: 0;
@@ -14,160 +14,8 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            min-height: 100vh;
             color: #333;
-        }
-
-        .header {
-            background: rgba(255, 255, 255, 0.95);
-            padding: 15px 0;
-            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
-            backdrop-filter: blur(10px);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .header-content {
-            max-width: 1400px;
-            margin: 0 auto;
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 20px;
-        }
-
-        .logo {
-            font-size: 1.8em;
-            font-weight: bold;
-            color: #1e3c72;
-        }
-
-        .nav-menu {
-            display: flex;
-            gap: 30px;
-        }
-
-        .nav-item {
-            color: #666;
-            text-decoration: none;
-            font-weight: 500;
-            padding: 8px 16px;
-            border-radius: 8px;
-            transition: all 0.3s ease;
-        }
-
-        .nav-item:hover, .nav-item.active {
-            background: #1e3c72;
-            color: white;
-        }
-
-        /* Dropdown Menü Stilleri */
-        .dropdown {
-            position: relative;
-            display: inline-block;
-        }
-
-        .dropdown-content {
-            display: none;
-            position: absolute;
-            background-color: rgba(255, 255, 255, 0.98);
-            min-width: 180px;
-            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-            z-index: 1;
-            border-radius: 8px;
-            padding: 10px 0;
-            top: 100%; /* Dropdown'ı butonun altına yerleştir */
-            left: 0;
-            opacity: 0;
-            transform: translateY(10px);
-            transition: opacity 0.3s ease, transform 0.3s ease;
-            pointer-events: none; /* Başlangıçta etkileşimi kapat */
-        }
-
-        .dropdown-content a {
-            color: #333;
-            padding: 12px 16px;
-            text-decoration: none;
-            display: block;
-            font-weight: 400;
-            transition: background-color 0.2s ease;
-            white-space: nowrap; /* Menü öğeleri tek satırda kalsın */
-        }
-
-        .dropdown-content a:hover {
-            background-color: #f1f1f1;
-            color: #1e3c72;
-        }
-
-        .dropdown:hover .dropdown-content,
-        .dropdown.active .dropdown-content { /* JavaScript ile 'active' sınıfı eklenince de açılsın */
-            display: block;
-            opacity: 1;
-            transform: translateY(0);
-            pointer-events: auto; /* Açıkken etkileşimi aç */
-        }
-
-        /* Dropdown başlığının stilini nav-item'a benzet */
-        .dropdown .nav-item {
-            cursor: pointer;
-            padding-right: 25px; /* Ok ikonu için boşluk */
-        }
-        .dropdown .nav-item::after {
-            content: ' ▼'; /* Küçük ok ikonu */
-            font-size: 0.8em;
-            vertical-align: middle;
-        }
-
-
-        .user-section {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .user-avatar {
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(45deg, #1e3c72, #2a5298);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-        }
-
-        .user-info {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .user-name {
-            font-weight: 600;
-            color: #333;
-        }
-
-        .user-role {
-            font-size: 0.8em;
-            color: #666;
-        }
-
-        .logout-btn {
-            background: #ff6b6b;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 0.9em;
-            transition: all 0.3s ease;
-        }
-
-        .logout-btn:hover {
-            background: #ff5252;
-            transform: translateY(-1px);
         }
 
         .main-container {
@@ -175,321 +23,152 @@
             margin: 30px auto;
             padding: 0 20px;
         }
+        
+        /* ... Diğer mevcut stilleriniz buraya eklenecek ... */
+        .welcome-section { background: rgba(255, 255, 255, 0.95); padding: 30px; border-radius: 20px; margin-bottom: 30px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); }
+        .welcome-title { font-size: 2em; color: #1e3c72; margin-bottom: 10px; }
+        .welcome-subtitle { color: #666; font-size: 1.1em; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 25px; margin-bottom: 40px; }
+        .stat-card { background: rgba(255, 255, 255, 0.95); padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); transition: transform 0.3s ease; border-left: 5px solid; }
+        .stat-card:hover { transform: translateY(-5px); }
+        .stat-card.patents { border-left-color: #ff6b6b; }
+        .stat-card.trademarks { border-left-color: #4ecdc4; }
+        .stat-card.copyrights { border-left-color: #45b7d1; }
+        .stat-card.designs { border-left-color: #96ceb4; }
+        .stat-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .stat-icon { width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5em; color: white; }
+        .stat-icon.patents { background: #ff6b6b; }
+        .stat-icon.trademarks { background: #4ecdc4; }
+        .stat-icon.copyrights { background: #45b7d1; }
+        .stat-icon.designs { background: #96ceb4; }
+        .stat-value { font-size: 2.5em; font-weight: bold; color: #1e3c72; }
+        .stat-label { color: #666; font-size: 1.1em; margin-bottom: 10px; }
+        .stat-change { font-size: 0.9em; padding: 4px 8px; border-radius: 6px; font-weight: 500; }
+        .stat-change.positive { background: #d4edda; color: #155724; }
+        .stat-change.negative { background: #f8d7da; color: #721c24; }
+        .dashboard-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 30px; margin-bottom: 40px; }
+        .chart-section { background: rgba(255, 255, 255, 0.95); padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); }
+        .chart-title { font-size: 1.3em; color: #1e3c72; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .chart-container { height: 300px; background: #f8f9fa; border-radius: 10px; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+        .chart-placeholder { color: #666; font-style: italic; text-align: center; }
+        .recent-activities { background: rgba(255, 255, 255, 0.95); padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); }
+        .activity-item { display: flex; align-items: center; padding: 15px 0; border-bottom: 1px solid #eee; }
+        .activity-item:last-child { border-bottom: none; }
+        .activity-icon { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 15px; font-size: 1.2em; color: white; }
+        .activity-icon.patent { background: #ff6b6b; }
+        .activity-icon.trademark { background: #4ecdc4; }
+        .activity-icon.copyright { background: #45b7d1; }
+        .activity-icon.design { background: #96ceb4; }
+        .activity-content { flex: 1; }
+        .activity-title { font-weight: 600; color: #333; margin-bottom: 5px; }
+        .activity-time { font-size: 0.9em; color: #666; }
+        .quick-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-top: 30px; }
+        .action-btn { background: linear-gradient(45deg, #1e3c72, #2a5298); color: white; padding: 20px; border: none; border-radius: 15px; cursor: pointer; font-size: 1em; font-weight: 600; transition: all 0.3s ease; text-align: center; text-decoration: none; display: block; }
+        .action-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(30, 60, 114, 0.3); }
+        .loading-animation { display: inline-block; width: 20px; height: 20px; border: 3px solid #f3f3f3; border-top: 3px solid #1e3c72; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .firebase-status { position: fixed; top: 20px; right: 20px; padding: 10px 15px; border-radius: 20px; font-size: 0.8em; font-weight: 600; z-index: 1000; background: #d4edda; color: #155724; }
+        .user-section { display: flex; align-items: center; gap: 15px; }
+        .user-avatar { width: 40px; height: 40px; background: linear-gradient(45deg, #1e3c72, #2a5298); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; }
+        .user-info { display: flex; flex-direction: column; }
+        .user-name { font-weight: 600; color: #333; }
+        .user-role { font-size: 0.8em; color: #666; }
+        .logout-btn { background: #ff6b6b; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 0.9em; transition: all 0.3s ease; }
+        .logout-btn:hover { background: #ff5252; transform: translateY(-1px); }
 
-        .welcome-section {
-            background: rgba(255, 255, 255, 0.95);
-            padding: 30px;
-            border-radius: 20px;
-            margin-bottom: 30px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-        }
 
-        .welcome-title {
-            font-size: 2em;
-            color: #1e3c72;
-            margin-bottom: 10px;
-        }
-
-        .welcome-subtitle {
-            color: #666;
-            font-size: 1.1em;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 25px;
-            margin-bottom: 40px;
-        }
-
-        .stat-card {
-            background: rgba(255, 255, 255, 0.95);
-            padding: 25px;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s ease;
-            border-left: 5px solid;
-        }
-
-        .stat-card:hover {
-            transform: translateY(-5px);
-        }
-
-        .stat-card.patents {
-            border-left-color: #ff6b6b;
-        }
-
-        .stat-card.trademarks {
-            border-left-color: #4ecdc4;
-        }
-
-        .stat-card.copyrights {
-            border-left-color: #45b7d1;
-        }
-
-        .stat-card.designs {
-            border-left-color: #96ceb4;
-        }
-
-        .stat-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-
-        .stat-icon {
-            width: 50px;
-            height: 50px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5em;
+        /* === YENİ SOL MENÜ VE SAYFA DÜZENİ STİLLERİ BAŞLANGICI === */
+        .sidebar {
+            width: 260px;
+            background: #1e3c72;
             color: white;
-        }
-
-        .stat-icon.patents {
-            background: #ff6b6b;
-        }
-
-        .stat-icon.trademarks {
-            background: #4ecdc4;
-        }
-
-        .stat-icon.copyrights {
-            background: #45b7d1;
-        }
-
-        .stat-icon.designs {
-            background: #96ceb4;
-        }
-
-        .stat-value {
-            font-size: 2.5em;
-            font-weight: bold;
-            color: #1e3c72;
-        }
-
-        .stat-label {
-            color: #666;
-            font-size: 1.1em;
-            margin-bottom: 10px;
-        }
-
-        .stat-change {
-            font-size: 0.9em;
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-weight: 500;
-        }
-
-        .stat-change.positive {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .stat-change.negative {
-            background: #f8d7da;
-            color: #721c24;
-        }
-
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 30px;
-            margin-bottom: 40px;
-        }
-
-        .chart-section {
-            background: rgba(255, 255, 255, 0.95);
-            padding: 30px;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-        }
-
-        .chart-title {
-            font-size: 1.3em;
-            color: #1e3c72;
-            margin-bottom: 20px;
             display: flex;
-            justify-content: space-between;
-            align-items: center;
+            flex-direction: column;
+            transition: width 0.3s ease;
+            height: 100vh;
+            position: sticky;
+            top: 0;
         }
-
-        .chart-container {
-            height: 300px;
-            background: #f8f9fa;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .chart-placeholder {
-            color: #666;
-            font-style: italic;
-            text-align: center;
-        }
-
-        .recent-activities {
-            background: rgba(255, 255, 255, 0.95);
-            padding: 30px;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-        }
-
-        .activity-item {
-            display: flex;
-            align-items: center;
-            padding: 15px 0;
-            border-bottom: 1px solid #eee;
-        }
-
-        .activity-item:last-child {
-            border-bottom: none;
-        }
-
-        .activity-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 15px;
-            font-size: 1.2em;
-            color: white;
-        }
-
-        .activity-icon.patent {
-            background: #ff6b6b;
-        }
-
-        .activity-icon.trademark {
-            background: #4ecdc4;
-        }
-
-        .activity-icon.copyright {
-            background: #45b7d1;
-        }
-
-        .activity-icon.design {
-            background: #96ceb4;
-        }
-
-        .activity-content {
-            flex: 1;
-        }
-
-        .activity-title {
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 5px;
-        }
-
-        .activity-time {
-            font-size: 0.9em;
-            color: #666;
-        }
-
-        .quick-actions {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-top: 30px;
-        }
-
-        .action-btn {
-            background: linear-gradient(45deg, #1e3c72, #2a5298);
-            color: white;
-            padding: 20px;
-            border: none;
-            border-radius: 15px;
-            cursor: pointer;
-            font-size: 1em;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            text-align: center;
-            text-decoration: none;
-            display: block;
-        }
-
-        .action-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 25px rgba(30, 60, 114, 0.3);
-        }
-
-        .loading-animation {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #1e3c72;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .firebase-status {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 10px 15px;
-            border-radius: 20px;
-            font-size: 0.8em;
-            font-weight: 600;
-            z-index: 1000;
-            background: #d4edda;
-            color: #155724;
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .dashboard-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .nav-menu {
-                display: none;
-            }
-            
-            .user-section {
-                flex-direction: column;
-                gap: 10px;
-            }
-        }
+        .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+        .sidebar-logo { font-size: 1.8em; font-weight: bold; color: white; }
+        .sidebar-nav { flex-grow: 1; overflow-y: auto; padding: 20px 0; }
+        .nav-category-title { padding: 10px 20px; font-size: 0.8em; font-weight: bold; color: rgba(255, 255, 255, 0.5); text-transform: uppercase; }
+        .sidebar-nav-item, .accordion-header { display: flex; align-items: center; gap: 15px; padding: 15px 20px; color: rgba(255, 255, 255, 0.8); text-decoration: none; transition: background 0.3s ease; cursor: pointer; }
+        .sidebar-nav-item:hover, .accordion-header:hover { background: rgba(255, 255, 255, 0.1); }
+        .sidebar-nav-item.active { background: #2a5298; color: white; font-weight: bold; border-left: 4px solid #4ecdc4; padding-left: 16px; }
+        .nav-icon { font-size: 1.2em; }
+        .accordion-header::after { content: '▶'; margin-left: auto; font-size: 0.8em; transition: transform 0.3s ease; }
+        .accordion-header.active::after { transform: rotate(90deg); }
+        .accordion-content { background: rgba(0, 0, 0, 0.2); max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; }
+        .accordion-content a { display: block; padding: 12px 20px 12px 45px; color: rgba(255, 255, 255, 0.7); text-decoration: none; transition: background 0.2s ease; }
+        .accordion-content a:hover { background: rgba(255, 255, 255, 0.1); color: white; }
+        .accordion-content a.active { color: white; font-weight: 500; }
+        .page-wrapper { flex-grow: 1; display: flex; flex-direction: column; height: 100vh; overflow-y: auto; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); }
+        .top-header { background: rgba(255, 255, 255, 0.95); padding: 15px 30px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05); display: flex; justify-content: flex-end; align-items: center; position: sticky; top: 0; z-index: 99; backdrop-filter: blur(10px); }
+        body > .header { display: none; }
+        /* === YENİ SOL MENÜ VE SAYFA DÜZENİ STİLLERİ SONU === */
     </style>
 </head>
 <body>
-    <div id="firebaseStatus" class="firebase-status" style="display: none;">🔄 Firebase bağlanıyor...</div>
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <span class="sidebar-logo">🔥 IP Manager</span>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-category-title">Ana Menü</div>
+            <a href="dashboard.html" class="sidebar-nav-item">
+                <span class="nav-icon">📊</span>
+                <span>Dashboard</span>
+            </a>
+            <a href="portfolio.html" class="sidebar-nav-item">
+                <span class="nav-icon">📋</span>
+                <span>Portföy</span>
+            </a>
+            
+            <div class="nav-category-title">Veri Girişi</div>
+            <a href="data-entry.html" class="sidebar-nav-item">
+                <span class="nav-icon">➕</span>
+                <span>Yeni Kayıt</span>
+            </a>
+            <a href="excel-upload.html" class="sidebar-nav-item">
+                <span class="nav-icon">📄</span>
+                <span>Excel ile Yükle</span>
+            </a>
 
-    <header class="header">
-        <div class="header-content">
-            <div class="logo">🔥 IP Manager</div>
-            <nav class="nav-menu">
-                <a href="#" class="nav-item active">Dashboard</a>
-                <a href="portfolio.html" class="nav-item">Portföy</a>
-                
-<div class="dropdown" id="managementDropdown">
-    <a href="#" class="nav-item dropdown-toggle" onclick="toggleDropdown(event)">Yönetim</a>
-    <div class="dropdown-content">
-        <a href="task-management.html">İş Yönetimi</a>
-        <a href="persons.html">Kişiler Yönetimi</a>
-        <a href="user-management.html">Kullanıcı Yönetimi</a>
-    </div>
-</div>
+            <div class="nav-category-title">Yönetim</div>
+            <div class="accordion">
+                <div class="accordion-header">
+                    <span class="nav-icon">⚙️</span>
+                    <span>Yönetim</span>
+                </div>
+                <div class="accordion-content">
+                    <a href="task-management.html">İş Yönetimi</a>
+                    <a href="my-tasks.html">İşlerim</a>
+                    <a href="persons.html">Kişiler Yönetimi</a>
+                    <a href="user-management.html">Kullanıcı Yönetimi</a>
+                </div>
+            </div>
+            
+            <div class="nav-category-title">Araçlar</div>
+             <a href="indexing.html" class="sidebar-nav-item">
+                <span class="nav-icon">📁</span>
+                <span>Belge İndeksleme</span>
+            </a>
 
-                <a href="#" class="nav-item">Raporlar</a>
-                <a href="#" class="nav-item">Ayarlar</a>
-            </nav>
-            <div class="user-section">
+            <a href="#" class="sidebar-nav-item" style="opacity: 0.5; cursor: not-allowed;">
+                <span class="nav-icon">📈</span>
+                <span>Raporlar</span>
+            </a>
+             <a href="#" class="sidebar-nav-item" style="opacity: 0.5; cursor: not-allowed;">
+                <span class="nav-icon">🔧</span>
+                <span>Ayarlar</span>
+            </a>
+        </nav>
+    </aside>
+
+    <div class="page-wrapper">
+        <header class="top-header">
+             <div class="user-section">
                 <div class="user-avatar" id="userAvatar">?</div>
                 <div class="user-info">
                     <div class="user-name" id="userName">Yükleniyor...</div>
@@ -497,448 +176,115 @@
                 </div>
                 <button class="logout-btn" id="logoutBtn">Çıkış</button>
             </div>
-        </div>
-    </header>
+        </header>
 
-    <main class="main-container">
-        <section class="welcome-section">
-            <h1 class="welcome-title">Hoş Geldiniz! 👋</h1>
-            <p class="welcome-subtitle">Fikri mülkiyet haklarınızın güncel durumunu görüntüleyin ve yönetin.</p>
-        </section>
+        <main class="main-container">
+            <div id="firebaseStatus" class="firebase-status" style="display: none;">🔄 Firebase bağlanıyor...</div>
+            <section class="welcome-section">
+                <h1 class="welcome-title">Hoş Geldiniz! 👋</h1>
+                <p class="welcome-subtitle">Fikri mülkiyet haklarınızın güncel durumunu görüntüleyin ve yönetin.</p>
+            </section>
 
-        <section class="stats-grid">
-            <div class="stat-card patents">
-                <div class="stat-header">
-                    <div class="stat-icon patents">📋</div>
-                    <div class="stat-change positive" id="patentChange">+0</div>
-                </div>
-                <div class="stat-value" id="patentCount">0</div>
-                <div class="stat-label">Patent</div>
-            </div>
+            <section class="stats-grid">
+                <div class="stat-card patents"><div class="stat-header"><div class="stat-icon patents">📋</div><div class="stat-change positive" id="patentChange">+0</div></div><div class="stat-value" id="patentCount">0</div><div class="stat-label">Patent</div></div>
+                <div class="stat-card trademarks"><div class="stat-header"><div class="stat-icon trademarks">🏷️</div><div class="stat-change positive" id="trademarkChange">+0</div></div><div class="stat-value" id="trademarkCount">0</div><div class="stat-label">Marka</div></div>
+                <div class="stat-card copyrights"><div class="stat-header"><div class="stat-icon copyrights">©</div><div class="stat-change positive" id="copyrightChange">+0</div></div><div class="stat-value" id="copyrightCount">0</div><div class="stat-label">Telif Hakkı</div></div>
+                <div class="stat-card designs"><div class="stat-header"><div class="stat-icon designs">🎨</div><div class="stat-change positive" id="designChange">+0</div></div><div class="stat-value" id="designCount">0</div><div class="stat-label">Tasarım</div></div>
+            </section>
 
-            <div class="stat-card trademarks">
-                <div class="stat-header">
-                    <div class="stat-icon trademarks">🏷️</div>
-                    <div class="stat-change positive" id="trademarkChange">+0</div>
-                </div>
-                <div class="stat-value" id="trademarkCount">0</div>
-                <div class="stat-label">Marka</div>
-            </div>
+            <section class="dashboard-grid">
+                <div class="chart-section"><div class="chart-title">Aylık Başvuru Trendi</div><div class="chart-container" id="trendChart"><div class="chart-placeholder"><div style="font-size: 3em; margin-bottom: 10px;">📈</div><div>Gerçek zamanlı veriler yükleniyor...</div><div class="loading-animation"></div></div></div></div>
+                <div class="recent-activities"><h2 class="chart-title">Son Aktiviteler</h2><div id="activitiesList"><div style="text-align: center; padding: 40px; color: #666;"><div class="loading-animation"></div><div style="margin-top: 10px;">Firebase'den veriler yükleniyor...</div></div></div></div>
+            </section>
 
-            <div class="stat-card copyrights">
-                <div class="stat-header">
-                    <div class="stat-icon copyrights">©</div>
-                    <div class="stat-change positive" id="copyrightChange">+0</div>
-                </div>
-                <div class="stat-value" id="copyrightCount">0</div>
-                <div class="stat-label">Telif Hakkı</div>
-            </div>
-
-            <div class="stat-card designs">
-                <div class="stat-header">
-                    <div class="stat-icon designs">🎨</div>
-                    <div class="stat-change positive" id="designChange">+0</div>
-                </div>
-                <div class="stat-value" id="designCount">0</div>
-                <div class="stat-label">Tasarım</div>
-            </div>
-        </section>
-
-        <section class="dashboard-grid">
-            <div class="chart-section">
-                <div class="chart-title">
-                    Aylık Başvuru Trendi
-                </div>
-                <div class="chart-container" id="trendChart">
-                    <div class="chart-placeholder">
-                        <div style="font-size: 3em; margin-bottom: 10px;">📈</div>
-                        <div>Gerçek zamanlı veriler yükleniyor...</div>
-                        <div class="loading-animation"></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="recent-activities">
-                <h2 class="chart-title">Son Aktiviteler</h2>
-                <div id="activitiesList">
-                    <div style="text-align: center; padding: 40px; color: #666;">
-                        <div class="loading-animation"></div>
-                        <div style="margin-top: 10px;">Firebase'den veriler yükleniyor...</div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section class="quick-actions">
-            <a href="data-entry.html" class="action-btn">📋 Yeni Patent Başvurusu</a>
-            <a href="data-entry.html" class="action-btn">🏷️ Yeni Marka Başvurusu</a>
-            <a href="portfolio.html" class="action-btn">📊 Portföyü Görüntüle</a>
-            <a href="persons.html" class="action-btn">👥 Kişileri Yönet</a>
-            <a href="indexing.html" class="action-btn">📁 Belge İndeksle</a> <a href="#" class="action-btn" onclick="alert('Raporlama modülü yakında!')">📈 Rapor Oluştur</a>
-        </section>
-    </main>
+            <section class="quick-actions">
+                <a href="data-entry.html" class="action-btn">📋 Yeni Patent Başvurusu</a>
+                <a href="data-entry.html" class="action-btn">🏷️ Yeni Marka Başvurusu</a>
+                <a href="portfolio.html" class="action-btn">📊 Portföyü Görüntüle</a>
+                <a href="persons.html" class="action-btn">👥 Kişileri Yönet</a>
+                <a href="indexing.html" class="action-btn">📁 Belge İndeksle</a>
+                <a href="#" class="action-btn" onclick="alert('Raporlama modülü yakında!')">📈 Rapor Oluştur</a>
+            </section>
+        </main>
+    </div>
 
     <script type="module">
-        import { 
-            authService, 
-            ipRecordsService, 
-            auth, 
-            createDemoData 
-        } from './firebase-config.js';
+        import { authService, ipRecordsService, auth, createDemoData } from './firebase-config.js';
 
-        // Dropdown Menü Fonksiyonu
-        function toggleDropdown(event) {
-            event.preventDefault(); // Varsayılan bağlantı davranışını engelle
-            const dropdown = document.getElementById("managementDropdown");
-            dropdown.classList.toggle("active"); // 'active' sınıfını ekleyip/kaldırarak görünürlüğü kontrol et
-            
-            // Dropdown dışına tıklanınca kapanması için
-            window.onclick = function(e) {
-                if (!e.target.matches('.dropdown-toggle') && !e.target.closest('.dropdown-content')) {
-                    if (dropdown.classList.contains('active')) {
-                        dropdown.classList.remove('active');
-                        window.onclick = null; // Olay dinleyiciyi kaldır
-                    }
-                }
-            }
-        }
-        // Fonksiyonu global scope'a atayalım ki HTML'den erişilebilsin
-        window.toggleDropdown = toggleDropdown;
-
-
-        // Dashboard Controller Class
+        // ... (Mevcut DashboardController sınıfınız ve diğer scriptleriniz buraya gelecek)
+        // Önemli: Eski header'a ait dropdown scriptini silebilirsiniz.
         class DashboardController {
             constructor() {
                 this.currentUser = null;
-                this.stats = {
-                    patent: 0,
-                    trademark: 0,
-                    copyright: 0,
-                    design: 0
-                };
+                this.stats = { patent: 0, trademark: 0, copyright: 0, design: 0 };
                 this.init();
             }
-
             init() {
                 this.setupEventListeners();
                 this.setupAuthStateListener();
                 this.checkFirebaseConnectionStatus(); 
                 console.log('📊 Firebase Dashboard başlatıldı');
             }
-
             setupAuthStateListener() {
                 auth.onAuthStateChanged(async (user) => { 
                     const statusDiv = document.getElementById('firebaseStatus');
-
                     if (user) {
-                        this.currentUser = authService.getCurrentUser(); // Kullanıcı bilgilerini ve rolünü güncellemek için authService'ten al
+                        this.currentUser = authService.getCurrentUser();
                         this.updateUserInfo(this.currentUser); 
                         statusDiv.textContent = '🔥 Firebase Bağlı'; 
                         statusDiv.className = 'firebase-status connected'; 
-                        console.log('✅ User authenticated by Firebase:', user.email); 
-                        
                         await this.loadUserData(); 
-                        // localStorage'a kaydedilen kullanıcı verisi artık authService'den geliyor
-                        // DÜZELTME: Bu satır duplicated olabilir, authService zaten handle ediyor.
-                        // Ancak fallback için tutulmasında sakınca yok.
                         localStorage.setItem('currentUser', JSON.stringify(this.currentUser)); 
-
                     } else {
-                        console.log('ℹ️ User is not authenticated. Checking localStorage fallback.'); 
                         const localUser = authService.getCurrentUser(); 
                         if (localUser && localUser.uid) { 
                             this.currentUser = localUser; 
                             this.updateUserInfo(localUser); 
                             statusDiv.textContent = '⚠️ Yerel Mod (Firebase bağlı değil)'; 
                             statusDiv.className = 'firebase-status error'; 
-                            console.log('✅ LocalStorage user detected, running in local mode:', localUser.email); 
                             await this.loadUserData(); 
                         } else {
-                            console.log('❌ No authenticated user found, redirecting to login.'); 
                             window.location.href = 'index.html'; 
                         }
                     }
-                    setTimeout(() => {
-                        statusDiv.style.display = 'none'; 
-                    }, 3000);
+                    setTimeout(() => { statusDiv.style.display = 'none'; }, 3000);
                 });
             }
-
             setupEventListeners() {
                 document.getElementById('logoutBtn').addEventListener('click', async () => {
                     if (confirm('Çıkış yapmak istediğinizden emin misiniz?')) {
-                        try {
-                            await authService.signOut();
-                            // DÜZELTME: signOut() zaten yönlendirmeyi hallettiği için burada ekstra yönlendirmeye gerek yok.
-                            // EğersignOut() sadece localStorage'ı temizleyip yönlendirme yapıyorsa, aşağıdaki satır kalsın.
-                            // Ancak mevcut firebase-config.js'de signOut() sonrasında yönlendirme yapılmıyor,
-                            // sadece localStorage temizleniyor. Bu durumda onAuthStateChanged handle etmeli.
-                            // Yine de, kesin yönlendirme için bu satırı ekleyebiliriz:
-                            window.location.href = 'index.html'; 
-
-                        } catch (error) {
-                            console.error('Logout error:', error);
-                            alert('Çıkış yaparken bir hata oluştu.');
-                        }
+                        await authService.signOut();
+                        window.location.href = 'index.html';
                     }
                 });
             }
-
-            checkFirebaseConnectionStatus() {
-                const statusDiv = document.getElementById('firebaseStatus');
-                if (authService.isFirebaseAvailable) { 
-                    statusDiv.textContent = '🔥 Firebase Bağlı';
-                    statusDiv.className = 'firebase-status connected';
-                } else {
-                    statusDiv.textContent = '❌ Firebase Bağlantı Hatası (Yerel Mod)';
-                    statusDiv.className = 'firebase-status error';
-                }
-                statusDiv.style.display = 'block'; 
-                setTimeout(() => {
-                    statusDiv.style.display = 'none'; 
-                }, 3000);
-            }
-
+            checkFirebaseConnectionStatus() { /* ... */ }
             updateUserInfo(user) {
                 const userName = user.displayName || user.email.split('@')[0] || 'Kullanıcı'; 
-                const userAvatar = userName.charAt(0).toUpperCase(); 
-
                 document.getElementById('userName').textContent = userName; 
-                document.getElementById('userAvatar').textContent = userAvatar; 
-                document.getElementById('userRole').textContent = user.role === 'admin' ? 'Yönetici' : 
-                                                              user.role === 'superadmin' ? 'Süper Yönetici' : 'Kullanıcı'; // Rol bilgisini göster
+                document.getElementById('userAvatar').textContent = userName.charAt(0).toUpperCase(); 
+                document.getElementById('userRole').textContent = user.role === 'admin' ? 'Yönetici' : user.role === 'superadmin' ? 'Süper Yönetici' : 'Kullanıcı';
             }
-
-            async loadUserData() {
-                const activitiesListPlaceholder = document.getElementById('activitiesList');
-                const trendChartPlaceholder = document.getElementById('trendChart');
-
-                activitiesListPlaceholder.innerHTML = `
-                    <div style="text-align: center; padding: 40px; color: #666;">
-                        <div class="loading-animation"></div>
-                        <div style="margin-top: 10px;">Veriler yükleniyor...</div>
-                    </div>
-                `;
-                trendChartPlaceholder.innerHTML = `
-                    <div class="chart-placeholder">
-                        <div style="font-size: 3em; margin-bottom: 10px;">📈</div>
-                        <div>Gerçek zamanlı veriler yükleniyor...</div>
-                        <div class="loading-animation"></div>
-                    </div>
-                `;
-
-                try {
-                    const result = await ipRecordsService.getRecords(); 
-                    
-                    if (result.success) {
-                        const records = result.data;
-                        this.processRecords(records);
-                        this.updateStats();
-                        this.updateActivities(records);
-                        this.updateChart(records); 
-                    } else {
-                        console.error('Error loading records:', result.error);
-                        this.handleNoData();
-                    }
-                } catch (error) {
-                    console.error('Error in loadUserData:', error);
-                    this.handleNoData();
-                } finally {
-                    // Bu blokta loading indicator'ı gizlediğimizden emin olun
-                    // activitiesListPlaceholder.innerHTML = activitiesListPlaceholder.innerHTML; 
-                    // trendChartPlaceholder.innerHTML = trendChartPlaceholder.innerHTML; 
-                }
-            }
-
-            processRecords(records) {
-                this.stats = {
-                    patent: 0,
-                    trademark: 0,
-                    copyright: 0,
-                    design: 0
-                };
-
-                records.forEach(record => {
-                    if (this.stats.hasOwnProperty(record.type)) {
-                        this.stats[record.type]++;
-                    }
-                });
-
-                console.log('📊 Stats processed:', this.stats);
-            }
-
-            updateStats() {
-                document.getElementById('patentCount').textContent = this.stats.patent;
-                document.getElementById('trademarkCount').textContent = this.stats.trademark;
-                document.getElementById('copyrightCount').textContent = this.stats.copyright;
-                document.getElementById('designCount').textContent = this.stats.design;
-
-                document.getElementById('patentChange').textContent = `+${this.stats.patent}`;
-                document.getElementById('trademarkChange').textContent = `+${this.stats.trademark}`;
-                document.getElementById('copyrightChange').textContent = `+${this.stats.copyright}`;
-                document.getElementById('designChange').textContent = `+${this.stats.design}`;
-            }
-
-            updateActivities(records) {
-                const activitiesList = document.getElementById('activitiesList');
-                
-                if (records.length === 0) {
-                    activitiesList.innerHTML = `
-                        <div style="text-align: center; padding: 40px; color: #666;">
-                            <div style="font-size: 2em; margin-bottom: 15px;">📋</div>
-                            <div>Henüz kayıt bulunmuyor</div>
-                            <div style="margin-top: 10px;">
-                                <a href="data-entry.html" style="color: #1e3c72; text-decoration: none;">İlk kaydınızı oluşturun →</a>
-                            </div>
-                        </div>
-                    `;
-                    return;
-                }
-
-                const recentRecords = records.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 5);
-                activitiesList.innerHTML = '';
-
-                recentRecords.forEach(record => {
-                    const activityItem = document.createElement('div');
-                    activityItem.className = 'activity-item';
-                    
-                    const iconMap = {
-                        patent: '📋',
-                        trademark: '🏷️',
-                        copyright: '©',
-                        design: '🎨'
-                    };
-
-                    const typeNames = {
-                        patent: 'Patent',
-                        trademark: 'Marka',
-                        copyright: 'Telif Hakkı',
-                        design: 'Tasarım'
-                    };
-
-                    const timeAgo = this.getTimeAgo(record.createdAt);
-
-                    activityItem.innerHTML = `
-                        <div class="activity-icon ${record.type}">${iconMap[record.type]}</div>
-                        <div class="activity-content">
-                            <div class="activity-title">${typeNames[record.type]} kaydı: ${record.title}</div>
-                            <div class="activity-time">${timeAgo}</div>
-                        </div>
-                    `;
-
-                    activitiesList.appendChild(activityItem);
-                });
-            }
-
-            updateChart(records) { 
-                const chartContainer = document.getElementById('trendChart');
-                const total = Object.values(this.stats).reduce((sum, val) => sum + val, 0);
-                
-                if (total === 0) {
-                    chartContainer.innerHTML = `
-                        <div class="chart-placeholder">
-                            <div style="font-size: 3em; margin-bottom: 10px;">📈</div>
-                            <div>Henüz kayıt bulunmuyor</div>
-                            <div style="margin-top: 10px; color: #666;">
-                                <a href="data-entry.html" style="color: #1e3c72; text-decoration: none;">Yeni kayıt oluşturarak grafiği görün.</a>
-                            </div>
-                        </div>
-                    `;
-                    return;
-                }
-
-                const monthlyCounts = {};
-                records.forEach(record => {
-                    const date = new Date(record.createdAt);
-                    const monthYear = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
-                    monthlyCounts[monthYear] = (monthlyCounts[monthYear] || 0) + 1;
-                });
-
-                const sortedMonths = Object.keys(monthlyCounts).sort();
-                const chartDataHtml = sortedMonths.map(month => `
-                    <div style="text-align: center; margin: 0 5px;">
-                        <div style="font-size: 1.5em; font-weight: bold; color: #1e3c72;">${monthlyCounts[month]}</div>
-                        <div style="font-size: 0.8em; color: #666;">${month}</div>
-                    </div>
-                `).join('');
-
-                chartContainer.innerHTML = `
-                    <div style="display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-end; width: 100%; height: 100%;">
-                        ${chartDataHtml}
-                    </div>
-                `;
-            }
-
-            handleNoData() {
-                this.updateStats(); 
-                
-                document.getElementById('activitiesList').innerHTML = `
-                    <div style="text-align: center; padding: 40px; color: #666;">
-                        <div style="font-size: 2em; margin-bottom: 15px;">🚀</div>
-                        <div>İlk IP kaydınızı oluşturun!</div>
-                        <div style="margin-top: 15px;">
-                            <a href="data-entry.html" class="action-btn" style="display: inline-block; padding: 10px 20px; font-size: 0.9em;">
-                                + Yeni Kayıt Oluştur
-                            </a>
-                        </div>
-                    </div>
-                `;
-
-                this.updateChart([]);
-            }
-
-            getTimeAgo(date) {
-                if (!date) return 'Bilinmiyor';
-                
-                const now = new Date();
-                const recordDate = date instanceof Date ? date : new Date(date);
-                const diffMs = now - recordDate;
-                const diffMins = Math.floor(diffMs / 60000);
-                const diffHours = Math.floor(diffMs / 3600000);
-                const diffDays = Math.floor(diffMs / 86400000);
-
-                if (diffMins < 1) return 'Az önce';
-                if (diffMins < 60) return `${diffMins} dakika önce`;
-                if (diffHours < 24) return `${diffHours} saat önce`;
-                if (diffDays < 30) return `${diffDays} gün önce`;
-                
-                return recordDate.toLocaleDateString('tr-TR');
-            }
-
-            async refreshData() {
-                await this.loadUserData();
-                console.log('🔄 Dashboard verileri yenilendi');
-            }
-
-            async createTestData() {
-                await createDemoData();
-                await this.loadUserData();
-                console.log('🧪 Test verileri oluşturuldu');
-            }
+            async loadUserData() { /* ... */ }
+            processRecords(records) { /* ... */ }
+            updateStats() { /* ... */ }
+            updateActivities(records) { /* ... */ }
+            updateChart(records) { /* ... */ }
+            handleNoData() { /* ... */ }
+            getTimeAgo(date) { /* ... */ }
+            async refreshData() { /* ... */ }
+            async createTestData() { /* ... */ }
         }
 
-        // Initialize Dashboard after Firebase auth state is determined
         let dashboard;
-        
         auth.onAuthStateChanged((user) => {
-            if (user) {
-                if (!dashboard) {
-                    dashboard = new DashboardController();
-                }
+            if (user || authService.getCurrentUser()) {
+                if (!dashboard) dashboard = new DashboardController();
             } else {
-                const localUser = authService.getCurrentUser();
-                if (localUser && localUser.uid) {
-                    if (!dashboard) {
-                        dashboard = new DashboardController();
-                    }
-                } else {
-                    console.log('❌ No authenticated user found, redirecting to login.');
-                    window.location.href = 'index.html'; 
-                }
+                window.location.href = 'index.html'; 
             }
         });
 
-        // Test functions (window'a bağlı, konsoldan erişilebilir)
         window.testDashboard = {
             refreshData: () => dashboard?.refreshData(),
             createTestData: () => dashboard?.createTestData(),
@@ -946,8 +292,34 @@
             getStats: () => dashboard?.stats
         };
 
-        console.log('🚀 Firebase Dashboard modülü hazır!');
-        console.log('Test için: testDashboard.createTestData() - Demo veri oluştur');
+        // YENİ AKORDİYON MENÜ İÇİN JAVASCRIPT
+        document.addEventListener('DOMContentLoaded', function() {
+            const accordions = document.querySelectorAll('.accordion-header');
+            accordions.forEach(accordion => {
+                accordion.addEventListener('click', () => {
+                    const content = accordion.nextElementSibling;
+                    accordion.classList.toggle('active');
+                    if (content.style.maxHeight) {
+                        content.style.maxHeight = null;
+                    } else {
+                        content.style.maxHeight = content.scrollHeight + "px";
+                    }
+                });
+            });
+
+            const currentPage = window.location.pathname.split("/").pop() || 'dashboard.html';
+            const activeLink = document.querySelector(`.sidebar-nav a[href="${currentPage}"]`);
+            if (activeLink) {
+                document.querySelectorAll('.sidebar-nav-item.active, .accordion-content a.active').forEach(el => el.classList.remove('active'));
+                activeLink.classList.add('active');
+                const parentAccordion = activeLink.closest('.accordion-content');
+                if(parentAccordion) {
+                    const header = parentAccordion.previousElementSibling;
+                    header.classList.add('active');
+                    parentAccordion.style.maxHeight = parentAccordion.scrollHeight + "px";
+                }
+            }
+        });
     </script>
 </body>
 </html>
