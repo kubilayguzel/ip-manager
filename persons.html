@@ -246,7 +246,6 @@
         let personsModule; 
 
         class PersonsModule {
-            // ... Orijinal PersonsModule sınıfının TÜM içeriği buraya gelecek ...
             constructor() {
                 this.currentUser = null;
                 this.allPersons = [];
@@ -271,7 +270,7 @@
                     }
                 });
             }
-            setupEventListeners() { /* ... */ }
+
             updateUserInfo() {
                  if (this.currentUser) {
                     const userName = this.currentUser.displayName || this.currentUser.email.split('@')[0] || 'Kullanıcı';
@@ -280,11 +279,353 @@
                     document.getElementById('userRole').textContent = this.currentUser.role === 'admin' ? 'Yönetici' : this.currentUser.role === 'superadmin' ? 'Süper Yönetici' : 'Kullanıcı';
                 }
             }
-            async loadPersons() { /* ... */ }
-            // ... Sınıfın diğer tüm orijinal metodları ...
+
+            setupEventListeners() {
+                document.getElementById('logoutBtn').addEventListener('click', () => authService.signOut());
+                document.getElementById('searchInput').addEventListener('input', (e) => { this.filters.search = e.target.value; this.applyFilters(); });
+                document.getElementById('typeFilter').addEventListener('change', (e) => { this.filters.type = e.target.value; this.applyFilters(); });
+                document.getElementById('resetFiltersBtn').addEventListener('click', () => this.resetFilters());
+                document.getElementById('refreshPersonsBtn').addEventListener('click', () => this.loadPersons());
+                document.getElementById('addPersonBtn').addEventListener('click', () => this.showPersonModal());
+                document.getElementById('addFirstPersonBtn').addEventListener('click', () => this.showPersonModal());
+                document.getElementById('closePersonModalBtn').addEventListener('click', () => this.hidePersonModal());
+                document.getElementById('cancelPersonFormBtn').addEventListener('click', () => this.hidePersonModal());
+                document.getElementById('personForm').addEventListener('submit', (e) => this.handlePersonFormSubmit(e));
+                document.getElementById('prevBtn').addEventListener('click', () => { if (this.currentPage > 1) { this.currentPage--; this.renderTable(); } });
+                document.getElementById('nextBtn').addEventListener('click', () => { const totalPages = Math.ceil(this.filteredPersons.length / this.personsPerPage); if (this.currentPage < totalPages) { this.currentPage++; this.renderTable(); } });
+                document.querySelectorAll('.persons-table th.sortable').forEach(th => {
+                    th.addEventListener('click', () => this.handleSort(th.dataset.sort));
+                });
+                const createUserAccountBtn = document.getElementById('createUserAccountBtn');
+                if (createUserAccountBtn) {
+                    createUserAccountBtn.addEventListener('click', () => this.createPersonUserAccount());
+                }
+
+                document.getElementById('personModal').addEventListener('click', (e) => {
+                    if (e.target.id === 'personModal') {
+                        this.hidePersonModal();
+                    }
+                });
+
+                if (this.currentUser && this.currentUser.role === 'superadmin') {
+                    document.getElementById('ownerColumn').style.display = 'table-cell';
+                } else {
+                    document.getElementById('ownerColumn').style.display = 'none';
+                }
+            }
+            
+            async loadPersons() {
+                const loadingIndicator = document.getElementById('loadingIndicator');
+                const personsTable = document.getElementById('personsTable');
+                const noPersons = document.getElementById('noPersons');
+                loadingIndicator.style.display = 'block';
+                personsTable.style.display = 'none';
+                noPersons.style.display = 'none';
+                try {
+                    const result = await personsService.getPersons();
+                    if (result.success) {
+                        this.allPersons = result.data;
+                        this.applyFilters();
+                    } else {
+                        throw new Error(result.error);
+                    }
+                } catch (error) {
+                    console.error('Error loading persons data:', error);
+                    this.allPersons = [];
+                    this.filteredPersons = [];
+                    this.showEmptyState();
+                    alert('Kişiler yüklenirken bir hata oluştu: ' + error.message);
+                } finally {
+                    loadingIndicator.style.display = 'none';
+                }
+            }
+
+            updateStats() {
+                document.getElementById('totalPersonsCount').textContent = this.filteredPersons.length;
+                document.getElementById('individualCount').textContent = this.filteredPersons.filter(p => p.type === 'individual').length;
+                document.getElementById('companyCount').textContent = this.filteredPersons.filter(p => p.type === 'company').length;
+                document.getElementById('institutionCount').textContent = this.filteredPersons.filter(p => p.type === 'institution').length;
+            }
+
+            applyFilters() {
+                this.currentPage = 1;
+                const search = document.getElementById('searchInput').value.toLowerCase();
+                const typeFilter = document.getElementById('typeFilter').value;
+
+                this.filteredPersons = this.allPersons.filter(person => {
+                    const searchMatch = search === '' || person.name.toLowerCase().includes(search) || (person.email && person.email.toLowerCase().includes(search)) || (person.phone && person.phone.includes(search));
+                    const typeMatch = typeFilter === '' || person.type === typeFilter;
+                    return searchMatch && typeMatch;
+                });
+                this.sortRecords();
+                this.renderTable();
+                this.updateStats();
+            }
+
+            resetFilters() {
+                document.getElementById('searchInput').value = '';
+                document.getElementById('typeFilter').value = '';
+                this.applyFilters();
+            }
+            
+            handleSort(column) {
+                if (this.sortColumn === column) {
+                    this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+                } else {
+                    this.sortColumn = column;
+                    this.sortDirection = 'asc';
+                }
+                this.sortRecords();
+                this.renderTable();
+            }
+
+            sortRecords() {
+                this.filteredPersons.sort((a, b) => {
+                    let aVal = a[this.sortColumn] || '';
+                    let bVal = b[this.sortColumn] || '';
+
+                    if (this.sortColumn === 'name' || this.sortColumn === 'email' || this.sortColumn === 'type' || this.sortColumn === 'phone' || this.sortColumn === 'userEmail') {
+                        aVal = String(aVal).toLowerCase();
+                        bVal = String(bVal).toLowerCase();
+                    }
+
+                    if (aVal < bVal) return this.sortDirection === 'asc' ? -1 : 1;
+                    if (aVal > bVal) return this.sortDirection === 'asc' ? 1 : -1;
+                    return 0;
+                });
+                this.updateSortIndicators();
+            }
+
+            updateSortIndicators() {
+                document.querySelectorAll('.persons-table th.sortable').forEach(th => {
+                    th.classList.remove('sort-asc', 'sort-desc');
+                    if (th.dataset.sort === this.sortColumn) {
+                        th.classList.add(`sort-${this.sortDirection}`);
+                    }
+                });
+            }
+
+            renderTable() {
+                const tbody = document.getElementById('personsTableBody');
+                const pagination = document.getElementById('pagination');
+                const personsTable = document.getElementById('personsTable');
+                const noPersons = document.getElementById('noPersons');
+                tbody.innerHTML = '';
+
+                if (this.filteredPersons.length === 0) {
+                    this.showEmptyState();
+                    return;
+                }
+
+                personsTable.style.display = 'table';
+                noPersons.style.display = 'none';
+
+                const totalPages = Math.ceil(this.filteredPersons.length / this.personsPerPage);
+                const pagePersons = this.filteredPersons.slice((this.currentPage - 1) * this.personsPerPage, this.currentPage * this.personsPerPage);
+
+                pagePersons.forEach(person => {
+                    tbody.appendChild(this.createTableRow(person));
+                });
+
+                if (totalPages > 1) {
+                    pagination.style.display = 'flex';
+                    document.getElementById('prevBtn').disabled = this.currentPage === 1;
+                    document.getElementById('nextBtn').disabled = this.currentPage === totalPages;
+                    document.getElementById('pageInfo').textContent = `Sayfa ${this.currentPage} / ${totalPages}`;
+                } else {
+                    pagination.style.display = 'none';
+                }
+                this.updateSortIndicators();
+            }
+
+            createTableRow(person) {
+                const row = document.createElement('tr');
+                const typeNames = { individual: 'Bireysel', company: 'Şirket', institution: 'Kurum' };
+                row.innerHTML = `
+                    <td>${person.name}</td>
+                    <td>${person.email || '-'}</td>
+                    <td>${person.phone || '-'}</td>
+                    <td><span class="person-type ${person.type}">${typeNames[person.type] || 'Bilinmiyor'}</span></td>
+                    <td style="${this.currentUser && this.currentUser.role === 'superadmin' ? 'display: table-cell;' : 'display: none;'}">${person.userEmail || '-'}</td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="table-action-btn btn-view" data-id="${person.id}" title="Görüntüle">👁️</button>
+                            <button class="table-action-btn btn-edit" data-id="${person.id}" title="Düzenle">✏️</button>
+                            <button class="table-action-btn btn-delete" data-id="${person.id}" title="Sil">🗑️</button>
+                        </div>
+                    </td>
+                `;
+                row.querySelector('.btn-view').addEventListener('click', () => this.viewPerson(person.id));
+                row.querySelector('.btn-edit').addEventListener('click', () => this.editPerson(person.id));
+                row.querySelector('.btn-delete').addEventListener('click', () => this.deletePerson(person.id));
+                return row;
+            }
+
+            showEmptyState() {
+                document.getElementById('personsTable').style.display = 'none';
+                document.getElementById('pagination').style.display = 'none';
+                document.getElementById('noPersons').style.display = 'block';
+            }
+
+            showPersonModal(personId = null) {
+                this.currentPersonId = personId;
+                const modal = document.getElementById('personModal');
+                const form = document.getElementById('personForm');
+                form.reset();
+
+                form.querySelectorAll('.error-message').forEach(el => el.style.display = 'none');
+                form.querySelectorAll('.filter-input').forEach(el => el.classList.remove('error-field'));
+
+                document.getElementById('personModalTitle').textContent = personId ? 'Kişi Detayları' : 'Yeni Kişi Ekle';
+                document.getElementById('personCreatedAt').value = '';
+                document.getElementById('personUpdatedAt').value = '';
+                document.getElementById('modalOwnerInfo').value = '';
+                document.getElementById('modalOwnerInfoGroup').style.display = 'none';
+                document.getElementById('createUserAccountGroup').style.display = 'none';
+
+                if (personId) {
+                    const person = this.allPersons.find(p => p.id === personId);
+                    if (person) {
+                        document.getElementById('personName').value = person.name || '';
+                        document.getElementById('personEmail').value = person.email || '';
+                        document.getElementById('personPhone').value = person.phone || '';
+                        document.getElementById('personType').value = person.type || '';
+                        document.getElementById('personAddress').value = person.address || '';
+                        document.getElementById('personCreatedAt').value = person.createdAt ? new Date(person.createdAt).toLocaleString('tr-TR') : '-';
+                        document.getElementById('personUpdatedAt').value = person.updatedAt ? new Date(person.updatedAt).toLocaleString('tr-TR') : '-';
+
+                        if (this.currentUser.role === 'superadmin' || person.userId === this.currentUser.uid) {
+                            if (person.userEmail) {
+                                document.getElementById('modalOwnerInfo').value = person.userEmail;
+                                document.getElementById('modalOwnerInfoGroup').style.display = 'flex';
+                            }
+                            if (this.currentUser.role === 'superadmin' && person.email && !person.hasUserAccount) {
+                                document.getElementById('createUserAccountGroup').style.display = 'flex';
+                            }
+                        }
+                    }
+                }
+                modal.classList.add('show');
+            }
+
+            hidePersonModal() {
+                document.getElementById('personModal').classList.remove('show');
+            }
+
+            viewPerson(personId) {
+                this.showPersonModal(personId);
+                const formElements = document.querySelectorAll('#personForm input, #personForm select, #personForm textarea, #personForm button:not(#cancelPersonFormBtn)');
+                formElements.forEach(el => el.disabled = true);
+                document.getElementById('savePersonBtn').style.display = 'none';
+            }
+
+            editPerson(personId) {
+                this.showPersonModal(personId);
+                const formElements = document.querySelectorAll('#personForm input, #personForm select, #personForm textarea, #personForm button:not(#cancelPersonFormBtn)');
+                formElements.forEach(el => el.disabled = false);
+                document.getElementById('savePersonBtn').style.display = 'inline-block';
+            }
+
+            async handlePersonFormSubmit(event) {
+                event.preventDefault();
+                const personName = document.getElementById('personName').value.trim();
+                const personEmail = document.getElementById('personEmail').value.trim();
+                const personPhone = document.getElementById('personPhone').value.trim();
+                const personType = document.getElementById('personType').value;
+                const personAddress = document.getElementById('personAddress').value.trim();
+
+                let isValid = true;
+                if (!personName) {
+                    alert('Ad Soyad zorunludur.');
+                    isValid = false;
+                }
+                if (!personType) {
+                    alert('Kişi Türü zorunludur.');
+                    isValid = false;
+                }
+                if (personEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(personEmail)) {
+                    alert('Geçerli bir e-posta adresi girin.');
+                    isValid = false;
+                }
+                
+                if (!isValid) return;
+
+                const personData = { name: personName, email: personEmail, phone: personPhone, type: personType, address: personAddress };
+                let result;
+                if (this.currentPersonId) {
+                    result = await personsService.updatePerson(this.currentPersonId, personData);
+                    if (result.success) {
+                        alert('Kişi başarıyla güncellendi!');
+                    } else {
+                        alert('Kişi güncellenirken hata: ' + result.error);
+                    }
+                } else {
+                    result = await personsService.addPerson(personData);
+                    if (result.success) {
+                        alert('Yeni kişi başarıyla eklendi!');
+                    } else {
+                        alert('Kişi eklenirken hata: ' + result.error);
+                    }
+                }
+                if (result.success) {
+                    this.hidePersonModal();
+                    await this.loadPersons();
+                }
+            }
+
+            async deletePerson(personId) {
+                const person = this.allPersons.find(p => p.id === personId);
+                if (!person) return;
+
+                if (confirm(`'${person.name}' adlı kişiyi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`)) {
+                    try {
+                        const result = await personsService.deletePerson(personId);
+                        if (result.success) {
+                            alert('Kişi başarıyla silindi.');
+                            this.loadPersons();
+                        } else {
+                            throw new Error(result.error);
+                        }
+                    } catch (error) {
+                        alert('Kişi silinirken bir hata oluştu: ' + error.message);
+                    }
+                }
+            }
+
+            async createPersonUserAccount() {
+                if (!this.currentPersonId) {
+                    alert('Lütfen önce bir kişi seçin.');
+                    return;
+                }
+                const person = this.allPersons.find(p => p.id === this.currentPersonId);
+                if (!person || !person.email) {
+                    alert('Bu kişi için bir e-posta adresi bulunmuyor veya kişi seçilmedi.');
+                    return;
+                }
+
+                if (!confirm(`'${person.name}' (${person.email}) için yeni bir kullanıcı hesabı oluşturulacak. Devam etmek istiyor musunuz?`)) {
+                    return;
+                }
+
+                try {
+                    const dummyPassword = 'password123';
+                    const result = await authService.signUp(person.email, dummyPassword, person.name, 'user');
+
+                    if (result.success) {
+                        await personsService.updatePerson(person.id, { hasUserAccount: true });
+                        alert(`'${person.name}' için kullanıcı hesabı başarıyla oluşturuldu! Varsayılan şifre: ${dummyPassword}. Kullanıcıya bildirip şifresini değiştirmesini söyleyin.`);
+                        this.hidePersonModal();
+                        this.loadPersons();
+                    } else {
+                        alert('Kullanıcı hesabı oluşturulurken hata: ' + result.error);
+                    }
+                } catch (error) {
+                    console.error('Kullanıcı hesabı oluşturma hatası:', error);
+                    alert('Kullanıcı hesabı oluşturulurken beklenmeyen bir hata oluştu: ' + error.message);
+                }
+            }
         }
 
-        // Modül başlatma
         auth.onAuthStateChanged((user) => {
             if (user || authService.getCurrentUser()) {
                 if (!personsModule) {
@@ -296,13 +637,10 @@
             }
         });
 
-        // YENİ AKORDİYON MENÜ İÇİN JAVASCRIPT
-       document.addEventListener('DOMContentLoaded', function() {
-    // --- Akordiyon Menü Tıklama Fonksiyonu ---
+        document.addEventListener('DOMContentLoaded', function() {
     const accordions = document.querySelectorAll('.accordion-header');
     accordions.forEach(accordion => {
         accordion.addEventListener('click', function(event) {
-            // Akordiyonu aç/kapat
             this.classList.toggle('active');
             const content = this.nextElementSibling;
             if (content.style.maxHeight) {
@@ -313,20 +651,16 @@
         });
     });
 
-    // --- Sayfa Yüklendiğinde Aktif Menüyü Ayarlama Fonksiyonu ---
     function setActiveMenu() {
         const currentPage = window.location.pathname.split("/").pop() || 'dashboard.html';
         
-        // Önce tüm aktif işaretlerini temizle
         document.querySelectorAll('.sidebar-nav-item.active, .accordion-content a.active').forEach(el => el.classList.remove('active'));
         
-        // Mevcut sayfanın linkini bul ve aktif yap
         const activeLink = document.querySelector(`.sidebar-nav a[href="${currentPage}"]`);
         if (!activeLink) return;
 
         activeLink.classList.add('active');
         
-        // Eğer link bir akordiyon içindeyse, akordiyonu aç ve başlığını aktif et
         const parentAccordionContent = activeLink.closest('.accordion-content');
         if (parentAccordionContent) {
             const parentAccordionHeader = parentAccordionContent.previousElementSibling;
@@ -337,7 +671,6 @@
         }
     }
 
-    // Sayfa ilk yüklendiğinde aktif menüyü ayarla
     setActiveMenu();
 });
     </script>
