@@ -889,48 +889,35 @@
                 
                 // YENİ FİLTRELEME: Sadece belirli transaction tiplerini göster
                 const displayableTransactionTypes = [
-                    "Document Indexed", // Belge indeksleme transaction'ları
-                    "Document Sub-Indexed", // Alt belge indeksleme transaction'ları
-                    // create-task.html'den gelen iş tipleri
-                    'Başvuru',
-                    'İtiraza Karşı Görüş (YIDD)',
-                    'Yenileme',
-                    'Eksiklik Giderme',
-                    'Yayına İtiraz',
-                    'Karara İtiraz',
-                    'Yayıma İtirazın Yeniden İncelenmesi',
-                    'İtiraza Karşı Görüş (Markalar)',
-                    'Devir',
-                    'Lisans',
-                    'Birleşme',
-                    'Veraset ile İntikal',
-                    'Tescil Belgesi Sureti',
-                    'Sicil Sureti',
-                    'Menşe Memleket Belgesi',
-                    'Rehin/Teminat',
-                    'Bölünme',
-                    'Vazgeçme',
-                    'Tanınmışlık Tespiti',
-                    '3.Kişi Görüşü',
-                    'Yayına İtirazı Geri Çekme',
-                    'Madrid Başvurusu Ücret Ödeme',
-                    'Muvaffakat Sunumu',
-                    'Kullanım İspatı Sunma',
-                    'İtiraza Ek Belge',
-                    'Eşya Sınırlandırma'
+                    "Document Indexed",
+                    "Document Sub-Indexed",
+                    // create-task.html'den gelen iş tipleri (portfolio.html'deki ile aynı liste)
+                    'Başvuru', 'İtiraza Karşı Görüş (YIDD)', 'Yenileme', 'Eksiklik Giderme', 'Yayına İtiraz',
+                    'Karara İtiraz', 'Yayıma İtirazın Yeniden İncelenmesi', 'İtiraza Karşı Görüş (Markalar)',
+                    'Devir', 'Lisans', 'Birleşme', 'Veraset ile İntikal', 'Tescil Belgesi Sureti',
+                    'Sicil Sureti', 'Menşe Memleket Belgesi', 'Rehin/Teminat', 'Bölünme', 'Vazgeçme',
+                    'Tanınmışlık Tespiti', '3.Kişi Görüşü', 'Yayına İtirazı Geri Çekme',
+                    'Madrid Başvurusu Ücret Ödeme', 'Muvaffakat Sunumu', 'Kullanım İspatı Sunma',
+                    'İtiraza Ek Belge', 'Eşya Sınırlandırma',
+                    // İndeksleme Tipleri (Belge İndeksleme modülüne özel)
+                    'Kabul Kararı', 'Ret Kararı', 'Eksiklik Bildirimi' 
                 ];
 
-                // Sadece gösterilebilir tipleri filtrele
-                const filteredTransactionsToDisplay = allTransactions.filter(tx => 
+                const relevantTransactions = allTransactions.filter(tx => 
                     displayableTransactionTypes.includes(tx.type) // transaction'ın 'type' özelliğini kontrol et
-                );
+                ).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)); // Tekrar sıralama
 
 
-                const transactionsMap = new Map(filteredTransactionsToDisplay.map(tx => [tx.transactionId, tx])); // Filtrelenmiş olanlar üzerinden map oluştur
+                if (relevantTransactions.length === 0) {
+                    historyContainer.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Gösterilebilir işlem bulunmuyor.</p>';
+                    return;
+                }
+
+                const transactionsMap = new Map(relevantTransactions.map(tx => [tx.transactionId, tx]));
                 const childrenMap = new Map();
                 
-                filteredTransactionsToDisplay.forEach(tx => { // Filtrelenmiş olanlar üzerinden childrenMap oluştur
-                    if (tx.parentId && transactionsMap.has(tx.parentId)) { // Sadece parent'ı da gösterilen transaction'lar için child oluştur
+                relevantTransactions.forEach(tx => {
+                    if (tx.parentId && transactionsMap.has(tx.parentId)) { // Sadece parent'ı da listede olanları child yap
                         if (!childrenMap.has(tx.parentId)) childrenMap.set(tx.parentId, []);
                         childrenMap.get(tx.parentId).push(tx);
                     }
@@ -952,12 +939,10 @@
                                 <div class="transaction-node-content">
                                     <div class="transaction-info">
                                         <div class="transaction-description">${tx.description || tx.type}</div> 
-                                        <div class="transaction-meta">${new Date(tx.timestamp).toLocaleString('tr-TR')} by ${tx.userEmail}${documentLinkHtml}</div>
+                                        <div class="transaction-meta">${new Date(tx.timestamp).toLocaleDateString('tr-TR')} by ${tx.userEmail}${documentLinkHtml}</div>
                                     </div>
                                     <div class="transaction-actions">
-                                        <button class="transaction-action-btn btn-edit-transaction" onclick="portfolio.openEditTransactionModal('${recordId}', '${tx.transactionId}')" title="Düzenle">✏️</button>
-                                        <button class="transaction-action-btn btn-delete-transaction" onclick="portfolio.deleteTransaction('${recordId}', '${tx.transactionId}')" title="Sil">🗑️</button>
-                                    </div>
+                                        </div>
                                 </div>
                             </div>
                             ${hasChildren ? `<div class="child-transactions" id="children-of-${tx.transactionId}">${buildTreeHtml(children)}</div>` : ''}`;
@@ -965,113 +950,16 @@
                     return html;
                 };
 
-                // Sadece filtrelenmiş transaction'lar içinden kökleri bul
-                const rootTransactions = filteredTransactionsToDisplay.filter(tx => !tx.parentId || !transactionsMap.has(tx.parentId));
+                const rootTransactions = relevantTransactions.filter(tx => !tx.parentId || !transactionsMap.has(tx.parentId));
                 historyContainer.innerHTML = buildTreeHtml(rootTransactions);
 
-                if (rootTransactions.length === 0 && filteredTransactionsToDisplay.length === 0) {
-                    historyContainer.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Belge işlem geçmişi bulunmuyor veya gösterilebilir işlem yok.</p>';
-                }
-            }
-
-
-            editRecord(recordId) { window.location.href = `data-entry.html?recordId=${recordId}`; }
-
-            async deleteRecord(recordId) {
-                const record = this.records.find(r => r.id === recordId);
-                if (!record) return;
-                if (confirm(`'${record.title}' başlıklı kaydı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`)) {
-                    try {
-                        const result = await ipRecordsService.deleteRecord(recordId);
-                        if(result.success) { alert('Kayıt başarıyla silindi.'); this.loadRecords(); } 
-                        else { throw new Error(result.error); }
-                    } catch(error) { alert('Kayıt silinirken bir hata oluştu: ' + error.message); }
-                }
-            }
-
-            closeModal(modalId) { document.getElementById(modalId).classList.remove('show'); }
-
-            exportData() {
-                if (this.filteredRecords.length === 0) { alert('Dışa aktarılacak veri bulunamadı.'); return; }
-                const headers = ['Tur', 'Baslik', 'BasvuruNo', 'Durum', 'BasvuruTarihi', 'HakSahipleri', 'Aciklama'];
-                const rows = this.filteredRecords.map(r => [r.type, r.title, r.applicationNumber, r.status, r.applicationDate, (r.owners || []).map(o => o.name).join('; '), r.description]);
-                let csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n" + rows.map(e => e.map(cell => `"${String(cell || '').replace(/"/g, '""')}"`).join(",")).join("\n");
-                const link = document.createElement("a");
-                link.setAttribute("href", encodeURI(csvContent));
-                link.setAttribute("download", "ip_manager_portfoy.csv");
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            }
-            
-            showEmptyState() {
-                document.getElementById('portfolioTable').style.display = 'none';
-                document.getElementById('pagination').style.display = 'none';
-                document.getElementById('noRecords').style.display = 'block';
-            }
-
-            openEditTransactionModal(recordId, transactionId) {
-                const record = this.records.find(r => r.id === recordId);
-                const transaction = record?.transactions.find(t => t.transactionId === transactionId);
-                if (!transaction) { alert('Düzenlenecek işlem bulunamadı.'); return; }
-
-                document.getElementById('editTransactionRecordId').value = recordId;
-                document.getElementById('editTransactionId').value = transactionId;
-                document.getElementById('editTransactionDescription').value = transaction.description;
-
-                this.closeModal('detailModal'); 
-                document.getElementById('editTransactionModal').classList.add('show');
-            }
-
-            hideEditTransactionModal() {
-                this.closeModal('editTransactionModal');
-                this.viewRecord(document.getElementById('editTransactionRecordId').value); 
-            }
-
-            async saveTransactionChanges() {
-                const recordId = document.getElementById('editTransactionRecordId').value;
-                const transactionId = document.getElementById('editTransactionId').value;
-                const newDescription = document.getElementById('editTransactionDescription').value;
-                if (!newDescription.trim()) { alert('Açıklama boş olamaz.'); return; }
-                
-                try {
-                    await ipRecordsService.updateTransaction(recordId, transactionId, { description: newDescription });
-                    alert('İşlem başarıyla güncellendi.');
-                    await this.loadRecords(); 
-                    this.closeModal('editTransactionModal');
-                    this.viewRecord(recordId); 
-                } catch (error) {
-                    alert('İşlem güncellenirken hata: ' + error.message);
-                }
-            }
-
-            async deleteTransaction(recordId, transactionId) {
-                if (!confirm('Bu işlemi ve buna bağlı tüm alt işlemleri silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.')) return;
-                try {
-                    const result = await ipRecordsService.deleteTransaction(recordId, transactionId);
-                    if (result.success) {
-                        alert('İşlem başarıyla silindi.');
-                        const recordIndex = this.records.findIndex(r => r.id === recordId);
-                        if(recordIndex !== -1) {
-                            this.records[recordIndex].transactions = result.remainingTransactions;
-                        }
-                        this.renderTransactionHistory(recordId, result.remainingTransactions, this.records[recordIndex].files);
-                    } else {
-                        throw new Error(result.error);
-                    }
-                } catch (error) {
-                    alert('İşlem silinirken hata: ' + error.message);
+                if (rootTransactions.length === 0) {
+                    historyContainer.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Gösterilebilir işlem bulunmuyor.</p>';
                 }
             }
         }
 
-        auth.onAuthStateChanged((user) => {
-            if (user || authService.getCurrentUser()) {
-                if (!window.portfolio) window.portfolio = new PortfolioModule();
-            } else {
-                window.location.href = 'index.html';
-            }
-        });
+        window.portfolio = new PortfolioModule(); // window.portfolio ataması doğru olmalıydı
 
         // YENİ AKORDİYON MENÜ İÇİN JAVASCRIPT
         document.addEventListener('DOMContentLoaded', function() {
