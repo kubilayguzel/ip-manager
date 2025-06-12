@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IP Manager - İş Yönetimi</title>
+     <style>
+        /* my-tasks.html'deki stillerle büyük ölçüde aynı */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); min-height: 100vh; color: #333; }
+        .header { background: rgba(255, 255, 255, 0.95); padding: 15px 0; box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 100; }
+        .header-content { max-width: 1400px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; }
+        .logo { font-size: 1.8em; font-weight: bold; color: #1e3c72; }
+        .nav-menu { display: flex; gap: 30px; }
+        .nav-item { color: #666; text-decoration: none; font-weight: 500; padding: 8px 16px; border-radius: 8px; transition: all 0.3s ease; }
+        .nav-item:hover, .nav-item.active { background: #1e3c72; color: white; }
+        .user-section { display: flex; align-items: center; gap: 15px; }
+        .user-avatar { width: 40px; height: 40px; background: linear-gradient(45deg, #1e3c72, #2a5298); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; }
+        .logout-btn { background: #ff6b6b; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 0.9em; transition: all 0.3s ease; }
+        .logout-btn:hover { background: #ff5252; }
+        .main-container { max-width: 1400px; margin: 30px auto; padding: 0 20px; }
+        .page-header { background: rgba(255, 255, 255, 0.95); padding: 30px; border-radius: 20px; margin-bottom: 30px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); }
+        .page-title { font-size: 2em; color: #1e3c72; margin-bottom: 10px; }
+        .page-subtitle { color: #666; font-size: 1.1em; }
+        .tasks-container { background: rgba(255, 255, 255, 0.95); border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); overflow: hidden; }
+        .tasks-header { padding: 20px 30px; border-bottom: 1px solid #e1e8ed; display: flex; justify-content: space-between; align-items: center; flex-wrap:wrap; gap:15px; }
+        .filter-group { display: flex; gap: 10px; align-items: center; flex-wrap:wrap; }
+        .filter-label { font-weight: 500; }
+        .filter-select { padding: 8px 12px; border-radius: 8px; border: 1px solid #ccc; }
+        .btn-primary { background: #1e3c72; color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; }
+        .task-table { width: 100%; border-collapse: collapse; }
+        .task-table th, .task-table td { padding: 15px; text-align: left; border-bottom: 1px solid #f0f0f0; }
+        /* Modal Styles */
+        .modal { display: none; position: fixed; z-index: 1001; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4); }
+        .modal-content { background-color: #fefefe; margin: 10% auto; padding: 30px; border: 1px solid #888; width: 80%; max-width: 700px; border-radius: 15px; }
+        .close-btn { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .form-group { display: flex; flex-direction: column; }
+        .form-group.full-width { grid-column: 1 / -1; }
+        .form-label { margin-bottom: 5px; font-weight: 500; }
+        .form-input, .form-select, .form-textarea { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">IP Manager</div>
+            <nav class="nav-menu">
+                <a href="dashboard.html" class="nav-item">Dashboard</a>
+                <a href="portfolio.html" class="nav-item">Portföy</a>
+                <a href="my-tasks.html" class="nav-item">İşlerim</a>
+                <a href="task-management.html" class="nav-item active">İş Yönetimi</a>
+            </nav>
+            <div class="user-section">
+                <div class="user-avatar" id="userAvatar">?</div>
+                <button class="logout-btn" id="logoutBtn">Çıkış</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <section class="page-header">
+            <h1 class="page-title">İş Akış Yönetimi</h1>
+            <p class="page-subtitle">Tüm işleri görüntüleyin, yeni işler oluşturun ve atamaları yönetin.</p>
+        </section>
+
+        <div class="tasks-container">
+            <div class="tasks-header">
+                <div class="filter-group">
+                    <label class="filter-label" for="userFilter">Kullanıcı:</label>
+                    <select id="userFilter" class="filter-select"></select>
+                    <label class="filter-label" for="statusFilter">Durum:</label>
+                    <select id="statusFilter" class="filter-select"></select>
+                </div>
+                <button id="createTaskBtn" class="btn-primary">Yeni İş Oluştur</button>
+            </div>
+            <div class="table-container">
+                <table class="task-table">
+                    <thead>
+                        <tr>
+                            <th>İş Başlığı</th>
+                            <th>Atanan Kişi</th>
+                            <th>İlgili Kayıt</th>
+                            <th>Durum</th>
+                            <th>İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tasksTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+    
+    <div id="taskModal" class="modal">
+      <div class="modal-content">
+        <span class="close-btn">&times;</span>
+        <h2 id="modalTitle">Yeni İş Oluştur</h2>
+        <form id="taskForm">
+            <input type="hidden" id="taskId">
+            <div class="form-grid">
+                <div class="form-group full-width">
+                    <label for="taskTitle" class="form-label">İş Başlığı</label>
+                    <input type="text" id="taskTitle" class="form-input" required>
+                </div>
+                <div class="form-group full-width">
+                    <label for="taskDescription" class="form-label">Açıklama</label>
+                    <textarea id="taskDescription" class="form-textarea" rows="4"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="taskType" class="form-label">İş Türü</label>
+                    <select id="taskType" class="form-select">
+                        <option value="general">Genel</option>
+                        <option value="trademark_application">Marka Başvurusu</option>
+                        <option value="patent_renewal">Patent Yenileme</option>
+                        <option value="document_review">Belge İnceleme</option>
+                    </select>
+                </div>
+                 <div class="form-group">
+                    <label for="taskPriority" class="form-label">Öncelik</label>
+                    <select id="taskPriority" class="form-select">
+                        <option value="low">Düşük</option>
+                        <option value="medium">Orta</option>
+                        <option value="high">Yüksek</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="assignedTo" class="form-label">Atanacak Kişi</label>
+                    <select id="assignedTo" class="form-select" required></select>
+                </div>
+                <div class="form-group">
+                    <label for="taskDueDate" class="form-label">Bitiş Tarihi</label>
+                    <input type="date" id="taskDueDate" class="form-input">
+                </div>
+                 <div class="form-group full-width">
+                    <label for="relatedIpRecord" class="form-label">İlgili Fikri Mülkiyet Kaydı (Opsiyonel)</label>
+                    <select id="relatedIpRecord" class="form-select"></select>
+                </div>
+            </div>
+            <button type="submit" class="btn-primary" style="margin-top: 20px;">Kaydet</button>
+        </form>
+      </div>
+    </div>
+
+
+    <script type="module">
+        import { authService, taskService, ipRecordsService } from './firebase-config.js';
+
+        class TaskManagementModule {
+            constructor() {
+                this.currentUser = null;
+                this.allTasks = [];
+                this.allUsers = [];
+                this.allIpRecords = [];
+                this.init();
+            }
+
+            init() {
+                authService.auth.onAuthStateChanged(async user => {
+                    if (user) {
+                        this.currentUser = authService.getCurrentUser();
+                        // Sadece superadmin erişebilir
+                        if (this.currentUser.role !== 'superadmin') {
+                            alert('Bu sayfaya erişim yetkiniz yoktur.');
+                            window.location.href = 'dashboard.html';
+                            return;
+                        }
+                        document.getElementById('userAvatar').textContent = (this.currentUser.displayName || 'U').charAt(0);
+                        await this.loadInitialData();
+                        this.setupEventListeners();
+                    } else {
+                        window.location.href = 'index.html';
+                    }
+                });
+            }
+
+            async loadInitialData() {
+                // Tüm kullanıcıları, işleri ve IP kayıtlarını yükle
+                const [usersResult, tasksResult, ipRecordsResult] = await Promise.all([
+                    taskService.getAllUsers(), 
+                    taskService.getAllTasks(),
+                    ipRecordsService.getRecords()
+                ]);
+
+                if (usersResult.success) this.allUsers = usersResult.data;
+                if (tasksResult.success) this.allTasks = tasksResult.data;
+                if (ipRecordsResult.success) this.allIpRecords = ipRecordsResult.data;
+                
+                this.populateFilters();
+                this.renderTasks();
+            }
+            
+            setupEventListeners() {
+                document.getElementById('createTaskBtn').addEventListener('click', () => this.openTaskModal());
+                document.querySelector('.close-btn').addEventListener('click', () => this.closeTaskModal());
+                document.getElementById('taskForm').addEventListener('submit', (e) => this.handleFormSubmit(e));
+                document.getElementById('userFilter').addEventListener('change', () => this.renderTasks());
+                document.getElementById('statusFilter').addEventListener('change', () => this.renderTasks());
+            }
+
+            populateFilters() {
+                const userFilter = document.getElementById('userFilter');
+                userFilter.innerHTML = '<option value="all">Tüm Kullanıcılar</option>';
+                this.allUsers.forEach(user => {
+                    userFilter.innerHTML += `<option value="${user.id}">${user.displayName || user.email}</option>`;
+                });
+                
+                const statusFilter = document.getElementById('statusFilter');
+                statusFilter.innerHTML = `<option value="all">Tüm Durumlar</option>
+                    <option value="open">Açık</option>
+                    <option value="in_progress">Devam Ediyor</option>
+                    <option value="pending_review">Gözden Geçiriliyor</option>
+                    <option value="completed">Tamamlandı</option>`;
+            }
+
+            renderTasks() {
+                const tableBody = document.getElementById('tasksTableBody');
+                tableBody.innerHTML = '';
+                
+                const selectedUser = document.getElementById('userFilter').value;
+                const selectedStatus = document.getElementById('statusFilter').value;
+
+                const filteredTasks = this.allTasks.filter(task => {
+                    const userMatch = selectedUser === 'all' || task.assignedTo_uid === selectedUser;
+                    const statusMatch = selectedStatus === 'all' || task.status === selectedStatus;
+                    return userMatch && statusMatch;
+                });
+
+                filteredTasks.forEach(task => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${task.title}</td>
+                        <td>${task.assignedTo_email}</td>
+                        <td>${task.relatedIpRecordTitle || '-'}</td>
+                        <td>${task.status}</td>
+                        <td>
+                            <button onclick="window.taskManagementModule.openTaskModal('${task.id}')">Düzenle</button>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            }
+
+            openTaskModal(taskId = null) {
+                const modal = document.getElementById('taskModal');
+                const form = document.getElementById('taskForm');
+                form.reset();
+                document.getElementById('taskId').value = '';
+
+                // Kullanıcı ve IP Kayıtları dropdown'larını doldur
+                const assignedToSelect = document.getElementById('assignedTo');
+                assignedToSelect.innerHTML = '';
+                this.allUsers.forEach(u => assignedToSelect.innerHTML += `<option value="${u.id}">${u.displayName || u.email}</option>`);
+
+                const ipRecordSelect = document.getElementById('relatedIpRecord');
+                ipRecordSelect.innerHTML = '<option value="">Yok</option>';
+                this.allIpRecords.forEach(r => ipRecordSelect.innerHTML += `<option value="${r.id}">${r.title}</option>`);
+
+
+                if (taskId) {
+                    const task = this.allTasks.find(t => t.id === taskId);
+                    document.getElementById('modalTitle').textContent = 'İşi Düzenle';
+                    document.getElementById('taskId').value = task.id;
+                    document.getElementById('taskTitle').value = task.title;
+                    document.getElementById('taskDescription').value = task.description;
+                    document.getElementById('taskType').value = task.taskType;
+                    document.getElementById('taskPriority').value = task.priority;
+                    document.getElementById('assignedTo').value = task.assignedTo_uid;
+                    document.getElementById('taskDueDate').value = task.dueDate || '';
+                    document.getElementById('relatedIpRecord').value = task.relatedIpRecordId || '';
+                } else {
+                    document.getElementById('modalTitle').textContent = 'Yeni İş Oluştur';
+                }
+                modal.style.display = 'block';
+            }
+
+            closeTaskModal() {
+                document.getElementById('taskModal').style.display = 'none';
+            }
+
+            async handleFormSubmit(e) {
+                e.preventDefault();
+                const taskId = document.getElementById('taskId').value;
+                const assignedToUser = this.allUsers.find(u => u.id === document.getElementById('assignedTo').value);
+                const relatedIpRecord = this.allIpRecords.find(r => r.id === document.getElementById('relatedIpRecord').value);
+
+                const taskData = {
+                    title: document.getElementById('taskTitle').value,
+                    description: document.getElementById('taskDescription').value,
+                    taskType: document.getElementById('taskType').value,
+                    priority: document.getElementById('taskPriority').value,
+                    assignedTo_uid: assignedToUser.id,
+                    assignedTo_email: assignedToUser.email,
+                    dueDate: document.getElementById('taskDueDate').value || null,
+                    relatedIpRecordId: relatedIpRecord ? relatedIpRecord.id : null,
+                    relatedIpRecordTitle: relatedIpRecord ? relatedIpRecord.title : null,
+                };
+                
+                let result;
+                if (taskId) {
+                    result = await taskService.updateTask(taskId, taskData);
+                } else {
+                    taskData.status = 'open'; // Yeni işler "Açık" olarak başlar
+                    taskData.createdBy_uid = this.currentUser.uid;
+                    taskData.createdBy_email = this.currentUser.email;
+                    result = await taskService.createTask(taskData);
+                }
+
+                if (result.success) {
+                    alert(`İş başarıyla ${taskId ? 'güncellendi' : 'oluşturuldu'}!`);
+                    this.closeTaskModal();
+                    this.loadInitialData(); // Listeyi yenile
+                } else {
+                    alert('Hata: ' + result.error);
+                }
+            }
+        }
+        window.taskManagementModule = new TaskManagementModule();
+    </script>
+</body>
+</html>
