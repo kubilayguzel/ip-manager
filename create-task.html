@@ -26,12 +26,16 @@
         .accordion-header.active::after { transform: rotate(90deg); }
         .accordion-content { background: rgba(0, 0, 0, 0.2); max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; }
         .accordion-content a { display: block; padding: 12px 20px 12px 55px; color: rgba(255, 255, 255, 0.7); text-decoration: none; }
+        .accordion-content a.active { color: white; font-weight: 500; }
         .accordion-content a.new-task-link { color: #fff; background-color: rgba(78, 205, 196, 0.25); font-weight: 500; }
         
         /* === ÜST BAR (TOP HEADER) === */
         .top-header { background: rgba(255, 255, 255, 0.95); padding: 15px 30px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05); display: flex; justify-content: flex-end; align-items: center; position: sticky; top: 0; z-index: 99; }
         .user-section { display: flex; align-items: center; gap: 15px; }
         .user-avatar { width: 40px; height: 40px; background: linear-gradient(45deg, #1e3c72, #2a5298); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; }
+        .user-info { display: flex; flex-direction: column; text-align: right;}
+        .user-name { font-weight: 600; }
+        .user-role { font-size: 0.8em; color: #666; }
         .logout-btn { background: #ff6b6b; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 0.9em; }
         
         /* === SAYFA GENELİ ELEMENTLER === */
@@ -56,7 +60,8 @@
         .search-results-list { max-height: 200px; overflow-y: auto; border: 1px solid #ccc; border-radius: 8px; margin-top: 5px; }
         .search-result-item { padding: 10px; cursor: pointer; border-bottom: 1px solid #eee; }
         .search-result-item:hover { background-color: #f0f4f8; }
-        .search-result-display { background: #e9f5ff; border: 1px solid #bde0fe; padding: 15px; border-radius: 8px; margin-top: 10px; }
+        .search-result-display { background: #e9f5ff; border: 1px solid #bde0fe; padding: 15px; border-radius: 8px; margin-top: 10px; display: flex; gap: 15px; align-items: center;}
+        .search-result-display img { max-width: 60px; max-height: 60px; border-radius: 4px; border: 1px solid #ddd; }
         .file-upload-area { border: 2px dashed #e1e8ed; border-radius: 10px; padding: 30px; text-align: center; cursor: pointer; transition: background .2s; }
         .file-upload-area:hover { background: #f0f4f8; }
         .file-list { margin-top: 15px; display: flex; flex-direction: column; gap: 8px; }
@@ -103,6 +108,10 @@
         <header class="top-header">
             <div class="user-section">
                 <div class="user-avatar" id="userAvatar">?</div>
+                <div class="user-info">
+                    <div class="user-name" id="userName"></div>
+                    <div class="user-role" id="userRole"></div>
+                </div>
                 <button class="logout-btn" id="logoutBtn">Çıkış</button>
             </div>
         </header>
@@ -144,7 +153,6 @@
     <script type="module">
         import { authService, taskService, ipRecordsService, personsService, auth, generateUUID } from './firebase-config.js';
 
-        // Sidebar menü scripti
         document.addEventListener('DOMContentLoaded', function() {
             const accordions = document.querySelectorAll('.accordion-header');
             accordions.forEach(header => {
@@ -184,13 +192,14 @@
                 this.currentUser = authService.getCurrentUser();
                 if (!this.currentUser) { window.location.href = 'index.html'; return; }
                 
-                document.getElementById('userAvatar').textContent = (this.currentUser.displayName || 'U').charAt(0);
+                const user = this.currentUser;
+                document.getElementById('userAvatar').textContent = (user.displayName || 'U').charAt(0);
+                document.getElementById('userName').textContent = user.displayName || user.email.split('@')[0];
+                document.getElementById('userRole').textContent = user.role;
                 
                 try {
                     const [ipRecordsResult, personsResult, usersResult] = await Promise.all([
-                        ipRecordsService.getRecords(),
-                        personsService.getPersons(),
-                        taskService.getAllUsers()
+                        ipRecordsService.getRecords(), personsService.getPersons(), taskService.getAllUsers()
                     ]);
                     this.allIpRecords = ipRecordsResult.data || [];
                     this.allPersons = personsResult.data || [];
@@ -200,7 +209,6 @@
                     alert("Gerekli veriler yüklenemedi, lütfen sayfayı yenileyin.");
                     return;
                 }
-
                 this.setupEventListeners();
             }
 
@@ -241,26 +249,42 @@
                 document.getElementById('saveTaskBtn').disabled = true;
 
                 const transactionLikeTasks = ['Devir', 'Lisans', 'Birleşme', 'Rehin'];
+                const simpleTasks = ['Yenileme', 'Tescil Belgesi Talebi'];
+
                 if (transactionLikeTasks.includes(taskType)) {
                     this.renderGenericTransactionForm(container, taskType);
+                } else if (simpleTasks.includes(taskType)) {
+                    this.renderSimpleTransactionForm(container, taskType);
                 }
             }
-            
+
             renderGenericTransactionForm(container, taskType) {
-                const partyLabels = {
-                    'Devir': 'Devralan Taraf', 'Lisans': 'Lisans Alan Taraf', 'Rehin': 'Rehin Alan Taraf', 'Birleşme': 'Birleşilen Taraf'
-                };
+                const partyLabels = { 'Devir': 'Devralan Taraf', 'Lisans': 'Lisans Alan Taraf', 'Rehin': 'Rehin Alan Taraf', 'Birleşme': 'Birleşilen Taraf' };
                 const partyLabel = partyLabels[taskType] || 'İlgili Taraf';
 
                 container.innerHTML = `
-                    <div class="form-section"> <h3 class="section-title">2. İşleme Konu Varlık</h3> <div class="form-group full-width"> <label for="portfolioSearchInput" class="form-label">Portföyden Ara (Başlık veya Başvuru No)</label> <input type="text" id="portfolioSearchInput" class="form-input" placeholder="Aramak için en az 3 karakter girin..."> <div id="portfolioSearchResults" class="search-results-list"></div> <div id="selectedIpRecordDisplay" class="search-result-display" style="display:none;"></div> </div> </div>
-                    <div class="form-section"> <h3 class="section-title">3. ${partyLabel}</h3> <div class="form-group full-width"> <label for="personSearchInput" class="form-label">Sistemdeki Kişilerden Ara (Ad, Soyad)</label> <div style="display: flex; gap: 10px;"> <input type="text" id="personSearchInput" class="form-input" placeholder="Aramak için en az 2 karakter girin..."> <button type="button" id="addNewPersonBtn" class="btn-secondary btn-small">➕ Yeni Kişi</button> </div> <div id="personSearchResults" class="search-results-list"></div> <div id="selectedRelatedPartyDisplay" class="search-result-display" style="display:none;"></div> </div> </div>
-                    <div class="form-section"> <h3 class="section-title">4. Gerekli Dokümanlar (${taskType} Sözleşmesi vb.)</h3> <div class="form-group full-width"> <div class="file-upload-area" id="fileUploadArea"><p>Dosyaları buraya sürükleyin veya tıklayın</p><input type="file" id="fileInput" multiple hidden></div> <div class="file-list" id="fileList"></div> </div> </div>
-                    <div class="form-section"> <h3 class="section-title">5. İş Detayları</h3> <div class="form-grid"> <div class="form-group"><label for="taskPriority" class="form-label">Öncelik</label><select id="taskPriority" class="form-select"><option value="medium">Orta</option><option value="high">Yüksek</option><option value="low">Düşük</option></select></div> <div class="form-group"><label for="assignedTo" class="form-label">Atanacak Dahili Kullanıcı</label><select id="assignedTo" class="form-select">${this.allUsers.map(u => `<option value="${u.id}">${u.displayName || u.email}</option>`).join('')}</select></div> <div class="form-group full-width"><label for="taskDueDate" class="form-label">Operasyonel Son Tarih</label><input type="date" id="taskDueDate" class="form-input"></div> </div> </div>`;
+                    <div class="form-section"><h3 class="section-title">2. İşleme Konu Varlık</h3><div class="form-group full-width"><label for="portfolioSearchInput" class="form-label">Portföyden Ara</label><input type="text" id="portfolioSearchInput" class="form-input" placeholder="Aramak için en az 3 karakter..."><div id="portfolioSearchResults" class="search-results-list"></div><div id="selectedIpRecordDisplay" class="search-result-display" style="display:none;"></div></div></div>
+                    <div class="form-section"><h3 class="section-title">3. ${partyLabel}</h3><div class="form-group full-width"><label for="personSearchInput" class="form-label">Sistemdeki Kişilerden Ara</label><div style="display: flex; gap: 10px;"><input type="text" id="personSearchInput" class="form-input" placeholder="Aramak için en az 2 karakter..."><button type="button" id="addNewPersonBtn" class="btn-secondary btn-small">➕ Yeni Kişi</button></div><div id="personSearchResults" class="search-results-list"></div><div id="selectedRelatedPartyDisplay" class="search-result-display" style="display:none;"></div></div></div>
+                    <div class="form-section"><h3 class="section-title">4. Gerekli Dokümanlar</h3><div class="form-group full-width"><div class="file-upload-area" id="fileUploadArea"><p>Dosyaları buraya sürükleyin veya tıklayın</p><input type="file" id="fileInput" multiple hidden></div><div class="file-list" id="fileList"></div></div></div>
+                    <div class="form-section"><h3 class="section-title">5. İş Detayları</h3><div class="form-grid"><div class="form-group"><label for="taskPriority" class="form-label">Öncelik</label><select id="taskPriority" class="form-select"><option value="medium">Orta</option><option value="high">Yüksek</option><option value="low">Düşük</option></select></div><div class="form-group"><label for="assignedTo" class="form-label">Atanacak Kullanıcı</label><select id="assignedTo" class="form-select">${this.allUsers.map(u => `<option value="${u.id}">${u.displayName || u.email}</option>`).join('')}</select></div><div class="form-group full-width"><label for="taskDueDate" class="form-label">Operasyonel Son Tarih</label><input type="date" id="taskDueDate" class="form-input"></div></div></div>`;
+                
+                this.setupDynamicFormListeners();
+            }
+
+            renderSimpleTransactionForm(container, taskType) {
+                container.innerHTML = `
+                    <div class="form-section"><h3 class="section-title">2. İşleme Konu Varlık</h3><div class="form-group full-width"><label for="portfolioSearchInput" class="form-label">Portföyden Ara</label><input type="text" id="portfolioSearchInput" class="form-input" placeholder="Aramak için en az 3 karakter..."><div id="portfolioSearchResults" class="search-results-list"></div><div id="selectedIpRecordDisplay" class="search-result-display" style="display:none;"></div></div></div>
+                    <div class="form-section"><h3 class="section-title">3. İş Detayları</h3><div class="form-grid"><div class="form-group"><label for="taskPriority" class="form-label">Öncelik</label><select id="taskPriority" class="form-select"><option value="medium">Orta</option><option value="high">Yüksek</option><option value="low">Düşük</option></select></div><div class="form-group"><label for="assignedTo" class="form-label">Atanacak Kullanıcı</label><select id="assignedTo" class="form-select">${this.allUsers.map(u => `<option value="${u.id}">${u.displayName || u.email}</option>`).join('')}</select></div><div class="form-group full-width"><label for="taskDueDate" class="form-label">Operasyonel Son Tarih</label><input type="date" id="taskDueDate" class="form-input"></div></div></div>`;
 
                 document.getElementById('portfolioSearchInput').addEventListener('input', (e) => this.searchPortfolio(e.target.value));
-                document.getElementById('personSearchInput').addEventListener('input', (e) => this.searchPersons(e.target.value));
-                document.getElementById('addNewPersonBtn').addEventListener('click', () => this.showAddPersonModal());
+            }
+
+            setupDynamicFormListeners() {
+                document.getElementById('portfolioSearchInput').addEventListener('input', (e) => this.searchPortfolio(e.target.value));
+                const personSearch = document.getElementById('personSearchInput');
+                if (personSearch) personSearch.addEventListener('input', (e) => this.searchPersons(e.target.value));
+                const addNewPersonBtn = document.getElementById('addNewPersonBtn');
+                if (addNewPersonBtn) addNewPersonBtn.addEventListener('click', () => this.showAddPersonModal());
                 this.setupFileUpload();
             }
 
@@ -312,7 +336,8 @@
             searchPortfolio(query) {
                 const container = document.getElementById('portfolioSearchResults');
                 if (query.length < 3) { container.innerHTML = ''; return; }
-                const filtered = this.allIpRecords.filter(r => r.title.toLowerCase().includes(query.toLowerCase()) || r.applicationNumber?.includes(query));
+                const mainIpType = document.getElementById('mainIpType').value;
+                const filtered = this.allIpRecords.filter(r => r.type === mainIpType && (r.title.toLowerCase().includes(query.toLowerCase()) || r.applicationNumber?.includes(query)));
                 container.innerHTML = filtered.map(r => `<div class="search-result-item" data-id="${r.id}">${r.title} (${r.applicationNumber || 'No Yok'})</div>`).join('');
                 container.querySelectorAll('.search-result-item').forEach(item => item.addEventListener('click', (e) => this.selectIpRecord(e.currentTarget.dataset.id)));
             }
@@ -320,8 +345,12 @@
             selectIpRecord(recordId) {
                 this.selectedIpRecord = this.allIpRecords.find(r => r.id === recordId);
                 const display = document.getElementById('selectedIpRecordDisplay');
-                display.innerHTML = `<p><b>Seçilen Varlık:</b> ${this.selectedIpRecord.title}</p><p><small>Mevcut Sahip: ${this.selectedIpRecord.owners.map(o=>o.name).join(', ')}</small></p>`;
-                display.style.display = 'block';
+                let imageHtml = '';
+                if (this.selectedIpRecord.type === 'marka' && this.selectedIpRecord.trademarkImage?.content) {
+                    imageHtml = `<img src="${this.selectedIpRecord.trademarkImage.content}" alt="Marka Görseli">`;
+                }
+                display.innerHTML = `${imageHtml}<div><p><b>Seçilen Varlık:</b> ${this.selectedIpRecord.title}</p><p><small>Mevcut Sahip: ${this.selectedIpRecord.owners.map(o=>o.name).join(', ')}</small></p></div>`;
+                display.style.display = 'flex';
                 document.getElementById('portfolioSearchResults').innerHTML = '';
                 document.getElementById('portfolioSearchInput').value = '';
                 this.checkFormCompleteness();
@@ -368,9 +397,14 @@
             checkFormCompleteness() {
                 const taskType = document.getElementById('specificTaskType').value;
                 const transactionLikeTasks = ['Devir', 'Lisans', 'Birleşme', 'Rehin'];
+                const simpleTasks = ['Yenileme', 'Tescil Belgesi Talebi'];
                 let isComplete = false;
                 if (transactionLikeTasks.includes(taskType)) {
                     if (this.selectedIpRecord && this.selectedRelatedParty) {
+                        isComplete = true;
+                    }
+                } else if (simpleTasks.includes(taskType)) {
+                    if (this.selectedIpRecord) {
                         isComplete = true;
                     }
                 }
@@ -382,8 +416,7 @@
                 const mainIpType = document.getElementById('mainIpType').value;
                 const specificTaskType = document.getElementById('specificTaskType').value;
                 const assignedToUser = this.allUsers.find(u => u.id === document.getElementById('assignedTo').value);
-                const transactionLikeTasks = ['Devir', 'Lisans', 'Birleşme', 'Rehin'];
-
+                
                 let taskData = {
                     taskType: `${mainIpType}_${specificTaskType.toLowerCase().replace(/ /g, '_')}`,
                     priority: document.getElementById('taskPriority').value,
@@ -394,14 +427,17 @@
                     createdBy_uid: this.currentUser.uid,
                     createdBy_email: this.currentUser.email,
                     files: this.uploadedFiles,
+                    relatedIpRecordId: this.selectedIpRecord.id,
+                    relatedIpRecordTitle: this.selectedIpRecord.title,
+                    title: `${specificTaskType} İşlemi: ${this.selectedIpRecord.title}`
                 };
 
+                const transactionLikeTasks = ['Devir', 'Lisans', 'Birleşme', 'Rehin'];
                 if (transactionLikeTasks.includes(specificTaskType)) {
-                    taskData.title = `${specificTaskType} İşlemi: ${this.selectedIpRecord.title}`;
                     taskData.description = `'${this.selectedIpRecord.title}' adlı varlık için ${specificTaskType} işlemi. İlgili taraf: '${this.selectedRelatedParty.name}'.`;
-                    taskData.relatedIpRecordId = this.selectedIpRecord.id;
-                    taskData.relatedIpRecordTitle = this.selectedIpRecord.title;
                     taskData.details = { relatedParty: this.selectedRelatedParty };
+                } else {
+                    taskData.description = `'${this.selectedIpRecord.title}' adlı varlık için ${specificTaskType} talebi.`;
                 }
 
                 const result = await taskService.createTask(taskData);
