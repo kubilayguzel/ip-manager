@@ -10,7 +10,9 @@
         
         /* === ANA SAYFA YAPISI === */
         .page-wrapper { flex-grow: 1; display: flex; flex-direction: column; height: 100vh; overflow-y: auto; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); }
-        .main-container { width: 100%; max-width: 1200px; margin: 30px auto; padding: 0 30px; }
+        .main-container { width: 100%; /* Genişliği tamamen doldurmasını sağlar */
+        padding: 30px; /* İçeriğin kenarlara yapışmaması için boşluk bırakır */
+        margin: 0; /* Otomatik ortalamayı kaldırır */ }
         
         /* === SOL MENÜ (SIDEBAR) === */
         .sidebar { width: 260px; background: #1e3c72; color: white; display: flex; flex-direction: column; height: 100vh; position: sticky; top: 0; z-index: 1002; flex-shrink: 0; }
