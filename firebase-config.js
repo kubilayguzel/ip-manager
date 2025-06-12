@@ -299,30 +299,22 @@ export const ipRecordsService = {
             (updates.files || []).forEach(newFile => {
                 const isExistingFile = (currentData.files || []).some(oldFile => oldFile.id === newFile.id);
                 if (!isExistingFile) { 
-                    const isChildFile = newFile.parentTransactionId; 
+                    const transactionType = newFile.indexingType || (newFile.parentTransactionId ? "Document Sub-Indexed" : "Document Indexed"); // indexingType varsa onu kullan
+                    const transactionDescription = newFile.indexingName || newFile.name; // indexingName varsa onu kullan
 
-                    // Eğer bu dosya için zaten bir transaction yoksa ve bir parent'ı yoksa, yeni bir parent transaction oluştur
-                    const existingFileTransaction = newTransactions.find(tx => tx.documentId === newFile.id);
-                    if (!existingFileTransaction) { // Sadece yoksa ve bu dosya için hiç transaction oluşturulmamışsa
-                        const transactionType = isChildFile ? "Document Sub-Indexed" : "Document Indexed";
-                        const transactionDescription = isChildFile 
-                            ? `Belge yüklendi (alt): ${newFile.indexingName || newFile.name}` 
-                            : `${newFile.indexingType || 'Belge'} yüklendi: ${newFile.indexingName || newFile.name}`;
-
-                        newTransactions.push({ 
-                            transactionId: generateUUID(), 
-                            type: transactionType, // 'Document Indexed' veya 'Document Sub-Indexed'
-                            description: transactionDescription, 
-                            documentId: newFile.id, 
-                            documentName: newFile.name, 
-                            documentDesignation: newFile.documentDesignation, // Added
-                            subDesignation: newFile.subDesignation, // Added
-                            timestamp: newFile.uploadedAt || timestamp, 
-                            userId: user.uid, 
-                            userEmail: user.email, 
-                            parentId: newFile.parentTransactionId || null // Belirtilen parentId ile child transaction
-                        });
-                    }
+                    newTransactions.push({ 
+                        transactionId: generateUUID(), 
+                        type: transactionType, 
+                        description: transactionDescription, 
+                        documentId: newFile.id, 
+                        documentName: newFile.name, 
+                        documentDesignation: newFile.documentDesignation, 
+                        subDesignation: newFile.subDesignation, 
+                        timestamp: newFile.uploadedAt || timestamp, 
+                        userId: user.uid, 
+                        userEmail: user.email, 
+                        parentId: newFile.parentTransactionId || null 
+                    });
                 }
             });
             
