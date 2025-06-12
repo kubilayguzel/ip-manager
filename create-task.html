@@ -651,7 +651,6 @@
                 let filteredTransactions = [];
                 const allTransactions = this.selectedIpRecord.transactions.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp)); 
 
-                // Transaction filtreleme mantığı güncellendi: Sadece parent olanları al
                 if (specificTaskType === 'İtirazı Geri Çekme' || specificTaskType === 'İtiraza Ek Belge') {
                     filteredTransactions = allTransactions.filter(tx => 
                         tx.description && (
@@ -904,8 +903,7 @@
                 if(result.success) {
                     // Portföy kaydına parent transaction ekle
                     const transactionTypeToRecord = specificTaskType; 
-                    // transactionDescriptionToRecord artık sadece spesifik iş tipinin adı olacak
-                    const transactionDescriptionToRecord = specificTaskType; 
+                    const transactionDescriptionToRecord = specificTaskType; // BURASI GÜNCELLENDİ
                     
                     let parentTransactionIdForChildLink = null;
                     if (taskData.details && taskData.details.relatedTransactionId) {
