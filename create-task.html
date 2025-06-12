@@ -668,7 +668,7 @@
                     );
                 } else if (specificTaskType === 'Yayına İtiraz' || specificTaskType === 'Karara İtiraz') {
                     // Bu işlem tipleri için ilgili bir transaction seçimi beklenmiyor.
-                    // Dolayısıyla selectElement boş kalacak ve disabled olacak.
+                    // Bu senaryoda selectElement boş kalacak ve disabled olacak.
                     selectElement.innerHTML = '<option value="">Uygun İşlem Yok</option>';
                     selectElement.disabled = true;
                     return; 
@@ -901,21 +901,21 @@
 
                 const result = await taskService.createTask(taskData);
                 if(result.success) {
-                    // YENİ EKLENEN KISIM: Portföy kaydına parent transaction ekle
-                    // title: `${specificTaskType} İşlemi: ${this.selectedIpRecord.title}`
-                    const transactionTypeToRecord = specificTaskType; // İşlem tipinin kendisi transaction tipi olarak kullanılacak
+                    // Portföy kaydına parent transaction ekle
+                    // Bu transaction, iş tipinin kendisiyle bir parent transaction olarak oluşturulacak
+                    const transactionTypeToRecord = specificTaskType; 
                     const transactionDescriptionToRecord = taskData.title; // İş başlığı açıklama olarak kullanılacak
                     
-                    // Eğer ilgili bir transaction seçilmişse, onu da transaction açıklamasına ekleyelim
                     let parentTransactionIdForChildLink = null;
+                    // Eğer ilgili bir transaction seçilmişse, bu yeni transaction'ın parent'ı o olacak
                     if (taskData.details && taskData.details.relatedTransactionId) {
                         parentTransactionIdForChildLink = taskData.details.relatedTransactionId;
                     }
 
                     const transactionData = {
-                        type: transactionTypeToRecord, // İşlem tipinin kendisi
+                        type: transactionTypeToRecord, 
                         description: transactionDescriptionToRecord,
-                        parentId: parentTransactionIdForChildLink || null // Eğer ilgili bir transaction varsa onun child'ı olsun, yoksa parent (null)
+                        parentId: parentTransactionIdForChildLink || null 
                     };
                     const addTxResult = await ipRecordsService.addTransactionToRecord(this.selectedIpRecord.id, transactionData);
 
