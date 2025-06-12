@@ -238,6 +238,7 @@
             transition: background 0.3s ease;
             flex-shrink: 0;
             margin-top: 5px;
+            align-self: flex-end; /* Sağ alta hizala */
         }
         .remove-file:hover {
             background: #c82333;
@@ -857,7 +858,7 @@
                                 content: dataUrl,
                                 documentDesignation: '',
                                 subDesignation: '',
-                                parentTransactionId: null,
+                                parentTransactionId: null, // YENİ: Üst işlem ID'si
                                 uploadedAt: new Date().toISOString()
                             };
                             this.uploadedFiles.push(newFileObj);
@@ -898,16 +899,17 @@
 
                     const mainDesignationSelect = this.createDesignationSelect(file.id, this.currentDocumentDesignations, file.documentDesignation);
                     controlsDiv.appendChild(mainDesignationSelect);
-
+                    
                     const removeBtn = document.createElement('button');
+                    removeBtn.type = 'button';
                     removeBtn.className = 'remove-file';
                     removeBtn.textContent = '×';
                     removeBtn.title = "Dosyayı Kaldır";
                     removeBtn.onclick = () => this.removeFile(file.id);
-                    controlsDiv.appendChild(removeBtn);
-
+                    
                     fileItem.appendChild(fileNameSpan);
                     fileItem.appendChild(controlsDiv);
+                    fileItem.appendChild(removeBtn);
                     fileListContainer.appendChild(fileItem);
                     
                     this.updateSpecificFileItem(file.id);
@@ -933,6 +935,8 @@
                     const file = this.uploadedFiles.find(f => f.id === fileId);
                     if (file) {
                         file.documentDesignation = e.target.value;
+                        file.subDesignation = '';
+                        file.parentTransactionId = null; 
                         this.updateSpecificFileItem(fileId);
                     }
                 };
@@ -945,18 +949,22 @@
                 if (!file || !fileItemElement) return;
 
                 const selectedDesignation = this.currentDocumentDesignations.find(d => d.value === file.documentDesignation);
-                let subDesignationContainer = fileItemElement.querySelector('.sub-designation-container');
-                if (subDesignationContainer) {
-                    subDesignationContainer.remove();
+                let subControlsContainer = fileItemElement.querySelector('.sub-controls-container');
+                if (subControlsContainer) {
+                    subControlsContainer.remove();
                 }
 
                 if (selectedDesignation && selectedDesignation.subDesignations) {
-                    subDesignationContainer = document.createElement('div');
-                    subDesignationContainer.className = 'sub-designation-container';
+                    subControlsContainer = document.createElement('div');
+                    subControlsContainer.className = 'sub-controls-container';
+                    subControlsContainer.style.width = '100%';
+                    subControlsContainer.style.display = 'flex';
+                    subControlsContainer.style.flexDirection = 'column';
+                    subControlsContainer.style.gap = '10px';
 
+                    // Alt atama dropdown
                     const subSelect = document.createElement('select');
                     subSelect.className = 'file-item-select sub-designation';
-                    
                     selectedDesignation.subDesignations.forEach(sub => {
                         const option = document.createElement('option');
                         option.value = sub.value;
@@ -964,14 +972,36 @@
                         if (sub.value === file.subDesignation) option.selected = true;
                         subSelect.appendChild(option);
                     });
-
                     subSelect.onchange = (e) => { file.subDesignation = e.target.value; };
-                    subDesignationContainer.appendChild(subSelect);
-                    fileItemElement.querySelector('.file-item-controls').insertBefore(subDesignationContainer, fileItemElement.querySelector('.remove-file'));
+                    subControlsContainer.appendChild(subSelect);
+
+                    // Mevcut parent'ları bul
+                    const potentialParents = this.selectedRecord.transactions.filter(tx => 
+                        tx.documentDesignation === file.documentDesignation && !tx.parentId
+                    );
+
+                    if (potentialParents.length > 0) {
+                        const parentSelect = document.createElement('select');
+                        parentSelect.className = 'file-item-select parent-linker';
+                        parentSelect.innerHTML = `<option value="">Yeni Ana İşlem Oluştur</option>`;
+                        potentialParents.forEach(p => {
+                             const option = document.createElement('option');
+                             option.value = p.transactionId;
+                             option.textContent = `İşleme Bağla: ${p.description} (${new Date(p.timestamp).toLocaleDateString()})`;
+                             if (p.transactionId === file.parentTransactionId) option.selected = true;
+                             parentSelect.appendChild(option);
+                        });
+                        parentSelect.onchange = (e) => {file.parentTransactionId = e.target.value || null;};
+                        subControlsContainer.appendChild(parentSelect);
+                    }
+
+                    fileItemElement.querySelector('.file-item-controls').appendChild(subControlsContainer);
                 } else {
                     file.subDesignation = '';
+                    file.parentTransactionId = null;
                 }
             }
+
 
             removeFile(fileIdToRemove) {
                 this.uploadedFiles = this.uploadedFiles.filter(f => f.id !== fileIdToRemove);
@@ -1001,23 +1031,30 @@
             
             validateForm() {
                 let isValid = true;
+                this.clearFieldError('recordSelect');
+
                 if (!this.selectedRecord) {
                     this.showNotification('Lütfen önce bir kayıt seçin.', 'error');
                     this.clearFieldError('recordSelect');
                     isValid = false;
                 }
+
                 if (this.uploadedFiles.length === 0) {
                      this.showNotification('Lütfen en az bir belge yükleyin.', 'error');
                      isValid = false;
                 }
+
                 this.uploadedFiles.forEach(file => {
-                    const des = this.currentDocumentDesignations.find(d => d.value === file.documentDesignation);
-                    if (!file.documentDesignation || (des && des.required)) {
+                    if (!file.documentDesignation) {
                         isValid = false;
+                    }
+                    const des = this.currentDocumentDesignations.find(d => d.value === file.documentDesignation);
+                    if (des && des.subDesignations && !file.subDesignation) {
+                         isValid = false;
                     }
                 });
                 if (!isValid) {
-                     this.showNotification('Lütfen yüklenen tüm belgeler için bir atama seçin.', 'error');
+                     this.showNotification('Lütfen yüklenen tüm belgeler için ana ve alt atamaları eksiksiz seçin.', 'error');
                 }
                 return isValid;
             }
@@ -1038,9 +1075,11 @@
                     updates.description = (this.originalRecordData.description ? this.originalRecordData.description + '\n\n' : '') + `[${new Date().toLocaleString('tr-TR')}] NOT: ${newNotes}`;
                 }
 
+                // Mevcut dosyalara yeni dosyaları ekle
                 updates.files = [...this.originalRecordData.files, ...this.uploadedFiles];
                 
                 try {
+                    // updateRecord servisi artık transaction'ları dosya bilgilerine göre (parentTransactionId dahil) oluşturacak
                     const result = await ipRecordsService.updateRecord(this.selectedRecord.id, updates);
                     if (result.success) {
                         this.showNotification('Belgeler başarıyla indekslendi ve kayıt güncellendi!', 'success');
@@ -1131,7 +1170,7 @@
 
                         html += `
                             <div class="transaction-node" data-id="${tx.transactionId}">
-                                ${hasChildren ? `<button class="transaction-toggle-btn" data-target-id="${tx.transactionId}">+</button>` : ''}
+                                ${hasChildren ? `<button type="button" class="transaction-toggle-btn" data-target-id="${tx.transactionId}">+</button>` : ''}
                                 <div class="transaction-node-content">
                                     <div class="transaction-info">
                                         <div class="transaction-description">${transactionDescription}</div>
@@ -1139,10 +1178,6 @@
                                             ${new Date(tx.timestamp).toLocaleString('tr-TR')}
                                             ${documentLinkHtml ? ' | ' + documentLinkHtml : ''}
                                         </div>
-                                    </div>
-                                    <div class="transaction-actions" style="display:none;">
-                                        <button class="transaction-action-btn btn-edit-transaction" onclick="indexingModule.openEditTransactionModal('${currentRecordId}', '${tx.transactionId}')" title="Düzenle">✏️</button>
-                                        <button class="transaction-action-btn btn-delete-transaction" onclick="indexingModule.deleteTransaction('${currentRecordId}', '${tx.transactionId}')" title="Sil">🗑️</button>
                                     </div>
                                 </div>
                             </div>
