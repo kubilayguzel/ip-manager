@@ -40,7 +40,7 @@
         .user-info { display: flex; flex-direction: column; text-align: right;}
         .user-name { font-weight: 600; }
         .user-role { font-size: 0.8em; color: #666; }
-        .logout-btn { background: #ff6b6b; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 0.9em; }
+        .logout-btn { background: #ff6b6b; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: font-size: 0.9em; }
         
         /* === SAYFA GENELİ ELEMENTLER === */
         .page-header { background: rgba(255, 255, 255, 0.95); padding: 30px; border-radius: 20px; margin-bottom: 30px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); }
@@ -372,8 +372,6 @@
                 const simpleTasks = [
                     'Yenileme',
                     'Eksiklik Giderme',
-                    'Yayına İtiraz', // Burası artık transaction-specific olacak
-                    'Karara İtiraz', // Burası artık transaction-specific olacak
                     'Yayıma İtirazın Yeniden İncelenmesi', 
                     'Tescil Belgesi Sureti',
                     'Sicil Sureti',
@@ -393,12 +391,8 @@
                     'İtirazı Geri Çekme',
                     'Kullanım İspatı Sunma', 
                     'İtiraza Ek Belge',
-                    // 'Yayına İtiraz' ve 'Karara İtiraz' da buraya eklenecek,
-                    // ancak doğrudan Yayına İtiraz işlemi için related transaction seçimi olmayacak.
-                    // Bu senaryoda sadece doküman yükleme olmalı.
-                    // Yayına İtiraz'ı 'simpleTasks'ten çıkarıp bu gruba ekliyoruz ve populateRelatedTransactions içinde özel durumunu yöneteceğiz.
-                    'Yayına İtiraz',
-                    'Karara İtiraz'
+                    'Yayına İtiraz', // Yayına İtiraz ve Karara İtiraz buraya eklendi
+                    'Karara İtiraz' 
                 ];
 
 
@@ -449,8 +443,8 @@
                     'İtirazı Geri Çekme': 'Yayına İtiraz veya Karara İtiraz',
                     'Kullanım İspatı Sunma': 'Yayına İtiraz',
                     'İtiraza Ek Belge': 'Yayına İtiraz veya Karara İtiraz',
-                    'Yayına İtiraz': 'Yayına İtiraz (Kendisi)', // Yayına İtiraz için özel durum
-                    'Karara İtiraz': 'Karara İtiraz (Kendisi)' // Karara İtiraz için özel durum
+                    'Yayına İtiraz': 'Yok', // Bu işlem tipi için ilgili bir transaction seçimi beklenmiyor
+                    'Karara İtiraz': 'Yok' // Bu işlem tipi için ilgili bir transaction seçimi beklenmiyor
                 };
                 const relatedTransactionLabel = `İlgili İşlem Seçin (${transactionTypeMap[taskType] || 'Özel İşlem'})`;
 
@@ -599,8 +593,8 @@
                     'İtirazı Geri Çekme',
                     'Kullanım İspatı Sunma', 
                     'İtiraza Ek Belge',
-                    'Yayına İtiraz', // Yeni eklendi
-                    'Karara İtiraz' // Yeni eklendi
+                    'Yayına İtiraz', 
+                    'Karara İtiraz' 
                 ];
                 if (transactionSpecificTasks.includes(specificTaskType) && this.selectedIpRecord.transactions) {
                     this.populateRelatedTransactions(specificTaskType);
@@ -672,17 +666,13 @@
                     filteredTransactions = allTransactions.filter(tx => 
                         tx.description && tx.description.includes('Yayına İtiraz') && !tx.parentId // Sadece parent olanları al
                     );
-                } else if (specificTaskType === 'Yayına İtiraz' || specificTaskType === 'Karara İtiraz') { // Yayına İtiraz ve Karara İtiraz için özel durum
-                    // Bu işlemler kendileri bir başlangıç transaction'ı olduğu için,
-                    // ilgili bir transaction seçimi genellikle olmaz.
-                    // Ancak eğer bu işlem tipleri için de bir 'önceki itirazı' seçmek istiyorsak,
-                    // buradaki filtrelemeyi değiştirmeliyiz.
-                    // Şu anki mantıkta, bu formlar için related transaction seçimi sunmuyoruz.
+                } else if (specificTaskType === 'Yayına İtiraz' || specificTaskType === 'Karara İtiraz') {
+                    // Bu işlem tipleri için ilgili bir transaction seçimi beklenmiyor.
+                    // Dolayısıyla selectElement boş kalacak ve disabled olacak.
                     selectElement.innerHTML = '<option value="">Uygun İşlem Yok</option>';
                     selectElement.disabled = true;
-                    return;
+                    return; 
                 }
-
 
                 if (filteredTransactions.length > 0) {
                     filteredTransactions.forEach(tx => {
@@ -797,8 +787,6 @@
                 const simpleTasks = [
                     'Yenileme',
                     'Eksiklik Giderme',
-                    'Yayına İtiraz',
-                    'Karara İtiraz',
                     'Yayıma İtirazın Yeniden İncelenmesi',
                     'Tescil Belgesi Sureti',
                     'Sicil Sureti',
@@ -833,6 +821,7 @@
                 } else if (transactionSpecificTasks.includes(taskType)) {
                      if (this.selectedIpRecord) { // Varlık seçimi her durumda zorunlu
                          // Eğer ilgili bir transaction seçimi gerekiyorsa ve seçildiyse
+                         // 'Yayına İtiraz' ve 'Karara İtiraz' için transaction seçimi zorunlu DEĞİL
                          if (['İtiraza Karşı Görüş (YIDD)', 'İtiraza Karşı Görüş (Markalar)', 'İtirazı Geri Çekme', 'Kullanım İspatı Sunma', 'İtiraza Ek Belge'].includes(taskType)) {
                             if (document.getElementById('relatedTransactionSelect') && document.getElementById('relatedTransactionSelect').value !== '') {
                                 isComplete = true;
@@ -888,8 +877,10 @@
                     let relatedTransactionId = null;
                     let relatedTransactionDescription = null;
 
-                    // Eğer select elementi varsa ve bir değer seçilmişse
-                    if (relatedTransactionSelect && relatedTransactionSelect.value !== '') {
+                    // Eğer select elementi varsa ve bir değer seçilmişse (Yayına İtiraz ve Karara İtiraz hariç)
+                    if (relatedTransactionSelect && relatedTransactionSelect.value !== '' && 
+                        !['Yayına İtiraz', 'Karara İtiraz'].includes(specificTaskType)) {
+                        
                         relatedTransactionId = relatedTransactionSelect.value;
                         const relatedTransaction = this.selectedIpRecord.transactions.find(tx => tx.transactionId === relatedTransactionId);
                         relatedTransactionDescription = relatedTransaction ? relatedTransaction.description : null;
@@ -910,7 +901,30 @@
 
                 const result = await taskService.createTask(taskData);
                 if(result.success) {
-                    alert('İş başarıyla oluşturuldu!');
+                    // YENİ EKLENEN KISIM: Portföy kaydına parent transaction ekle
+                    // title: `${specificTaskType} İşlemi: ${this.selectedIpRecord.title}`
+                    const transactionTypeToRecord = specificTaskType; // İşlem tipinin kendisi transaction tipi olarak kullanılacak
+                    const transactionDescriptionToRecord = taskData.title; // İş başlığı açıklama olarak kullanılacak
+                    
+                    // Eğer ilgili bir transaction seçilmişse, onu da transaction açıklamasına ekleyelim
+                    let parentTransactionIdForChildLink = null;
+                    if (taskData.details && taskData.details.relatedTransactionId) {
+                        parentTransactionIdForChildLink = taskData.details.relatedTransactionId;
+                    }
+
+                    const transactionData = {
+                        type: transactionTypeToRecord, // İşlem tipinin kendisi
+                        description: transactionDescriptionToRecord,
+                        parentId: parentTransactionIdForChildLink || null // Eğer ilgili bir transaction varsa onun child'ı olsun, yoksa parent (null)
+                    };
+                    const addTxResult = await ipRecordsService.addTransactionToRecord(this.selectedIpRecord.id, transactionData);
+
+                    if (addTxResult.success) {
+                        alert('İş başarıyla oluşturuldu ve Portföy kaydına işlem eklendi!');
+                    } else {
+                        console.error('Portföy kaydına işlem eklenirken hata:', addTxResult.error);
+                        alert('İş oluşturuldu ancak portföy kaydına işlem eklenirken bir hata oluştu: ' + addTxResult.error);
+                    }
                     window.location.href = 'task-management.html';
                 } else {
                     alert('Hata: ' + result.error);
