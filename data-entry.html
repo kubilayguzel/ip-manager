@@ -410,7 +410,7 @@
                 auth.onAuthStateChanged(async (user) => {
                     if (user || authService.getCurrentUser()) {
                         this.currentUser = authService.getCurrentUser();
-                        this.updateUserInfo();
+                        this.updateUserInfo(); // <-- Bu satır burada duracak.
                         await this.loadPersonsFromService();
                         this.initializeEventListeners();
                         this.setupFileUpload();
@@ -437,9 +437,45 @@
                 });
             }
 
+            // AŞAĞIDAKİ updateUserInfo metodunu ekleyin:
+            updateUserInfo() {
+                if (this.currentUser) {
+                    const userName = this.currentUser.displayName || this.currentUser.email.split('@')[0] || 'Kullanıcı';
+                    const userRole = this.currentUser.role === 'admin' ? 'Yönetici' : this.currentUser.role === 'superadmin' ? 'Süper Yönetici' : 'Kullanıcı';
+                    
+                    document.getElementById('userAvatar').textContent = userName.charAt(0).toUpperCase();
+                    document.getElementById('userName').textContent = userName;
+                    document.getElementById('userRole').textContent = userRole;
+                }
+            }
+
+            // loadPersonsFromService, initializeEventListeners vb. diğer metodlar buraya devam ediyor.
+            // Bu kısım, sizin tarafınızdan eksik olan kısımdı.
+
             // ... Orijinal DataEntryModule sınıfının TÜM diğer metodları buraya gelecek ...
-            // (updateUserInfo, loadRecordForEdit, fillFormWithRecordData, ve diğer tümü)
-            // Önceki yanıtlarda bu metodların tam hali bulunmaktadır.
+            // (loadPersonsFromService, initializeEventListeners, showNotification, toggleLoading,
+            // renderOwnerList, addOwnerToGrid, removeOwner, addPerson, searchPersons, selectPerson,
+            // showAddPersonModal, hideAddPersonModal, savePerson, showSearchPersonModal,
+            // hideSearchPersonModal, selectType, updateTitleLabel, updateStatusOptions,
+            // renderDynamicFields, clearDynamicFields, setupFileUpload, handleFiles, updateFileList,
+            // removeFile, readFileAsDataURL, formatFileSize, setupTrademarkImageUpload,
+            // handleTrademarkImage, renderTrademarkImagePreview, removeTrademarkImage,
+            // toggleTrademarkImageUpload, validateForm, getFormData, loadRecordForEdit,
+            // fillFormWithRecordData, resetForm, handleSubmit, etc.)
+            // Bu metodların hepsi 'class DataEntryModule { ... }' bloğunun içinde kalmalıdır.
+            
+            // Örneğin, 'loadPersonsFromService' metodunuz updateUserInfo metodundan sonra yer alabilir:
+            async loadPersonsFromService() {
+                const result = await personsService.getPersons();
+                if (result.success) {
+                    this.persons = result.data;
+                } else {
+                    console.error('Kişiler yüklenirken hata:', result.error);
+                    this.showNotification('Kişiler yüklenemedi.', 'error');
+                }
+            }
+            
+            // ... ve diğer metodlar ...
         }
 
         // Modül başlatma
