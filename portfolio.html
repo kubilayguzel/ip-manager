@@ -175,6 +175,21 @@
             color: white;
             font-weight: bold;
         }
+        
+        .user-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-name {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .user-role {
+            font-size: 0.8em;
+            color: #666;
+        }
 
         .logout-btn {
             background: #ff6b6b;
@@ -358,7 +373,11 @@
     <div class="page-wrapper">
         <header class="top-header">
             <div class="user-section">
-                <div class="user-avatar" id="userAvatar">D</div>
+                <div class="user-avatar" id="userAvatar">?</div>
+                <div class="user-info">
+                    <div class="user-name" id="userName">Yükleniyor...</div>
+                    <div class="user-role" id="userRole">Kullanıcı</div>
+                </div>
                 <button class="logout-btn" id="logoutBtn">Çıkış</button>
             </div>
         </header>
@@ -564,14 +583,14 @@
                 auth.onAuthStateChanged(async (user) => {
                     if (user) {
                         this.currentUser = authService.getCurrentUser();
-                        this.loadUserData();
+                        this.updateUserInfo();
                         this.initializeEventListeners();
                         await this.loadRecords();
                     } else {
                         const localUser = authService.getCurrentUser();
                         if (localUser && localUser.uid) {
                             this.currentUser = localUser;
-                            this.loadUserData();
+                            this.updateUserInfo();
                             this.initializeEventListeners();
                             await this.loadRecords();
                         } else {
@@ -581,10 +600,14 @@
                 });
             }
 
-            loadUserData() {
+            updateUserInfo() {
                 if (this.currentUser) {
                     const userName = this.currentUser.displayName || this.currentUser.email.split('@')[0] || 'Kullanıcı';
+                    const userRole = this.currentUser.role === 'admin' ? 'Yönetici' : this.currentUser.role === 'superadmin' ? 'Süper Yönetici' : 'Kullanıcı';
+                    
                     document.getElementById('userAvatar').textContent = userName.charAt(0).toUpperCase();
+                    document.getElementById('userName').textContent = userName;
+                    document.getElementById('userRole').textContent = userRole;
                 }
             }
 
