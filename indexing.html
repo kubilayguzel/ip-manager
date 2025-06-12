@@ -262,34 +262,48 @@
 
         // YENİ AKORDİYON MENÜ İÇİN JAVASCRIPT
         document.addEventListener('DOMContentLoaded', function() {
-            const accordions = document.querySelectorAll('.accordion-header');
-            accordions.forEach(accordion => {
-                accordion.addEventListener('click', () => {
-                    const content = accordion.nextElementSibling;
-                    accordion.classList.toggle('active');
-                    if (content.style.maxHeight) {
-                        content.style.maxHeight = null;
-                    } else {
-                        content.style.maxHeight = content.scrollHeight + "px";
-                    }
-                });
-            });
-
-            const currentPage = window.location.pathname.split("/").pop();
-            const activeLink = document.querySelector(`.sidebar-nav a[href="${currentPage}"]`);
-            if (activeLink) {
-                document.querySelectorAll('.sidebar-nav-item.active, .accordion-content a.active').forEach(el => el.classList.remove('active'));
-                
-                activeLink.classList.add('active');
-                
-                const parentAccordion = activeLink.closest('.accordion-content');
-                if(parentAccordion) {
-                    const header = parentAccordion.previousElementSibling;
-                    header.classList.add('active');
-                    parentAccordion.style.maxHeight = parentAccordion.scrollHeight + "px";
-                }
+    // --- Akordiyon Menü Tıklama Fonksiyonu ---
+    const accordions = document.querySelectorAll('.accordion-header');
+    accordions.forEach(accordion => {
+        accordion.addEventListener('click', function(event) {
+            // Akordiyonu aç/kapat
+            this.classList.toggle('active');
+            const content = this.nextElementSibling;
+            if (content.style.maxHeight) {
+                content.style.maxHeight = null;
+            } else {
+                content.style.maxHeight = content.scrollHeight + "px";
             }
         });
+    });
+
+    // --- Sayfa Yüklendiğinde Aktif Menüyü Ayarlama Fonksiyonu ---
+    function setActiveMenu() {
+        const currentPage = window.location.pathname.split("/").pop() || 'dashboard.html';
+        
+        // Önce tüm aktif işaretlerini temizle
+        document.querySelectorAll('.sidebar-nav-item.active, .accordion-content a.active').forEach(el => el.classList.remove('active'));
+        
+        // Mevcut sayfanın linkini bul ve aktif yap
+        const activeLink = document.querySelector(`.sidebar-nav a[href="${currentPage}"]`);
+        if (!activeLink) return;
+
+        activeLink.classList.add('active');
+        
+        // Eğer link bir akordiyon içindeyse, akordiyonu aç ve başlığını aktif et
+        const parentAccordionContent = activeLink.closest('.accordion-content');
+        if (parentAccordionContent) {
+            const parentAccordionHeader = parentAccordionContent.previousElementSibling;
+            if (parentAccordionHeader && parentAccordionHeader.classList.contains('accordion-header')) {
+                parentAccordionHeader.classList.add('active');
+                parentAccordionContent.style.maxHeight = parentAccordionContent.scrollHeight + "px";
+            }
+        }
+    }
+
+    // Sayfa ilk yüklendiğinde aktif menüyü ayarla
+    setActiveMenu();
+});
     </script>
 </body>
 </html>
