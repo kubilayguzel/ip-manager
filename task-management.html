@@ -159,12 +159,15 @@
                 authService.auth.onAuthStateChanged(async user => {
                     if (user) {
                         this.currentUser = authService.getCurrentUser();
-                        // Sadece superadmin erişebilir
-                        if (this.currentUser.role !== 'superadmin') {
+                        
+                        // ### DEĞİŞİKLİK BURADA YAPILDI ###
+                        // Sadece admin ve superadmin erişebilir
+                        if (this.currentUser.role !== 'superadmin' && this.currentUser.role !== 'admin') {
                             alert('Bu sayfaya erişim yetkiniz yoktur.');
                             window.location.href = 'dashboard.html';
                             return;
                         }
+
                         document.getElementById('userAvatar').textContent = (this.currentUser.displayName || 'U').charAt(0);
                         await this.loadInitialData();
                         this.setupEventListeners();
