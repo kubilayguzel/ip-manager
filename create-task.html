@@ -275,9 +275,9 @@
                 this.selectedIpRecord = null;
                 this.selectedRelatedParty = null;
                 this.taskTypeMappings = {
-                    'marka': ['Başvuru', 'Yenileme', 'Devir', 'Tescil Belgesi Talebi', 'Lisans', 'Birleşme', 'Rehin'],
+                    'trademark': ['Başvuru', 'Yenileme', 'Devir', 'Tescil Belgesi Talebi', 'Lisans', 'Birleşme', 'Rehin'],
                     'patent': ['Başvuru', 'Yenileme', 'Yıllık Ücret Ödemesi', 'Lisans', 'Devir', 'Rehin'],
-                    'tasarim': ['Başvuru', 'Yenileme', 'Devir', 'Lisans', 'Rehin']
+                    'design': ['Başvuru', 'Yenileme', 'Devir', 'Lisans', 'Rehin']
                 };
             }
 
@@ -326,6 +326,7 @@
                 specificTypeSelect.innerHTML = '<option value="">Önce İşin Ana Türünü Seçin</option>';
                 if (mainType) {
                     specificTypeSelect.innerHTML = '<option value="">Seçiniz...</option>';
+                    // taskTypeMappings anahtarları İngilizceye çevrildi
                     this.taskTypeMappings[mainType].forEach(type => {
                         specificTypeSelect.innerHTML += `<option value="${type}">${type}</option>`;
                     });
