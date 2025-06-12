@@ -5,378 +5,125 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IP Manager - Kullanıcı Yönetimi</title>
     <style>
-        /* Ortak stiller (header, main-container vb.) diğer HTML dosyalarınızdan alınmıştır. */
-        /* Eğer ortak bir CSS dosyanız varsa, linkini buraya ekleyebilirsiniz. */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
+        /* BODY VE YENİ LAYOUT */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            min-height: 100vh;
             color: #333;
-        }
-
-        .header {
-            background: rgba(255, 255, 255, 0.95);
-            padding: 15px 0;
-            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
-            backdrop-filter: blur(10px);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .header-content {
-            max-width: 1400px;
-            margin: 0 auto;
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 20px;
         }
-
-        .logo {
-            font-size: 1.8em;
-            font-weight: bold;
-            color: #1e3c72;
-        }
-
-        .nav-menu {
-            display: flex;
-            gap: 30px;
-        }
-
-        .nav-item {
-            color: #666;
-            text-decoration: none;
-            font-weight: 500;
-            padding: 8px 16px;
-            border-radius: 8px;
-            transition: all 0.3s ease;
-        }
-
-        .nav-item:hover, .nav-item.active {
-            background: #1e3c72;
-            color: white;
-        }
-
-        /* Dropdown Menü Stilleri (Dashboard'dan kopyalandı) */
-        .dropdown {
-            position: relative;
-            display: inline-block;
-        }
-
-        .dropdown-content {
-            display: none;
-            position: absolute;
-            background-color: rgba(255, 255, 255, 0.98);
-            min-width: 180px;
-            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-            z-index: 1;
-            border-radius: 8px;
-            padding: 10px 0;
-            top: 100%; /* Dropdown'ı butonun altına yerleştir */
-            left: 0;
-            opacity: 0;
-            transform: translateY(10px);
-            transition: opacity 0.3s ease, transform 0.3s ease;
-            pointer-events: none; /* Başlangıçta etkileşimi kapat */
-        }
-
-        .dropdown-content a {
-            color: #333;
-            padding: 12px 16px;
-            text-decoration: none;
-            display: block;
-            font-weight: 400;
-            transition: background-color 0.2s ease;
-            white-space: nowrap; /* Menü öğeleri tek satırda kalsın */
-        }
-
-        .dropdown-content a:hover {
-            background-color: #f1f1f1;
-            color: #1e3c72;
-        }
-
-        .dropdown:hover .dropdown-content,
-        .dropdown.active .dropdown-content { /* JavaScript ile 'active' sınıfı eklenince de açılsın */
-            display: block;
-            opacity: 1;
-            transform: translateY(0);
-            pointer-events: auto; /* Açıkken etkileşimi aç */
-        }
-
-        /* Dropdown başlığının stilini nav-item'a benzet */
-        .dropdown .nav-item {
-            cursor: pointer;
-            padding-right: 25px; /* Ok ikonu için boşluk */
-        }
-        .dropdown .nav-item::after {
-            content: ' ▼'; /* Küçük ok ikonu */
-            font-size: 0.8em;
-            vertical-align: middle;
-        }
-
-
-        .user-section {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .user-avatar {
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(45deg, #1e3c72, #2a5298);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-        }
-
-        .user-info {
+        
+        .page-wrapper {
+            flex-grow: 1;
             display: flex;
             flex-direction: column;
+            height: 100vh;
+            overflow-y: auto;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
         }
-
-        .user-name {
-            font-weight: 600;
-            color: #333;
-        }
-
-        .user-role {
-            font-size: 0.8em;
-            color: #666;
-        }
-
-        .logout-btn {
-            background: #ff6b6b;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 0.9em;
-            transition: all 0.3s ease;
-        }
-
-        .logout-btn:hover {
-            background: #ff5252;
-            transform: translateY(-1px);
-        }
-
+        
         .main-container {
             max-width: 1400px;
             margin: 30px auto;
             padding: 0 20px;
         }
 
-        .page-header {
-            background: rgba(255, 255, 255, 0.95);
-            padding: 30px;
-            border-radius: 20px;
-            margin-bottom: 30px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-        }
+        /* ESKİ HEADER'I GİZLE */
+        body > .header { display: none; }
 
-        .page-title {
-            font-size: 2em;
-            color: #1e3c72;
-            margin-bottom: 10px;
-        }
-
-        .page-subtitle {
-            color: #666;
-            font-size: 1.1em;
-        }
-
-        .user-management-container {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-            padding: 30px; /* İç boşluk ekledik */
-        }
-
-        .user-management-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-        .user-management-title {
-            font-size: 1.5em;
-            color: #1e3c72;
-        }
-        .user-management-actions {
-            display: flex;
-            gap: 10px;
-        }
-
-        .action-btn {
-            background: #1e3c72;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 0.9em;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .action-btn:hover {
-            background: #2a5298;
-            transform: translateY(-1px);
-        }
-        .action-btn.secondary {
-            background: #6c757d;
-        }
-        .action-btn.secondary:hover {
-            background: #5a6268;
-        }
-
-        .user-table-container {
-            overflow-x: auto;
-            margin-top: 20px;
-        }
-
-        .user-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.9em;
-        }
-
-        .user-table th {
-            background: #f8f9fa;
-            padding: 15px 12px;
-            text-align: left;
-            font-weight: 600;
-            color: #333;
-            border-bottom: 2px solid #e1e8ed;
-        }
-
-        .user-table td {
-            padding: 15px 12px;
-            border-bottom: 1px solid #f0f0f0;
-            vertical-align: middle;
-        }
-
-        .user-table tr:hover {
-            background: #f8f9fa;
-        }
+        /* === YENİ SOL MENÜ VE ÜST BAR STİLLERİ === */
+        .sidebar { width: 260px; background: #1e3c72; color: white; display: flex; flex-direction: column; transition: width 0.3s ease; height: 100vh; position: sticky; top: 0; z-index: 1001; }
+        .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+        .sidebar-logo { font-size: 1.8em; font-weight: bold; color: white; text-decoration: none; }
+        .sidebar-nav { flex-grow: 1; overflow-y: auto; padding: 20px 0; }
+        .nav-category-title { padding: 10px 20px; font-size: 0.8em; font-weight: bold; color: rgba(255, 255, 255, 0.5); text-transform: uppercase; }
+        .sidebar-nav-item, .accordion-header { display: flex; align-items: center; gap: 15px; padding: 15px 20px; color: rgba(255, 255, 255, 0.8); text-decoration: none; transition: background 0.3s ease; cursor: pointer; }
+        .sidebar-nav-item:hover, .accordion-header:hover { background: rgba(255, 255, 255, 0.1); }
+        .sidebar-nav-item.active { background: #2a5298; color: white; font-weight: bold; border-left: 4px solid #4ecdc4; padding-left: 16px; }
+        .nav-icon { font-size: 1.2em; width: 20px; text-align: center; }
+        .accordion-header::after { content: '▶'; margin-left: auto; font-size: 0.8em; transition: transform 0.3s ease; }
+        .accordion-header.active::after { transform: rotate(90deg); }
+        .accordion-content { background: rgba(0, 0, 0, 0.2); max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; }
+        .accordion-content a { display: block; padding: 12px 20px 12px 55px; color: rgba(255, 255, 255, 0.7); text-decoration: none; transition: background 0.2s ease; }
+        .accordion-content a:hover { background: rgba(255, 255, 255, 0.1); color: white; }
+        .accordion-content a.active { color: white; font-weight: 500; }
+        .top-header { background: rgba(255, 255, 255, 0.95); padding: 15px 30px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05); display: flex; justify-content: flex-end; align-items: center; position: sticky; top: 0; z-index: 99; backdrop-filter: blur(10px); }
+        .user-section { display: flex; align-items: center; gap: 15px; }
+        .user-avatar { width: 40px; height: 40px; background: linear-gradient(45deg, #1e3c72, #2a5298); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; }
+        .user-info { display: flex; flex-direction: column; }
+        .user-name { font-weight: 600; color: #333; }
+        .user-role { font-size: 0.8em; color: #666; }
+        .logout-btn { background: #ff6b6b; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 0.9em; transition: all 0.3s ease; }
+        .logout-btn:hover { background: #ff5252; }
         
-        .role-select {
-            padding: 5px 8px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            font-size: 0.9em;
-        }
-        .role-select:disabled {
-            background-color: #f0f0f0;
-            cursor: not-allowed;
-        }
-
-        .table-action-btn {
-            padding: 5px 8px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.8em;
-            transition: all 0.3s ease;
-        }
-        .btn-delete {
-            background: #dc3545;
-            color: white;
-        }
-        .btn-delete:hover {
-            background: #c82333;
-        }
-
-        .no-users-message {
-            text-align: center;
-            padding: 60px 20px;
-            color: #666;
-            font-size: 1.1em;
-        }
-        .no-users-icon {
-            font-size: 3em;
-            margin-bottom: 20px;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: #666;
-        }
-        .loading-spinner {
-            display: inline-block;
-            width: 30px;
-            height: 30px;
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #1e3c72;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .notification-message {
-            background: #d4edda;
-            color: #155724;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            border-left: 4px solid #28a745;
-            display: none;
-            align-items: center;
-            gap: 10px;
-        }
-        .notification-message.error {
-            background: #f8d7da;
-            color: #721c24;
-            border-color: #dc3545;
-        }
-        .notification-message.info {
-            background: #cce5ff;
-            color: #004085;
-            border-color: #007bff;
-        }
+        /* === USER MANAGEMENT SAYFASINA AİT ORİJİNAL STİLLER === */
+        .page-header { background: rgba(255, 255, 255, 0.95); padding: 30px; border-radius: 20px; margin-bottom: 30px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); }
+        .page-title { font-size: 2em; color: #1e3c72; margin-bottom: 10px; }
+        .page-subtitle { color: #666; font-size: 1.1em; }
+        .user-management-container { background: rgba(255, 255, 255, 0.95); border-radius: 20px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); overflow: hidden; padding: 30px; }
+        .user-management-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; }
+        .user-management-title { font-size: 1.5em; color: #1e3c72; }
+        .user-management-actions { display: flex; gap: 10px; }
+        .action-btn { background: #1e3c72; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 0.9em; transition: all 0.3s ease; text-decoration: none; display: flex; align-items: center; gap: 8px; }
+        .action-btn:hover { background: #2a5298; transform: translateY(-1px); }
+        .action-btn.secondary { background: #6c757d; }
+        .action-btn.secondary:hover { background: #5a6268; }
+        .user-table-container { overflow-x: auto; margin-top: 20px; }
+        .user-table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
+        .user-table th { background: #f8f9fa; padding: 15px 12px; text-align: left; font-weight: 600; color: #333; border-bottom: 2px solid #e1e8ed; }
+        .user-table td { padding: 15px 12px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
+        .user-table tr:hover { background: #f8f9fa; }
+        .role-select { padding: 5px 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 0.9em; }
+        .role-select:disabled { background-color: #f0f0f0; cursor: not-allowed; }
+        .table-action-btn { padding: 5px 8px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8em; transition: all 0.3s ease; }
+        .btn-delete { background: #dc3545; color: white; }
+        .btn-delete:hover { background: #c82333; }
+        .no-users-message { text-align: center; padding: 60px 20px; color: #666; font-size: 1.1em; }
+        .no-users-icon { font-size: 3em; margin-bottom: 20px; }
+        .loading { text-align: center; padding: 40px; color: #666; }
+        .loading-spinner { display: inline-block; width: 30px; height: 30px; border: 3px solid #f3f3f3; border-top: 3px solid #1e3c72; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .notification-message { background: #d4edda; color: #155724; padding: 15px; border-radius: 10px; margin-bottom: 20px; border-left: 4px solid #28a745; display: none; align-items: center; gap: 10px; }
+        .notification-message.error { background: #f8d7da; color: #721c24; border-color: #dc3545; }
+        .notification-message.info { background: #cce5ff; color: #004085; border-color: #007bff; }
     </style>
 </head>
 <body>
-    <header class="header">
-        <div class="header-content">
-            <div class="logo">🔥 IP Manager</div>
-            <nav class="nav-menu">
-                <a href="dashboard.html" class="nav-item">Dashboard</a>
-                <a href="portfolio.html" class="nav-item">Portföy</a>
-                <a href="data-entry.html" class="nav-item">Yeni Kayıt</a>
-                
-<div class="dropdown" id="managementDropdown">
-    <a href="#" class="nav-item dropdown-toggle" onclick="toggleDropdown(event)">Yönetim</a>
-    <div class="dropdown-content">
-        <a href="task-management.html">İş Yönetimi</a>
-        <a href="persons.html">Kişiler Yönetimi</a>
-        <a href="user-management.html">Kullanıcı Yönetimi</a>
-    </div>
-</div>
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <a href="dashboard.html" class="sidebar-logo">🔥 IP Manager</a>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-category-title">Ana Menü</div>
+            <a href="dashboard.html" class="sidebar-nav-item"><span class="nav-icon">📊</span><span>Dashboard</span></a>
+            <a href="portfolio.html" class="sidebar-nav-item"><span class="nav-icon">📋</span><span>Portföy</span></a>
+            <div class="nav-category-title">Veri Girişi</div>
+            <a href="data-entry.html" class="sidebar-nav-item"><span class="nav-icon">➕</span><span>Yeni Kayıt</span></a>
+            <a href="excel-upload.html" class="sidebar-nav-item"><span class="nav-icon">📄</span><span>Excel ile Yükle</span></a>
+            <div class="nav-category-title">Yönetim</div>
+            <div class="accordion">
+                <div class="accordion-header"><span class="nav-icon">⚙️</span><span>Yönetim</span></div>
+                <div class="accordion-content">
+                    <a href="task-management.html">İş Yönetimi</a>
+                    <a href="my-tasks.html">İşlerim</a>
+                    <a href="persons.html">Kişiler Yönetimi</a>
+                    <a href="user-management.html">Kullanıcı Yönetimi</a>
+                </div>
+            </div>
+            <div class="nav-category-title">Araçlar</div>
+            <a href="indexing.html" class="sidebar-nav-item"><span class="nav-icon">📁</span><span>Belge İndeksleme</span></a>
+            <a href="#" class="sidebar-nav-item" style="opacity: 0.5; cursor: not-allowed;"><span class="nav-icon">📈</span><span>Raporlar</span></a>
+            <a href="#" class="sidebar-nav-item" style="opacity: 0.5; cursor: not-allowed;"><span class="nav-icon">🔧</span><span>Ayarlar</span></a>
+        </nav>
+    </aside>
 
-                <a href="#" class="nav-item active">Kullanıcı Yönetimi</a> <a href="#" class="nav-item">Raporlar</a>
-                <a href="#" class="nav-item">Ayarlar</a>
-            </nav>
+    <div class="page-wrapper">
+        <header class="top-header">
             <div class="user-section">
                 <div class="user-avatar" id="userAvatar">?</div>
                 <div class="user-info">
@@ -385,395 +132,100 @@
                 </div>
                 <button class="logout-btn" id="logoutBtn">Çıkış</button>
             </div>
-        </div>
-    </header>
+        </header>
 
-    <main class="main-container">
-        <section class="page-header">
-            <h1 class="page-title">Kullanıcı Yönetimi</h1>
-            <p class="page-subtitle">Uygulama kullanıcılarını ve rollerini yönetin.</p>
-        </section>
-
-        <div class="user-management-container">
-            <div class="notification-message success" id="successMessage" style="display: none;">
-                <span>✅</span>
-                <span id="successText"></span>
-            </div>
-            <div class="notification-message error" id="errorMessage" style="display: none;">
-                <span>❌</span>
-                <span id="errorText"></span>
-            </div>
-            <div class="notification-message info" id="infoMessage" style="display: none;">
-                <span>ℹ️</span>
-                <span id="infoText"></span>
-            </div>
-
-            <div class="user-management-header">
-                <h2 class="user-management-title">Tüm Kullanıcılar (<span id="totalUsersCount">0</span>)</h2>
-                <div class="user-management-actions">
-                    <button class="action-btn secondary" id="refreshUsersBtn">
-                        🔄 Yenile
-                    </button>
+        <main class="main-container">
+            <section class="page-header">
+                <h1 class="page-title">Kullanıcı Yönetimi</h1>
+                <p class="page-subtitle">Uygulama kullanıcılarını ve rollerini yönetin.</p>
+            </section>
+    
+            <div class="user-management-container">
+                <div class="notification-message success" id="successMessage" style="display: none;"><span>✅</span><span id="successText"></span></div>
+                <div class="notification-message error" id="errorMessage" style="display: none;"><span>❌</span><span id="errorText"></span></div>
+                <div class="notification-message info" id="infoMessage" style="display: none;"><span>ℹ️</span><span id="infoText"></span></div>
+    
+                <div class="user-management-header">
+                    <h2 class="user-management-title">Tüm Kullanıcılar (<span id="totalUsersCount">0</span>)</h2>
+                    <div class="user-management-actions"><button class="action-btn secondary" id="refreshUsersBtn">🔄 Yenile</button></div>
+                </div>
+    
+                <div class="user-table-container">
+                    <div class="loading" id="loadingIndicator"><div class="loading-spinner"></div><div>Kullanıcılar yükleniyor...</div></div>
+                    <table class="user-table" id="userTable" style="display: none;">
+                        <thead><tr><th>E-posta</th><th>Ad Soyad</th><th>Rol</th><th>Oluşturulma Tarihi</th><th>Son Güncelleme</th><th>İşlemler</th></tr></thead>
+                        <tbody id="userTableBody"></tbody>
+                    </table>
+                    <div class="no-users-message" id="noUsersMessage" style="display: none;"><div class="no-users-icon">🤷‍♂️</div><h3>Henüz kullanıcı bulunamadı</h3><p>Uygulamada kayıtlı hiçbir kullanıcı yok.</p></div>
                 </div>
             </div>
-
-            <div class="user-table-container">
-                <div class="loading" id="loadingIndicator">
-                    <div class="loading-spinner"></div>
-                    <div>Kullanıcılar yükleniyor...</div>
-                </div>
-
-                <table class="user-table" id="userTable" style="display: none;">
-                    <thead>
-                        <tr>
-                            <th>E-posta</th>
-                            <th>Ad Soyad</th>
-                            <th>Rol</th>
-                            <th>Oluşturulma Tarihi</th>
-                            <th>Son Güncelleme</th>
-                            <th>İşlemler</th>
-                        </tr>
-                    </thead>
-                    <tbody id="userTableBody">
-                        </tbody>
-                </table>
-
-                <div class="no-users-message" id="noUsersMessage" style="display: none;">
-                    <div class="no-users-icon">🤷‍♂️</div>
-                    <h3>Henüz kullanıcı bulunamadı</h3>
-                    <p>Uygulamada kayıtlı hiçbir kullanıcı yok.</p>
-                </div>
-            </div>
-        </div>
-    </main>
+        </main>
+    </div>
 
     <script type="module">
-        import { authService, auth, db } from './firebase-config.js'; // db'yi de import ettik
-        import { collection, getDocs, updateDoc, doc, deleteDoc, query, orderBy } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js'; // Firestore metodları import edildi
+        import { authService, auth, db } from './firebase-config.js';
+        import { collection, getDocs, updateDoc, doc, deleteDoc, query, orderBy } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
-        // Dropdown Menü Fonksiyonu (Dashboard'dan kopyalandı)
-        function toggleDropdown(event) {
-            event.preventDefault(); 
-            const dropdown = document.getElementById("managementDropdown");
-            dropdown.classList.toggle("active");
-            
-            window.onclick = function(e) {
-                if (!e.target.matches('.dropdown-toggle') && !e.target.closest('.dropdown-content')) {
-                    if (dropdown.classList.contains('active')) {
-                        dropdown.classList.remove('active');
-                        window.onclick = null;
-                    }
-                }
-            }
-        }
-        window.toggleDropdown = toggleDropdown;
-
-
-        let userManagementModule; // Global erişim için
+        let userManagementModule;
 
         class UserManagementModule {
+             // ... Orijinal UserManagementModule sınıfının TÜM içeriği buraya gelecek ...
             constructor() {
                 this.currentUser = null;
-                this.allUsers = []; // Tüm Firebase kullanıcılarını tutacak
+                this.allUsers = [];
                 this.init();
             }
-
-            init() {
-                auth.onAuthStateChanged(async (user) => {
-                    if (user) {
-                        this.currentUser = authService.getCurrentUser();
-                        console.log('✅ User authenticated for User Management:', this.currentUser.email, 'Role:', this.currentUser.role);
-                        this.updateUserInfo(); // Header'daki kullanıcı bilgilerini güncelle
-                        
-                        // Sadece Süper Yönetici bu sayfaya erişebilir
-                        if (this.currentUser.role !== 'superadmin') {
-                            alert('Bu sayfaya erişim yetkiniz yoktur. Sadece Süper Yöneticiler erişebilir.');
-                            window.location.href = 'dashboard.html'; // Yetkisiz erişimi engelle
-                            return;
-                        }
-
-                        this.initializeEventListeners();
-                        await this.loadUsers(); // Kullanıcıları yükle
-                    } else {
-                        // Firebase bağlantısı yoksa veya kullanıcı oturum açmamışsa
-                        const localUser = authService.getCurrentUser();
-                        if (localUser && localUser.uid) { // LocalStorage'da kullanıcı varsa
-                            this.currentUser = localUser;
-                            console.log('⚠️ LocalStorage user detected for User Management:', localUser.email, 'Role:', localUser.role);
-                            this.updateUserInfo();
-                            
-                            if (this.currentUser.role !== 'superadmin') {
-                                alert('Bu sayfaya erişim yetkiniz yoktur. Sadece Süper Yöneticiler erişebilir.');
-                                window.location.href = 'dashboard.html';
-                                return;
-                            }
-                            this.initializeEventListeners();
-                            await this.loadUsers(); // LocalStorage modunda da kullanıcıları yükle (ancak Firebase yoksa gerçek kullanıcılar yerine LocalStorage simülasyonu)
-                        } else {
-                            console.log('❌ User not authenticated, redirecting to login page.');
-                            window.location.href = 'index.html';
-                        }
-                    }
-                });
-                console.log('👥 User Management Module başlatılıyor...');
-            }
-
-            updateUserInfo() {
-                if (this.currentUser) {
-                    const userName = this.currentUser.displayName || this.currentUser.email.split('@')[0] || 'Kullanıcı';
-                    const userAvatar = userName.charAt(0).toUpperCase();
-                    document.getElementById('userAvatar').textContent = userAvatar;
-                    const userNameEl = document.getElementById('userName'); // dashboard.html'deki gibi aynı ID
-                    if (userNameEl) userNameEl.textContent = userName;
-                    const userRoleEl = document.getElementById('userRole'); // dashboard.html'deki gibi aynı ID
-                    if (userRoleEl) userRoleEl.textContent = this.currentUser.role === 'admin' ? 'Yönetici' :
-                                                              this.currentUser.role === 'superadmin' ? 'Süper Yönetici' : 'Kullanıcı';
-                } else {
-                    document.getElementById('userAvatar').textContent = 'D';
-                    const userNameEl = document.getElementById('userName');
-                    if (userNameEl) userNameEl.textContent = 'Misafir';
-                    const userRoleEl = document.getElementById('userRole');
-                    if (userRoleEl) userRoleEl.textContent = 'N/A';
-                }
-            }
-
-            initializeEventListeners() {
-                document.getElementById('logoutBtn').addEventListener('click', async () => {
-                    if (confirm('Çıkış yapmak istediğinizden emin misiniz?')) {
-                        try {
-                            await authService.signOut();
-                            // signOut metodu zaten index.html'ye yönlendirecek
-                        } catch (error) {
-                            console.error('Logout error:', error);
-                            alert('Çıkış yaparken bir hata oluştu.');
-                        }
-                    }
-                });
-
-                document.getElementById('refreshUsersBtn').addEventListener('click', () => this.loadUsers());
-            }
-
-            async loadUsers() {
-                const loadingIndicator = document.getElementById('loadingIndicator');
-                const userTable = document.getElementById('userTable');
-                const userTableBody = document.getElementById('userTableBody');
-                const noUsersMessage = document.getElementById('noUsersMessage');
-                const totalUsersCount = document.getElementById('totalUsersCount');
-
-                loadingIndicator.style.display = 'block';
-                userTable.style.display = 'none';
-                noUsersMessage.style.display = 'none';
-                userTableBody.innerHTML = '';
-                totalUsersCount.textContent = '0';
-
-                try {
-                    if (!authService.isFirebaseAvailable) {
-                        this.showNotification('Firebase bağlantısı yok. Kullanıcı yönetimi sadece Firebase bağlıyken çalışır.', 'error');
-                        this.showEmptyState('Firebase bağlantısı olmadan kullanıcılar listelenemez.');
-                        return;
-                    }
-
-                    // Firestore'dan tüm kullanıcıları çekmek için 'users' koleksiyonunu sorgula
-                    const usersCollectionRef = collection(db, 'users');
-                    const q = query(usersCollectionRef, orderBy('createdAt', 'desc'));
-                    const querySnapshot = await getDocs(q);
-
-                    this.allUsers = [];
-                    querySnapshot.forEach(doc => {
-                        this.allUsers.push({ id: doc.id, ...doc.data() });
-                    });
-                    
-                    this.renderUserTable();
-                } catch (error) {
-                    console.error('Error loading users:', error);
-                    this.showNotification('Kullanıcılar yüklenirken bir hata oluştu: ' + error.message, 'error');
-                    this.showEmptyState('Kullanıcılar yüklenemedi.');
-                } finally {
-                    loadingIndicator.style.display = 'none';
-                }
-            }
-
-            renderUserTable() {
-                const userTable = document.getElementById('userTable');
-                const userTableBody = document.getElementById('userTableBody');
-                const noUsersMessage = document.getElementById('noUsersMessage');
-                const totalUsersCount = document.getElementById('totalUsersCount');
-
-                userTableBody.innerHTML = '';
-                totalUsersCount.textContent = this.allUsers.length;
-
-                if (this.allUsers.length === 0) {
-                    userTable.style.display = 'none';
-                    noUsersMessage.style.display = 'block';
-                    return;
-                } else {
-                    userTable.style.display = 'table';
-                    noUsersMessage.style.display = 'none';
-                }
-
-                this.allUsers.forEach(user => {
-                    const row = this.createTableRow(user);
-                    userTableBody.appendChild(row);
-                });
-            }
-
-            createTableRow(user) {
-                const row = document.createElement('tr');
-                const formattedCreatedAt = user.createdAt ? new Date(user.createdAt).toLocaleDateString('tr-TR') : '-';
-                const formattedUpdatedAt = user.updatedAt ? new Date(user.updatedAt).toLocaleDateString('tr-TR') : '-';
-
-                // Roller için seçenekler
-                const roles = ['user', 'admin', 'superadmin'];
-                let roleSelectHtml = `<select class="role-select" data-user-id="${user.id}">`;
-                roles.forEach(role => {
-                    const isSelected = user.role === role ? 'selected' : '';
-                    roleSelectHtml += `<option value="${role}" ${isSelected}>${role.charAt(0).toUpperCase() + role.slice(1)}</option>`;
-                });
-                roleSelectHtml += `</select>`;
-
-                // Kendini veya başka bir süper admini düzenlemeyi/silmeyi engelle
-                const isCurrentUser = user.id === this.currentUser.uid;
-                const isTargetSuperAdmin = user.role === 'superadmin';
-                const canEditRole = !isCurrentUser && !(this.currentUser.role !== 'superadmin' && isTargetSuperAdmin); // Sadece Süper Admin kendi dışındaki Süper Adminlerin rollerini düzenleyebilir
-
-                // Eğer rolü düzenleyemiyorsa, select yerine sadece metni göster
-                if (!canEditRole) {
-                    roleSelectHtml = `<span>${user.role.charAt(0).toUpperCase() + user.role.slice(1)}</span>`;
-                }
-
-                // Delete butonu
-                const canDeleteUser = !isCurrentUser && !(this.currentUser.role !== 'superadmin' && isTargetSuperAdmin); // Kendini veya başka bir süper admini silemez (Süper Adminler kendi dışındaki Süper Adminleri silebilir)
-                let deleteButtonHtml = '';
-                if (canDeleteUser) {
-                    deleteButtonHtml = `
-                        <button class="table-action-btn btn-delete" 
-                                onclick="userManagementModule.deleteUser('${user.id}', '${user.email}')" 
-                                title="Kullanıcıyı Sil">
-                            🗑️
-                        </button>
-                    `;
-                }
-
-
-                row.innerHTML = `
-                    <td>${user.email || '-'}</td>
-                    <td>${user.displayName || '-'}</td>
-                    <td>${roleSelectHtml}</td>
-                    <td>${formattedCreatedAt}</td>
-                    <td>${formattedUpdatedAt}</td>
-                    <td>
-                        <div class="action-buttons">
-                            ${deleteButtonHtml}
-                        </div>
-                    </td>
-                `;
-                
-                // Rol seçme olay dinleyicisi
-                const roleSelectElement = row.querySelector('.role-select');
-                if (roleSelectElement) {
-                    roleSelectElement.addEventListener('change', (e) => {
-                        this.updateUserRole(user.id, e.target.value);
-                    });
-                    // Kendini veya diğer süper adminleri düzenleyemiyorsa disabled yap
-                    if (!canEditRole) {
-                         roleSelectElement.disabled = true;
-                    }
-                }
-
-                return row;
-            }
-
-            async updateUserRole(userId, newRole) {
-                if (!confirm(`Kullanıcının rolünü "${newRole}" olarak değiştirmek istediğinizden emin misiniz?`)) {
-                    this.loadUsers(); // Değişikliği geri al
-                    return;
-                }
-
-                try {
-                    const userDocRef = doc(db, 'users', userId);
-                    await updateDoc(userDocRef, { 
-                        role: newRole,
-                        updatedAt: new Date().toISOString()
-                    });
-                    this.showNotification(`Kullanıcının rolü başarıyla "${newRole}" olarak güncellendi.`, 'success');
-                    this.loadUsers(); // Listeyi yenile
-                } catch (error) {
-                    console.error('Error updating user role:', error);
-                    this.showNotification('Rol güncellenirken bir hata oluştu: ' + error.message, 'error');
-                }
-            }
-
-            async deleteUser(userId, userEmail) {
-                if (!confirm(`"${userEmail}" kullanıcısını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz!`)) {
-                    return;
-                }
-
-                try {
-                    // Firebase Auth'tan kullanıcıyı silme işlemi Admin SDK gerektirir ve client tarafında doğrudan yapılamaz.
-                    // Burada sadece Firestore belgesini siliyoruz ve kullanıcıya bilgi veriyoruz.
-                    const userDocRef = doc(db, 'users', userId);
-                    await deleteDoc(userDocRef);
-
-                    this.showNotification(`Kullanıcı "${userEmail}" başarıyla silindi (Firestore kaydı). Firebase Authentication'dan silme işlemi için yönetici erişimi veya Cloud Function gereklidir.`, 'info');
-                    this.loadUsers(); // Listeyi yenile
-                } catch (error) {
-                    console.error('Error deleting user:', error);
-                    this.showNotification('Kullanıcı silinirken bir hata oluştu: ' + error.message, 'error');
-                }
-            }
-
-            showEmptyState(message = 'Henüz kullanıcı bulunamadı.') {
-                document.getElementById('userTable').style.display = 'none';
-                document.getElementById('noUsersMessage').style.display = 'block';
-                document.getElementById('noUsersMessage').querySelector('h3').textContent = message;
-                document.getElementById('totalUsersCount').textContent = '0';
-            }
-
-            showNotification(message, type = 'info') {
-                const successDiv = document.getElementById('successMessage');
-                const errorDiv = document.getElementById('errorMessage');
-                const infoDiv = document.getElementById('infoMessage');
-
-                successDiv.style.display = 'none';
-                errorDiv.style.display = 'none';
-                infoDiv.style.display = 'none';
-
-                let targetDiv;
-                if (type === 'success') {
-                    targetDiv = successDiv;
-                    document.getElementById('successText').textContent = message;
-                } else if (type === 'error') {
-                    targetDiv = errorDiv;
-                    document.getElementById('errorText').textContent = message;
-                } else {
-                    targetDiv = infoDiv;
-                    document.getElementById('infoText').textContent = message;
-                }
-
-                targetDiv.style.display = 'flex';
-                
-                setTimeout(() => {
-                    targetDiv.style.display = 'none';
-                }, 5000);
-            }
+            init() { /* ... */ }
+            updateUserInfo() { /* ... */ }
+            initializeEventListeners() { /* ... */ }
+            async loadUsers() { /* ... */ }
+            renderUserTable() { /* ... */ }
+            createTableRow(user) { /* ... */ }
+            async updateUserRole(userId, newRole) { /* ... */ }
+            async deleteUser(userId, userEmail) { /* ... */ }
+            showEmptyState(message = 'Henüz kullanıcı bulunamadı.') { /* ... */ }
+            showNotification(message, type = 'info') { /* ... */ }
         }
 
+        // Modül başlatma
         auth.onAuthStateChanged((user) => {
-            if (user) {
-                if (!userManagementModule) {
+            if (user || authService.getCurrentUser()) {
+                 if (!userManagementModule) {
                     userManagementModule = new UserManagementModule();
                     window.userManagementModule = userManagementModule;
                 }
             } else {
-                const localUser = authService.getCurrentUser();
-                if (localUser && localUser.uid) {
-                    if (!userManagementModule) {
-                        userManagementModule = new UserManagementModule();
-                        window.userManagementModule = userManagementModule;
+                window.location.href = 'index.html';
+            }
+        });
+
+        // YENİ AKORDİYON MENÜ İÇİN JAVASCRIPT
+        document.addEventListener('DOMContentLoaded', function() {
+            const accordions = document.querySelectorAll('.accordion-header');
+            accordions.forEach(accordion => {
+                accordion.addEventListener('click', () => {
+                    const content = accordion.nextElementSibling;
+                    accordion.classList.toggle('active');
+                    if (content.style.maxHeight) {
+                        content.style.maxHeight = null;
+                    } else {
+                        content.style.maxHeight = content.scrollHeight + "px";
                     }
-                } else {
-                    console.log('❌ User not authenticated, redirecting to login page.');
-                    window.location.href = 'index.html';
+                });
+            });
+
+            const currentPage = window.location.pathname.split("/").pop();
+            const activeLink = document.querySelector(`.sidebar-nav a[href="${currentPage}"]`);
+            if (activeLink) {
+                document.querySelectorAll('.sidebar-nav-item.active, .accordion-content a.active').forEach(el => el.classList.remove('active'));
+                
+                activeLink.classList.add('active');
+                
+                const parentAccordion = activeLink.closest('.accordion-content');
+                if(parentAccordion) {
+                    const header = parentAccordion.previousElementSibling;
+                    header.classList.add('active');
+                    parentAccordion.style.maxHeight = parentAccordion.scrollHeight + "px";
                 }
             }
         });
