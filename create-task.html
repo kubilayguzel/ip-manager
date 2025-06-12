@@ -372,9 +372,9 @@
                 const simpleTasks = [
                     'Yenileme',
                     'Eksiklik Giderme',
-                    'Yayına İtiraz',
-                    'Karara İtiraz',
-                    'Yayıma İtirazın Yeniden İncelenmesi',
+                    'Yayına İtiraz', // Burası artık transaction-specific olacak
+                    'Karara İtiraz', // Burası artık transaction-specific olacak
+                    'Yayıma İtirazın Yeniden İncelenmesi', 
                     'Tescil Belgesi Sureti',
                     'Sicil Sureti',
                     'Menşe Memleket Belgesi',
@@ -392,15 +392,22 @@
                     'İtiraza Karşı Görüş (Markalar)',
                     'İtirazı Geri Çekme',
                     'Kullanım İspatı Sunma', 
-                    'İtiraza Ek Belge'
+                    'İtiraza Ek Belge',
+                    // 'Yayına İtiraz' ve 'Karara İtiraz' da buraya eklenecek,
+                    // ancak doğrudan Yayına İtiraz işlemi için related transaction seçimi olmayacak.
+                    // Bu senaryoda sadece doküman yükleme olmalı.
+                    // Yayına İtiraz'ı 'simpleTasks'ten çıkarıp bu gruba ekliyoruz ve populateRelatedTransactions içinde özel durumunu yöneteceğiz.
+                    'Yayına İtiraz',
+                    'Karara İtiraz'
                 ];
+
 
                 if (transactionLikeTasks.includes(taskType)) {
                     this.renderGenericTransactionForm(container, taskType);
                 } else if (simpleTasks.includes(taskType)) {
                     this.renderSimpleTransactionForm(container, taskType);
                 } else if (transactionSpecificTasks.includes(taskType)) {
-                    this.renderTransactionRelatedForm(container, taskType); // Yeni form render metodu
+                    this.renderTransactionRelatedForm(container, taskType); 
                 }
             }
 
@@ -441,7 +448,9 @@
                     'İtiraza Karşı Görüş (Markalar)': 'Yayına İtiraz',
                     'İtirazı Geri Çekme': 'Yayına İtiraz veya Karara İtiraz',
                     'Kullanım İspatı Sunma': 'Yayına İtiraz',
-                    'İtiraza Ek Belge': 'Yayına İtiraz veya Karara İtiraz'
+                    'İtiraza Ek Belge': 'Yayına İtiraz veya Karara İtiraz',
+                    'Yayına İtiraz': 'Yayına İtiraz (Kendisi)', // Yayına İtiraz için özel durum
+                    'Karara İtiraz': 'Karara İtiraz (Kendisi)' // Karara İtiraz için özel durum
                 };
                 const relatedTransactionLabel = `İlgili İşlem Seçin (${transactionTypeMap[taskType] || 'Özel İşlem'})`;
 
@@ -568,9 +577,14 @@
                 if (this.selectedIpRecord.type === 'trademark' && this.selectedIpRecord.trademarkImage && this.selectedIpRecord.trademarkImage.content) {
                     imageHtml = `<img src="${this.selectedIpRecord.trademarkImage.content}" alt="Marka Görseli" style="width: 40px; height: 40px; object-fit: contain; margin-right: 10px; border-radius: 4px; border: 1px solid #ddd;">`;
                 }
-                if (display) { // Null kontrolü eklendi
-                    display.innerHTML = `${imageHtml}<div><p><b>Seçilen Varlık:</b> ${this.selectedIpRecord.title}</p><p><small>Mevcut Sahip: ${this.selectedIpRecord.owners.map(o=>o.name).join(', ')}</small></p></div>`;
+                if (display) { // Null kontrolü
+                    display.innerHTML = `${imageHtml}<div><p><b>Seçilen Varlık:</b> ${this.selectedIpRecord.title}</p><p><small>Mevcut Sahip: ${this.selectedIpRecord.owners.map(o=>o.name).join(', ')}</small></p></div><button type="button" id="removeSelectedIpRecordBtn" style="background: none; border: none; font-size: 1.5em; cursor: pointer; color: #ff6b6b; margin-left: auto;">&times;</button>`;
                     display.style.display = 'flex';
+                    // Butona event listener ata
+                    const removeBtn = document.getElementById('removeSelectedIpRecordBtn');
+                    if (removeBtn) {
+                        removeBtn.addEventListener('click', () => this.removeSelectedIpRecord());
+                    }
                 }
 
                 document.getElementById('portfolioSearchResults').innerHTML = ''; // Sonuçları temizle
@@ -584,20 +598,43 @@
                     'İtiraza Karşı Görüş (Markalar)',
                     'İtirazı Geri Çekme',
                     'Kullanım İspatı Sunma', 
-                    'İtiraza Ek Belge' 
+                    'İtiraza Ek Belge',
+                    'Yayına İtiraz', // Yeni eklendi
+                    'Karara İtiraz' // Yeni eklendi
                 ];
                 if (transactionSpecificTasks.includes(specificTaskType) && this.selectedIpRecord.transactions) {
                     this.populateRelatedTransactions(specificTaskType);
                 } else {
                     const relatedTransactionSelect = document.getElementById('relatedTransactionSelect');
                     const relatedTransactionSection = document.getElementById('relatedTransactionSection');
-                    if (relatedTransactionSelect && relatedTransactionSection) { // Null kontrolü eklendi
+                    if (relatedTransactionSelect && relatedTransactionSection) { 
                         relatedTransactionSelect.innerHTML = '<option value="">Uygun İşlem Yok</option>';
                         relatedTransactionSelect.disabled = true;
                         relatedTransactionSection.style.display = 'none';
                     }
                 }
             }
+
+            // İşleme konu varlık kaldırma metodu
+            removeSelectedIpRecord() {
+                this.selectedIpRecord = null;
+                const display = document.getElementById('selectedIpRecordDisplay');
+                if (display) {
+                    display.innerHTML = '';
+                    display.style.display = 'none';
+                }
+                document.getElementById('portfolioSearchInput').value = '';
+                // İlgili transaction seçimi alanını da sıfırla
+                const relatedTransactionSelect = document.getElementById('relatedTransactionSelect');
+                const relatedTransactionSection = document.getElementById('relatedTransactionSection');
+                if (relatedTransactionSelect && relatedTransactionSection) {
+                    relatedTransactionSelect.innerHTML = '<option value="">Önce Varlık Seçin</option>';
+                    relatedTransactionSelect.disabled = true;
+                    relatedTransactionSection.style.display = 'none';
+                }
+                this.checkFormCompleteness();
+            }
+
 
             populateRelatedTransactions(specificTaskType) {
                 const selectElement = document.getElementById('relatedTransactionSelect');
@@ -625,21 +662,24 @@
                         tx.description && (
                             tx.description.includes('Yayına İtiraz') || 
                             tx.description.includes('Karara İtiraz')
-                        ) && (tx.type === "Document Indexed" || tx.type === "Document Sub-Indexed") 
+                        ) && !tx.parentId // Sadece parent olanları al
                     );
                 } else if (specificTaskType === 'İtiraza Karşı Görüş (YIDD)') {
                     filteredTransactions = allTransactions.filter(tx => 
-                        tx.description && tx.description.includes('Karara İtiraz') && (tx.type === "Document Indexed" || tx.type === "Document Sub-Indexed")
+                        tx.description && tx.description.includes('Karara İtiraz') && !tx.parentId // Sadece parent olanları al
                     );
                 } else if (specificTaskType === 'İtiraza Karşı Görüş (Markalar)' || specificTaskType === 'Kullanım İspatı Sunma') {
                     filteredTransactions = allTransactions.filter(tx => 
-                        tx.description && tx.description.includes('Yayına İtiraz') && (tx.type === "Document Indexed" || tx.type === "Document Sub-Indexed")
+                        tx.description && tx.description.includes('Yayına İtiraz') && !tx.parentId // Sadece parent olanları al
                     );
-                } else if (specificTaskType === 'Yayına İtiraz') { // Yeni eklenecek kısım
-                    // 'Yayına İtiraz' işlemi için transaction listesi yok, çünkü kendisi bir başlangıç işlemi.
-                    // Eğer burada özel bir transaction listeleme istenmiyorsa, bu kısmı boş bırakabiliriz.
-                    // Ya da "Bu işlem için ilgili bir transaction seçimi yoktur" gibi bir mesaj gösterebiliriz.
+                } else if (specificTaskType === 'Yayına İtiraz' || specificTaskType === 'Karara İtiraz') { // Yayına İtiraz ve Karara İtiraz için özel durum
+                    // Bu işlemler kendileri bir başlangıç transaction'ı olduğu için,
+                    // ilgili bir transaction seçimi genellikle olmaz.
+                    // Ancak eğer bu işlem tipleri için de bir 'önceki itirazı' seçmek istiyorsak,
+                    // buradaki filtrelemeyi değiştirmeliyiz.
+                    // Şu anki mantıkta, bu formlar için related transaction seçimi sunmuyoruz.
                     selectElement.innerHTML = '<option value="">Uygun İşlem Yok</option>';
+                    selectElement.disabled = true;
                     return;
                 }
 
@@ -776,7 +816,9 @@
                     'İtiraza Karşı Görüş (Markalar)',
                     'İtirazı Geri Çekme',
                     'Kullanım İspatı Sunma',
-                    'İtiraza Ek Belge'
+                    'İtiraza Ek Belge',
+                    'Yayına İtiraz', 
+                    'Karara İtiraz'
                 ];
 
                 let isComplete = false;
@@ -789,10 +831,18 @@
                         isComplete = true;
                     }
                 } else if (transactionSpecificTasks.includes(taskType)) {
-                     // Transaction seçimi de zorunlu hale getirilebilir
-                     // Sadece transaction'ları listelemesi gereken bir form ise ve varlık seçiliyse
-                     if (this.selectedIpRecord && document.getElementById('relatedTransactionSelect') && document.getElementById('relatedTransactionSelect').value !== '') {
-                        isComplete = true;
+                     if (this.selectedIpRecord) { // Varlık seçimi her durumda zorunlu
+                         // Eğer ilgili bir transaction seçimi gerekiyorsa ve seçildiyse
+                         if (['İtiraza Karşı Görüş (YIDD)', 'İtiraza Karşı Görüş (Markalar)', 'İtirazı Geri Çekme', 'Kullanım İspatı Sunma', 'İtiraza Ek Belge'].includes(taskType)) {
+                            if (document.getElementById('relatedTransactionSelect') && document.getElementById('relatedTransactionSelect').value !== '') {
+                                isComplete = true;
+                            } else {
+                                isComplete = false; // Transaction seçimi zorunlu ama yapılmamış
+                            }
+                         } else {
+                            // 'Yayına İtiraz' veya 'Karara İtiraz' gibi transaction seçimi gerektirmeyen durumlarda
+                            isComplete = true;
+                         }
                     }
                 }
                 document.getElementById('saveTaskBtn').disabled = !isComplete;
@@ -825,17 +875,34 @@
                     'İtiraza Karşı Görüş (Markalar)',
                     'İtirazı Geri Çekme',
                     'Kullanım İspatı Sunma',
-                    'İtiraza Ek Belge'
+                    'İtiraza Ek Belge',
+                    'Yayına İtiraz', 
+                    'Karara İtiraz'
                 ];
 
                 if (transactionLikeTasks.includes(specificTaskType)) {
                     taskData.description = `'${this.selectedIpRecord.title}' adlı varlık için ${specificTaskType} işlemi. İlgili taraf: '${this.selectedRelatedParty.name}'.`;
                     taskData.details = { relatedParty: this.selectedRelatedParty };
                 } else if (transactionSpecificTasks.includes(specificTaskType)) {
-                    const relatedTransactionId = document.getElementById('relatedTransactionSelect').value;
-                    const relatedTransaction = this.selectedIpRecord.transactions.find(tx => tx.transactionId === relatedTransactionId);
-                    taskData.description = `'${this.selectedIpRecord.title}' adlı varlık için ${specificTaskType} işlemi. İlgili İşlem: '${relatedTransaction ? relatedTransaction.description : 'Bilinmiyor'}'.`;
-                    taskData.details = { relatedTransactionId: relatedTransactionId, relatedTransactionDescription: relatedTransaction ? relatedTransaction.description : null };
+                    const relatedTransactionSelect = document.getElementById('relatedTransactionSelect');
+                    let relatedTransactionId = null;
+                    let relatedTransactionDescription = null;
+
+                    // Eğer select elementi varsa ve bir değer seçilmişse
+                    if (relatedTransactionSelect && relatedTransactionSelect.value !== '') {
+                        relatedTransactionId = relatedTransactionSelect.value;
+                        const relatedTransaction = this.selectedIpRecord.transactions.find(tx => tx.transactionId === relatedTransactionId);
+                        relatedTransactionDescription = relatedTransaction ? relatedTransaction.description : null;
+                    }
+
+                    taskData.description = `'${this.selectedIpRecord.title}' adlı varlık için ${specificTaskType} işlemi.`;
+                    if (relatedTransactionDescription) {
+                        taskData.description += ` İlgili İşlem: '${relatedTransactionDescription}'.`;
+                    }
+                    taskData.details = { 
+                        relatedTransactionId: relatedTransactionId, 
+                        relatedTransactionDescription: relatedTransactionDescription 
+                    };
                 }
                 else {
                     taskData.description = `'${this.selectedIpRecord.title}' adlı varlık için ${specificTaskType} talebi.`;
