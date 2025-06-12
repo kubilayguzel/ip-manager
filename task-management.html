@@ -169,55 +169,80 @@
     </div>
 
 
-    <script type="module">
-        import { authService, taskService, ipRecordsService } from './firebase-config.js';
+<script type="module">
+        import { authService, taskService, ipRecordsService, auth } from './firebase-config.js';
 
         class TaskManagementModule {
-            // ... Orijinal TaskManagementModule sınıfının TÜM içeriği buraya gelecek ...
             constructor() {
-                this.currentUser = null;
+                this.currentUser = authService.getCurrentUser();
                 this.allTasks = [];
                 this.allUsers = [];
                 this.allIpRecords = [];
-                this.init();
+                // init() metodu artık dışarıdan çağrılacak.
             }
 
-            init() { /* ... */ }
-            async loadInitialData() { /* ... */ }
-            setupEventListeners() { /* ... */ }
-            // ... Sınıfın diğer tüm orijinal metodları ...
-        }
-        window.taskManagementModule = new TaskManagementModule();
-
-        // YENİ AKORDİYON MENÜ İÇİN JAVASCRIPT
-        document.addEventListener('DOMContentLoaded', function() {
-            const accordions = document.querySelectorAll('.accordion-header');
-            accordions.forEach(accordion => {
-                accordion.addEventListener('click', () => {
-                    const content = accordion.nextElementSibling;
-                    accordion.classList.toggle('active');
-                    if (content.style.maxHeight) {
-                        content.style.maxHeight = null;
-                    } else {
-                        content.style.maxHeight = content.scrollHeight + "px";
-                    }
-                });
-            });
-
-            const currentPage = window.location.pathname.split("/").pop();
-            const activeLink = document.querySelector(`.sidebar-nav a[href="${currentPage}"]`);
-            if (activeLink) {
-                document.querySelectorAll('.sidebar-nav-item.active, .accordion-content a.active').forEach(el => el.classList.remove('active'));
-                
-                activeLink.classList.add('active');
-                
-                const parentAccordion = activeLink.closest('.accordion-content');
-                if(parentAccordion) {
-                    const header = parentAccordion.previousElementSibling;
-                    header.classList.add('active');
-                    parentAccordion.style.maxHeight = parentAccordion.scrollHeight + "px";
+            async init() {
+                // Rol kontrolünü doğrudan burada yapıyoruz
+                if (this.currentUser.role !== 'superadmin' && this.currentUser.role !== 'admin') {
+                    alert('Bu sayfaya erişim yetkiniz yoktur.');
+                    window.location.href = 'dashboard.html';
+                    return;
                 }
+
+                document.getElementById('userAvatar').textContent = (this.currentUser.displayName || 'U').charAt(0);
+                await this.loadInitialData();
+                this.setupEventListeners(); // Butonlar burada aktif ediliyor
             }
+
+            async loadInitialData() {
+                const [usersResult, tasksResult, ipRecordsResult] = await Promise.all([
+                    taskService.getAllUsers(), 
+                    taskService.getAllTasks(),
+                    ipRecordsService.getRecords()
+                ]);
+
+                if (usersResult.success) this.allUsers = usersResult.data;
+                if (tasksResult.success) this.allTasks = tasksResult.data;
+                if (ipRecordsResult.success) this.allIpRecords = ipRecordsResult.data;
+                
+                this.populateFilters();
+                this.renderTasks();
+            }
+            
+            setupEventListeners() {
+                document.getElementById('createTaskBtn').addEventListener('click', () => this.openTaskModal());
+                document.querySelector('.close-btn').addEventListener('click', () => this.closeTaskModal());
+                document.getElementById('taskForm').addEventListener('submit', (e) => this.handleFormSubmit(e));
+                document.getElementById('userFilter').addEventListener('change', () => this.renderTasks());
+                document.getElementById('statusFilter').addEventListener('change', () => this.renderTasks());
+                document.getElementById('logoutBtn').addEventListener('click', () => authService.signOut());
+            }
+
+            // ... (populateFilters, renderTasks, openTaskModal gibi diğer tüm metodlar burada yer almalı)
+             populateFilters() { /*...*/ }
+             renderTasks() { /*...*/ }
+             openTaskModal(taskId = null) { /*...*/ }
+             closeTaskModal() { /*...*/ }
+             async handleFormSubmit(e) { /*...*/ }
+        }
+
+        // --- GÜVENİLİR BAŞLATMA KODU ---
+        let taskManagementModule;
+        auth.onAuthStateChanged((user) => {
+            if (user || authService.getCurrentUser()) {
+                if (!taskManagementModule) {
+                    taskManagementModule = new TaskManagementModule();
+                    taskManagementModule.init(); // Modülü başlat
+                    window.taskManagementModule = taskManagementModule; // Gerekliyse global yap
+                }
+            } else {
+                window.location.href = 'index.html';
+            }
+        });
+
+        // Akordiyon menü için JS kodu
+        document.addEventListener('DOMContentLoaded', function() {
+            // ... (Akordiyon menü JS kodunuz buraya)
         });
     </script>
 </body>
