@@ -8,6 +8,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; display: flex; }
         .page-wrapper { flex-grow: 1; display: flex; flex-direction: column; height: 100vh; overflow-y: auto; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); }
+        /* DÜZELTME: main-container genişletildi */
         .main-container { width: 100%; max-width: 1200px; margin: 30px auto; padding: 0 30px; }
         .sidebar { width: 260px; background: #1e3c72; color: white; display: flex; flex-direction: column; height: 100vh; position: sticky; top: 0; z-index: 1002; flex-shrink: 0; }
         .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
@@ -118,11 +119,13 @@
                 this.allUsers = [];
                 this.uploadedFiles = [];
                 this.selectedIpRecord = null;
-                this.selectedNewOwner = null;
+                this.selectedRelatedParty = null; // "Devralan" veya "Lisans Alan" gibi
+                
+                // YENİ: Genişletilmiş iş tipleri
                 this.taskTypeMappings = {
-                    'marka': ['Başvuru', 'Yenileme', 'Devir', 'Tescil Belgesi Talebi'],
-                    'patent': ['Başvuru', 'Yenileme', 'Yıllık Ücret Ödemesi'],
-                    'tasarim': ['Başvuru', 'Yenileme', 'Devir']
+                    'marka': ['Başvuru', 'Yenileme', 'Devir', 'Tescil Belgesi Talebi', 'Lisans', 'Birleşme', 'Rehin'],
+                    'patent': ['Başvuru', 'Yenileme', 'Yıllık Ücret Ödemesi', 'Lisans', 'Devir', 'Rehin'],
+                    'tasarim': ['Başvuru', 'Yenileme', 'Devir', 'Lisans', 'Rehin']
                 };
             }
 
@@ -132,14 +135,21 @@
                 
                 document.getElementById('userAvatar').textContent = (this.currentUser.displayName || 'U').charAt(0);
                 
-                const [ipRecordsResult, personsResult, usersResult] = await Promise.all([
-                    ipRecordsService.getRecords(),
-                    personsService.getPersons(),
-                    taskService.getAllUsers()
-                ]);
-                this.allIpRecords = ipRecordsResult.data;
-                this.allPersons = personsResult.data;
-                this.allUsers = usersResult.data;
+                // Gerekli tüm verileri paralel olarak yükle
+                try {
+                    const [ipRecordsResult, personsResult, usersResult] = await Promise.all([
+                        ipRecordsService.getRecords(),
+                        personsService.getPersons(),
+                        taskService.getAllUsers()
+                    ]);
+                    this.allIpRecords = ipRecordsResult.data || [];
+                    this.allPersons = personsResult.data || [];
+                    this.allUsers = usersResult.data || [];
+                } catch (error) {
+                    console.error("Veri yüklenirken hata oluştu:", error);
+                    alert("Gerekli veriler yüklenemedi, lütfen sayfayı yenileyin.");
+                    return;
+                }
 
                 this.setupEventListeners();
             }
@@ -179,15 +189,27 @@
                 container.innerHTML = '';
                 document.getElementById('saveTaskBtn').disabled = true;
 
-                if (taskType === 'Devir') {
-                    this.renderDevirForm(container);
+                // YENİ: "Devir" benzeri iş tipleri için ortak bir form oluşturucu kullan
+                const devirLikeTasks = ['Devir', 'Lisans', 'Birleşme', 'Rehin'];
+                if (devirLikeTasks.includes(taskType)) {
+                    this.renderGenericTransactionForm(container, taskType);
                 }
             }
+            
+            // YENİ: Ortak form oluşturma fonksiyonu
+            renderGenericTransactionForm(container, taskType) {
+                // Etiketleri iş tipine göre dinamik olarak belirle
+                const relatedPartyLabels = {
+                    'Devir': 'Devralan Taraf',
+                    'Lisans': 'Lisans Alan Taraf',
+                    'Rehin': 'Rehin Alan Taraf',
+                    'Birleşme': 'Birleşilen Taraf'
+                };
+                const relatedPartyLabel = relatedPartyLabels[taskType] || 'İlgili Taraf';
 
-            renderDevirForm(container) {
                 container.innerHTML = `
                     <div class="form-section">
-                        <h3 class="section-title">2. Devredilecek Varlık</h3>
+                        <h3 class="section-title">2. İşleme Konu Varlık</h3>
                         <div class="form-group full-width">
                             <label for="portfolioSearchInput" class="form-label">Portföyden Ara (Başlık veya Başvuru No)</label>
                             <input type="text" id="portfolioSearchInput" class="form-input" placeholder="Aramak için en az 3 karakter girin...">
@@ -196,24 +218,21 @@
                         </div>
                     </div>
                     <div class="form-section">
-                        <h3 class="section-title">3. Devralan Taraf</h3>
+                        <h3 class="section-title">3. ${relatedPartyLabel}</h3>
                          <div class="form-group full-width">
                             <label for="personSearchInput" class="form-label">Sistemdeki Kişilerden Ara (Ad, Soyad)</label>
                             <div style="display: flex; gap: 10px;">
-                                <input type="text" id="personSearchInput" class="form-input" placeholder="Aramak için en az 3 karakter girin...">
+                                <input type="text" id="personSearchInput" class="form-input" placeholder="Aramak için en az 2 karakter girin...">
                                 <button type="button" id="addNewPersonBtn" class="btn-secondary btn-small">➕ Yeni Kişi</button>
                             </div>
                             <div id="personSearchResults" class="search-results-list"></div>
-                            <div id="selectedNewOwnerDisplay" class="search-result-display" style="display:none;"></div>
+                            <div id="selectedRelatedPartyDisplay" class="search-result-display" style="display:none;"></div>
                         </div>
                     </div>
                     <div class="form-section">
-                        <h3 class="section-title">4. Gerekli Dokümanlar (Devir Sözleşmesi vb.)</h3>
+                        <h3 class="section-title">4. Gerekli Dokümanlar (${taskType} Sözleşmesi vb.)</h3>
                         <div class="form-group full-width">
-                            <div class="file-upload-area" id="fileUploadArea">
-                                <p>Dosyaları buraya sürükleyin veya tıklayın</p>
-                                <input type="file" id="fileInput" multiple hidden>
-                            </div>
+                            <div class="file-upload-area" id="fileUploadArea"><p>Dosyaları buraya sürükleyin veya tıklayın</p><input type="file" id="fileInput" multiple hidden></div>
                             <div class="file-list" id="fileList"></div>
                         </div>
                     </div>
@@ -222,29 +241,28 @@
                         <div class="form-grid">
                             <div class="form-group"><label for="taskPriority" class="form-label">Öncelik</label><select id="taskPriority" class="form-select"><option value="medium">Orta</option><option value="high">Yüksek</option><option value="low">Düşük</option></select></div>
                             <div class="form-group"><label for="assignedTo" class="form-label">Atanacak Dahili Kullanıcı</label><select id="assignedTo" class="form-select">${this.allUsers.map(u => `<option value="${u.id}">${u.displayName || u.email}</option>`).join('')}</select></div>
-                             <div class="form-group full-width"><label for="taskDueDate" class="form-label">Operasyonel Son Tarih</label><input type="date" id="taskDueDate" class="form-input"></div>
+                            <div class="form-group full-width"><label for="taskDueDate" class="form-label">Operasyonel Son Tarih</label><input type="date" id="taskDueDate" class="form-input"></div>
                         </div>
-                    </div>
-                `;
+                    </div>`;
+
                 document.getElementById('portfolioSearchInput').addEventListener('input', (e) => this.searchPortfolio(e.target.value));
                 document.getElementById('personSearchInput').addEventListener('input', (e) => this.searchPersons(e.target.value));
                 document.getElementById('addNewPersonBtn').addEventListener('click', () => this.showAddPersonModal());
-                this.setupFileUpload(); // DOSYA YÜKLEME FONKSİYONUNU ÇAĞIR
-            }
-            
-            // DÜZELTME: Kopyalanan metodlar buraya eklendi
-            // --- DOSYA YÜKLEME METODLARI ---
-            setupFileUpload() {
-                const fileUploadArea = document.getElementById('fileUploadArea');
-                const fileInput = document.getElementById('fileInput');
-                if(!fileUploadArea || !fileInput) return;
-                fileUploadArea.addEventListener('click', () => fileInput.click());
-                fileInput.addEventListener('change', (e) => { this.handleFiles(e.target.files); e.target.value = ''; });
-                fileUploadArea.addEventListener('dragover', (e) => { e.preventDefault(); e.target.style.background = '#f0f4f8'; });
-                fileUploadArea.addEventListener('dragleave', (e) => { e.preventDefault(); e.target.style.background = 'transparent'; });
-                fileUploadArea.addEventListener('drop', (e) => { e.preventDefault(); e.target.style.background = 'transparent'; this.handleFiles(e.dataTransfer.files); });
+                this.setupFileUpload();
             }
 
+            // DÜZELTME: Tüm yardımcı fonksiyonlar bu sınıfa dahil edildi
+            // --- DOSYA YÜKLEME METODLARI ---
+            setupFileUpload() {
+                const area = document.getElementById('fileUploadArea');
+                const input = document.getElementById('fileInput');
+                if(!area || !input) return;
+                area.onclick = () => input.click();
+                input.onchange = (e) => { this.handleFiles(e.target.files); e.target.value = ''; };
+                area.ondragover = (e) => { e.preventDefault(); area.style.background = '#f0f4f8'; };
+                area.ondragleave = () => { area.style.background = 'transparent'; };
+                area.ondrop = (e) => { e.preventDefault(); area.style.background = 'transparent'; this.handleFiles(e.dataTransfer.files); };
+            }
             handleFiles(files) {
                 for (const file of files) {
                     if (this.uploadedFiles.find(f => f.name === file.name && f.size === file.size)) continue;
@@ -254,52 +272,28 @@
                     });
                 }
             }
-
             updateFileList() {
-                const fileListContainer = document.getElementById('fileList');
-                if (!fileListContainer) return;
-                fileListContainer.innerHTML = '';
-                this.uploadedFiles.forEach(file => {
-                    const fileItem = document.createElement('div');
-                    fileItem.className = 'file-item';
-                    fileItem.innerHTML = `<span>${file.name} (${this.formatFileSize(file.size)})</span><button type="button" class="remove-file" data-id="${file.id}">&times;</button>`;
-                    fileListContainer.appendChild(fileItem);
-                });
-                document.querySelectorAll('.remove-file').forEach(btn => btn.addEventListener('click', (e) => this.removeFile(e.target.dataset.id)));
+                const list = document.getElementById('fileList');
+                if (!list) return;
+                list.innerHTML = this.uploadedFiles.map(file => `
+                    <div class="file-item" data-id="${file.id}">
+                        <span>${file.name} (${this.formatFileSize(file.size)})</span>
+                        <button type="button" class="remove-file" data-id="${file.id}">&times;</button>
+                    </div>`).join('');
+                list.querySelectorAll('.remove-file').forEach(btn => btn.onclick = (e) => this.removeFile(e.target.dataset.id));
             }
+            removeFile(fileId) { this.uploadedFiles = this.uploadedFiles.filter(f => f.id !== fileId); this.updateFileList(); }
+            formatFileSize(bytes) { if (bytes === 0) return '0 Bytes'; const k = 1024; return `${parseFloat((bytes / Math.pow(k, Math.floor(Math.log(bytes) / Math.log(k)))).toFixed(2))} ${['Bytes', 'KB', 'MB'][Math.floor(Math.log(bytes) / Math.log(k))]}`; }
+            readFileAsDataURL(file) { return new Promise((resolve, reject) => { const r = new FileReader(); r.onload = () => resolve(r.result); r.onerror = reject; r.readAsDataURL(file); }); }
             
-            removeFile(fileId) {
-                this.uploadedFiles = this.uploadedFiles.filter(f => f.id !== fileId);
-                this.updateFileList();
-            }
-
-            formatFileSize(bytes) {
-                if (bytes === 0) return '0 Bytes';
-                const k = 1024;
-                const i = Math.floor(Math.log(bytes) / Math.log(k));
-                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + ['Bytes', 'KB', 'MB', 'GB'][i];
-            }
-
-            readFileAsDataURL(file) {
-                return new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onload = () => resolve(reader.result);
-                    reader.onerror = error => reject(error);
-                    reader.readAsDataURL(file);
-                });
-            }
-
             // --- ARAMA, SEÇME VE YENİ KİŞİ EKLEME METODLARI ---
             searchPortfolio(query) {
-                const resultsContainer = document.getElementById('portfolioSearchResults');
-                if (query.length < 3) { resultsContainer.innerHTML = ''; return; }
+                const container = document.getElementById('portfolioSearchResults');
+                if (query.length < 3) { container.innerHTML = ''; return; }
                 const filtered = this.allIpRecords.filter(r => r.title.toLowerCase().includes(query.toLowerCase()) || r.applicationNumber?.includes(query));
-                resultsContainer.innerHTML = filtered.map(r => `<div class="search-result-item" data-id="${r.id}">${r.title} (${r.applicationNumber || 'No Yok'})</div>`).join('');
-                document.querySelectorAll('#portfolioSearchResults .search-result-item').forEach(item => {
-                    item.addEventListener('click', (e) => this.selectIpRecord(e.target.dataset.id));
-                });
+                container.innerHTML = filtered.map(r => `<div class="search-result-item" data-id="${r.id}">${r.title} (${r.applicationNumber || 'No Yok'})</div>`).join('');
+                container.querySelectorAll('.search-result-item').forEach(item => item.onclick = (e) => this.selectIpRecord(e.currentTarget.dataset.id));
             }
-
             selectIpRecord(recordId) {
                 this.selectedIpRecord = this.allIpRecords.find(r => r.id === recordId);
                 const display = document.getElementById('selectedIpRecordDisplay');
@@ -309,60 +303,54 @@
                 document.getElementById('portfolioSearchInput').value = '';
                 this.checkFormCompleteness();
             }
-
             searchPersons(query) {
-                const resultsContainer = document.getElementById('personSearchResults');
-                if (query.length < 2) { resultsContainer.innerHTML = ''; return; }
+                const container = document.getElementById('personSearchResults');
+                if (query.length < 2) { container.innerHTML = ''; return; }
                 const filtered = this.allPersons.filter(p => p.name.toLowerCase().includes(query.toLowerCase()));
-                resultsContainer.innerHTML = filtered.map(p => `<div class="search-result-item" data-id="${p.id}">${p.name}</div>`).join('');
-                document.querySelectorAll('#personSearchResults .search-result-item').forEach(item => {
-                    item.addEventListener('click', (e) => {
-                        const person = this.allPersons.find(p => p.id === e.target.dataset.id);
-                        this.selectNewOwner(person);
-                    });
+                container.innerHTML = filtered.map(p => `<div class="search-result-item" data-id="${p.id}">${p.name}</div>`).join('');
+                container.querySelectorAll('.search-result-item').forEach(item => item.onclick = (e) => {
+                    this.selectRelatedParty(this.allPersons.find(p => p.id === e.currentTarget.dataset.id));
                 });
             }
-
-            selectNewOwner(person) {
-                this.selectedNewOwner = person;
-                const display = document.getElementById('selectedNewOwnerDisplay');
-                display.innerHTML = `<p><b>Seçilen Taraf:</b> ${this.selectedNewOwner.name}</p><p><small>${this.selectedNewOwner.email || 'E-posta yok'}</small></p>`;
+            selectRelatedParty(person) {
+                this.selectedRelatedParty = person;
+                const display = document.getElementById('selectedRelatedPartyDisplay');
+                const taskType = document.getElementById('specificTaskType').value;
+                const label = { 'Devir': 'Devralan', 'Lisans': 'Lisans Alan', 'Rehin': 'Rehin Alan', 'Birleşme': 'Birleşilen Taraf' }[taskType] || 'İlgili Taraf';
+                display.innerHTML = `<p><b>Seçilen ${label}:</b> ${this.selectedRelatedParty.name}</p>`;
                 display.style.display = 'block';
                 document.getElementById('personSearchResults').innerHTML = '';
                 document.getElementById('personSearchInput').value = '';
                 this.checkFormCompleteness();
             }
-
             showAddPersonModal() { document.getElementById('addPersonModal').style.display = 'flex'; }
             hideAddPersonModal() { document.getElementById('addPersonModal').style.display = 'none'; }
-            
             async saveNewPerson() {
                 const name = document.getElementById('personName').value;
                 const email = document.getElementById('personEmail').value;
                 const type = document.getElementById('personType').value;
                 if (!name || !type) { alert('Ad ve Kişi Türü zorunludur.'); return; }
-
                 const newPersonData = { name, email, type, userId: this.currentUser.uid, userEmail: this.currentUser.email };
                 const result = await personsService.addPerson(newPersonData);
                 if (result.success) {
                     alert('Yeni kişi başarıyla eklendi.');
                     const addedPerson = { ...newPersonData, id: result.id };
                     this.allPersons.push(addedPerson);
-                    this.selectNewOwner(addedPerson);
+                    this.selectRelatedParty(addedPerson);
                     this.hideAddPersonModal();
-                } else {
-                    alert('Hata: ' + result.error);
-                }
+                } else { alert('Hata: ' + result.error); }
             }
             
             checkFormCompleteness() {
                 const taskType = document.getElementById('specificTaskType').value;
+                const devirLikeTasks = ['Devir', 'Lisans', 'Birleşme', 'Rehin'];
                 let isComplete = false;
-                if (taskType === 'Devir') {
-                    if (this.selectedIpRecord && this.selectedNewOwner) {
+                if (devirLikeTasks.includes(taskType)) {
+                    if (this.selectedIpRecord && this.selectedRelatedParty) {
                         isComplete = true;
                     }
                 }
+                // Diğer iş tipleri için kontroller buraya eklenebilir
                 document.getElementById('saveTaskBtn').disabled = !isComplete;
             }
 
@@ -371,9 +359,10 @@
                 const mainIpType = document.getElementById('mainIpType').value;
                 const specificTaskType = document.getElementById('specificTaskType').value;
                 const assignedToUser = this.allUsers.find(u => u.id === document.getElementById('assignedTo').value);
+                const devirLikeTasks = ['Devir', 'Lisans', 'Birleşme', 'Rehin'];
 
                 let taskData = {
-                    taskType: `${mainIpType}_${specificTaskType.toLowerCase().replace(' ', '_')}`,
+                    taskType: `${mainIpType}_${specificTaskType.toLowerCase().replace(/ /g, '_')}`,
                     priority: document.getElementById('taskPriority').value,
                     assignedTo_uid: assignedToUser.id,
                     assignedTo_email: assignedToUser.email,
@@ -384,15 +373,12 @@
                     files: this.uploadedFiles,
                 };
 
-                if (specificTaskType === 'Devir') {
-                    taskData.title = `Devir İşlemi: ${this.selectedIpRecord.title}`;
-                    taskData.description = `'${this.selectedIpRecord.title}' adlı varlığın, mülkiyetinin '${this.selectedIpRecord.owners.map(o=>o.name).join(', ')}' kişisinden/kişilerinden '${this.selectedNewOwner.name}' adlı kişiye devredilmesi gerekiyor.`;
+                if (devirLikeTasks.includes(specificTaskType)) {
+                    taskData.title = `${specificTaskType} İşlemi: ${this.selectedIpRecord.title}`;
+                    taskData.description = `'${this.selectedIpRecord.title}' adlı varlık için ${specificTaskType} işlemi. İlgili taraf: '${this.selectedRelatedParty.name}'.`;
                     taskData.relatedIpRecordId = this.selectedIpRecord.id;
                     taskData.relatedIpRecordTitle = this.selectedIpRecord.title;
-                    taskData.details = {
-                        fromOwner: this.selectedIpRecord.owners,
-                        toOwner: {id: this.selectedNewOwner.id, name: this.selectedNewOwner.name, type: this.selectedNewOwner.type }
-                    };
+                    taskData.details = { relatedParty: this.selectedRelatedParty };
                 }
 
                 const result = await taskService.createTask(taskData);
@@ -410,11 +396,8 @@
             if(user || authService.getCurrentUser()) {
                 module.init();
                 window.createTaskModule = module;
-            } else {
-                window.location.href = 'index.html';
-            }
+            } else { window.location.href = 'index.html'; }
         });
-        
     </script>
 </body>
 </html>
