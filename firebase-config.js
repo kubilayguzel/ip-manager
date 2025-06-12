@@ -216,67 +216,25 @@ export const authService = {
     },
 
     getCurrentUser() {
-        // Firebase Auth'tan gelen güncel kullanıcıyı tercih et
-        if (this.isFirebaseAvailable && auth && auth.currentUser) {
-            const user = auth.currentUser;
-            // Rolü senkronize olarak Firestore'dan çekmek yerine,
-            // kullanıcı oturum açtığında veya güncellendiğinde çekip localStorage'a kaydetmeliyiz.
-            // Burası sadece localStorage'ı okuyor, bu yüzden doğru bilgiye sahip olması önemli.
-            const localUser = localStorage.getItem('currentUser');
-            if (localUser) {
-                return JSON.parse(localUser);
-            } else {
-                // Eğer localStorage'da yoksa ve Firebase Auth'ta varsa, minimum bilgiyi döndür
-                // ve arka planda rolü çekmek için bir mekanizma düşün
-                return {
-                    uid: user.uid,
-                    email: user.email,
-                    displayName: user.displayName,
-                    role: 'user', // Varsayılan, çünkü rol henüz çekilmedi
-                    isSuperAdmin: false
-                };
-            }
-        }
-        
-        // Firebase bağlı değilse veya Auth'ta kullanıcı yoksa LocalStorage'dan oku
         const localUser = localStorage.getItem('currentUser');
         if (localUser) {
-            const parsedUser = JSON.parse(localUser);
-            return parsedUser;
+            return JSON.parse(localUser);
         }
         return null;
     },
 
-    // Check if current user is super admin
     isSuperAdmin() {
         const currentUser = this.getCurrentUser();
         return currentUser?.role === 'superadmin' || currentUser?.isSuperAdmin === true;
     },
 
-    // Local authentication fallback methods
     localSignIn(email, password) {
         console.log('🧪 Local sign in attempt (Firebase not available):', email, password);
         
         const demoAccounts = [
-            { email: 'demo@ipmanager.com', password: 'demo123', name: 'Demo Kullanıcı', role: 'user' }, // Rolü 'user'
-            { email: 'admin@ipmanager.com', password: 'admin123', name: 'Admin Kullanıcı', role: 'admin' }, // Rolü 'admin'
-            { email: 'test@example.com', password: 'test123', name: 'Test Kullanıcı', role: 'user' },
-            // 🔥 SÜPER ADMİN HESABI - TÜM VERİLERE ERİŞİM
-            {
-                email: 'superadmin@ipmanager.com',
-                password: 'superadmin123',
-                name: 'Süper Admin',
-                role: 'superadmin',
-                permissions: ['viewAllData', 'editAllData', 'deleteAllData', 'systemAdmin']
-            },
-            // Debug hesabı
-            {
-                email: 'debug@ipmanager.com',
-                password: 'debug123',
-                name: 'Debug Kullanıcı',
-                role: 'debug',
-                permissions: ['viewAllData', 'systemDebug']
-            }
+            { email: 'demo@ipmanager.com', password: 'demo123', name: 'Demo Kullanıcı', role: 'user' },
+            { email: 'admin@ipmanager.com', password: 'admin123', name: 'Admin Kullanıcı', role: 'admin' },
+            { email: 'superadmin@ipmanager.com', password: 'superadmin123', name: 'Süper Admin', role: 'superadmin' },
         ];
 
         const account = demoAccounts.find(acc =>
@@ -290,37 +248,17 @@ export const authService = {
                 email: account.email,
                 displayName: account.name,
                 role: account.role,
-                permissions: account.permissions || [],
-                loginTime: new Date().toISOString(),
-                isSuperAdmin: account.role === 'superadmin' // isSuperAdmin'i role göre belirle
+                isSuperAdmin: account.role === 'superadmin'
             };
             
             localStorage.setItem('currentUser', JSON.stringify(userData));
             console.log('✅ Local sign in successful:', userData);
             
-            return {
-                success: true,
-                user: userData,
-                message: account.role === 'superadmin' ?
-                    '🔥 Süper Admin olarak giriş başarılı - TÜM VERİLERE ERİŞİM' :
-                    account.role === 'debug' ?
-                    '🐛 Debug kullanıcısı olarak giriş başarılı' :
-                    'Demo hesapla giriş başarılı'
-            };
+            return { success: true, user: userData };
         }
 
         console.error('❌ Local sign in failed - invalid credentials');
-        return {
-            success: false,
-            error: `Geçersiz e-posta veya şifre.
-            
-📧 Mevcut Hesaplar:
-• demo@ipmanager.com / demo123 (Demo)
-• admin@ipmanager.com / admin123 (Admin)
-• test@example.com / test123 (Test)
-🔥 superadmin@ipmanager.com / superadmin123 (SÜPER ADMİN)
-🐛 debug@ipmanager.com / debug123 (Debug)`
-        };
+        return { success: false, error: 'Geçersiz e-posta veya şifre.' };
     },
 
     localSignUp(email, password, displayName, initialRole = 'user') {
@@ -329,25 +267,112 @@ export const authService = {
             email: email,
             displayName: displayName,
             role: initialRole,
-            permissions: [],
-            loginTime: new Date().toISOString(),
-            isSuperAdmin: initialRole === 'superadmin' // isSuperAdmin'i role göre belirle
+            isSuperAdmin: initialRole === 'superadmin'
         };
         
         localStorage.setItem('currentUser', JSON.stringify(userData));
-        return {
-            success: true,
-            user: userData,
-            message: 'Yerel hesap oluşturuldu'
-        };
+        return { success: true, user: userData };
     }
 };
 
+// GÜNCELLEME #1: Diğer modüllerin ihtiyaç duyduğu `personsService` eklendi.
+export const personsService = {
+    async addPerson(personData) {
+        try {
+            const user = authService.getCurrentUser();
+            if (!user) throw new Error('Kullanıcı oturumu bulunamadı');
+            const newPerson = {
+                ...personData,
+                id: generateUUID(),
+                userId: user.uid,
+                userEmail: user.email,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            };
+            if (authService.isFirebaseAvailable && db) {
+                await setDoc(doc(db, 'persons', newPerson.id), newPerson);
+                return { success: true, id: newPerson.id, data: newPerson };
+            } else {
+                const persons = JSON.parse(localStorage.getItem('persons') || '[]');
+                persons.push(newPerson);
+                localStorage.setItem('persons', JSON.stringify(persons));
+                return { success: true, id: newPerson.id, data: newPerson };
+            }
+        } catch (error) {
+            return { success: false, error: error.message };
+        }
+    },
+    async getPersons() {
+        try {
+            if (authService.isFirebaseAvailable && db) {
+                const user = authService.getCurrentUser();
+                if (!user) return { success: true, data: [] };
+                const q = authService.isSuperAdmin()
+                    ? query(collection(db, 'persons'), orderBy('name', 'asc'))
+                    : query(collection(db, 'persons'), where('userId', '==', user.uid), orderBy('name', 'asc'));
+                const querySnapshot = await getDocs(q);
+                const persons = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                return { success: true, data: persons };
+            } else {
+                return { success: true, data: JSON.parse(localStorage.getItem('persons') || '[]') };
+            }
+        } catch (error) {
+            return { success: false, error: error.message, data: [] };
+        }
+    },
+    async updatePerson(personId, updates) {
+        try {
+            updates.updatedAt = new Date().toISOString();
+            if (authService.isFirebaseAvailable && db) {
+                await updateDoc(doc(db, 'persons', personId), updates);
+                return { success: true };
+            } else {
+                let persons = JSON.parse(localStorage.getItem('persons') || '[]');
+                const index = persons.findIndex(p => p.id === personId);
+                if (index > -1) {
+                    persons[index] = { ...persons[index], ...updates };
+                    localStorage.setItem('persons', JSON.stringify(persons));
+                    return { success: true };
+                }
+                return { success: false, error: 'Kişi bulunamadı' };
+            }
+        } catch (error) {
+            return { success: false, error: error.message };
+        }
+    },
+    async deletePerson(personId) {
+        try {
+            if (authService.isFirebaseAvailable && db) {
+                await deleteDoc(doc(db, 'persons', personId));
+                return { success: true };
+            } else {
+                let persons = JSON.parse(localStorage.getItem('persons') || '[]');
+                persons = persons.filter(p => p.id !== personId);
+                localStorage.setItem('persons', JSON.stringify(persons));
+                return { success: true };
+            }
+        } catch (error) {
+            return { success: false, error: error.message };
+        }
+    }
+};
+
+
 // IP Records Service (Firestore veya localStorage)
 export const ipRecordsService = {
+    // GÜNCELLEME #3: Silme işlemi için özyinelemeli (recursive) yardımcı fonksiyon
+    findAllDescendants(transactionId, transactions) {
+        let descendants = [];
+        const children = transactions.filter(tx => tx.parentId === transactionId);
+        for (const child of children) {
+            descendants.push(child.transactionId);
+            descendants = descendants.concat(this.findAllDescendants(child.transactionId, transactions));
+        }
+        return descendants;
+    },
+
     async addRecord(record) {
         console.log('💾 Adding record:', record);
-        
         try {
             const user = authService.getCurrentUser();
             if (!user || !user.uid) throw new Error('Kullanıcı oturumu bulunamadı');
@@ -358,18 +383,16 @@ export const ipRecordsService = {
                 userEmail: user.email,
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
-                transactions: record.transactions || [], // Yeni kayıt için boş dizi
-                // Her dosya için benzersiz ID ve yükleme zamanı ekle
-                files: record.files.map(file => ({
+                transactions: record.transactions || [],
+                files: (record.files || []).map(file => ({
                     ...file,
                     id: file.id || generateUUID(),
                     uploadedAt: file.uploadedAt || new Date().toISOString(),
-                    documentDesignation: file.documentDesignation || null, // Ensure null if empty
-                    subDesignation: file.subDesignation || null // Ensure null if empty
+                    documentDesignation: file.documentDesignation || null,
+                    subDesignation: file.subDesignation || null
                 }))
             };
 
-            // Kayıt oluşturulduğunda ilk transaction'ı ekle
             recordData.transactions.unshift({
                 transactionId: generateUUID(),
                 type: "Record Created",
@@ -377,19 +400,18 @@ export const ipRecordsService = {
                 timestamp: recordData.createdAt,
                 userId: user.uid,
                 userEmail: user.email,
-                parentId: null // Ana işlem
+                parentId: null
             });
 
             if (authService.isFirebaseAvailable && db) {
                 const docRef = await addDoc(collection(db, 'ipRecords'), recordData);
-                console.log('✅ Firebase record added with ID:', docRef.id);
-                return {
-                    success: true,
-                    id: docRef.id,
-                    data: recordData
-                };
+                return { success: true, id: docRef.id, data: recordData };
             } else {
-                return this.localAddRecord(recordData); // LocalAddRecord'a güncel yapıyı gönder
+                const records = JSON.parse(localStorage.getItem('ipRecords') || '[]');
+                recordData.id = generateUUID();
+                records.push(recordData);
+                localStorage.setItem('ipRecords', JSON.stringify(records));
+                return { success: true, id: recordData.id, data: recordData };
             }
         } catch (error) {
             console.error('Add record error:', error);
@@ -399,75 +421,24 @@ export const ipRecordsService = {
 
     async getRecords() {
         console.log('📋 Getting records...');
-        
         try {
             if (authService.isFirebaseAvailable && db) {
                 const user = authService.getCurrentUser();
                 if (!user || !user.uid) {
-                    console.warn('Firebase get records: No authenticated user. Returning local records.');
                     return this.localGetRecords();
                 }
-
-                let q;
-                // 🔥 SÜPER ADMİN KONTROLÜ
-                if (authService.isSuperAdmin()) {
-                    console.log('🔥 SÜPER ADMİN: Tüm kullanıcıların verileri getiriliyor...');
-                    
-                    q = query(
-                        collection(db, 'ipRecords'),
-                        orderBy('createdAt', 'desc')
-                    );
-
-                    const querySnapshot = await getDocs(q);
-                    const records = [];
-                    
-                    querySnapshot.forEach((doc) => {
-                        const data = doc.data();
-                        records.push({
-                            id: doc.id,
-                            ...data
-                        });
-                    });
-                    
-                    console.log(`🔥 SÜPER ADMİN: ${records.length} kayıt (tüm kullanıcılar) getirildi`);
-                    return {
-                        success: true,
-                        data: records,
-                        isAllUsersData: true
-                    };
-                } else {
-                    // Normal kullanıcı - sadece kendi verileri
-                    const q = query(
-                        collection(db, 'ipRecords'),
-                        where('userId', '==', user.uid),
-                        orderBy('createdAt', 'desc')
-                    );
-
-                    const querySnapshot = await getDocs(q);
-                    const records = [];
-                    
-                    querySnapshot.forEach((doc) => {
-                        records.push({
-                            id: doc.id,
-                            ...doc.data()
-                        });
-                    });
-                    console.log(`✅ Normal kullanıcı: ${records.length} kayıt getirildi`);
-                    return {
-                        success: true,
-                        data: records,
-                        isAllUsersData: false
-                    };
-                }
+                let q = authService.isSuperAdmin()
+                    ? query(collection(db, 'ipRecords'), orderBy('createdAt', 'desc'))
+                    : query(collection(db, 'ipRecords'), where('userId', '==', user.uid), orderBy('createdAt', 'desc'));
+                const querySnapshot = await getDocs(q);
+                const records = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                return { success: true, data: records };
             } else {
-                return this.localGetRecords();
+                return { success: true, data: JSON.parse(localStorage.getItem('ipRecords') || '[]') };
             }
         } catch (error) {
             console.error('Get records error:', error);
-            if (authService.isFirebaseAvailable) {
-                return { success: false, error: error.message || 'Kayıtlar alınırken bir hata oluştu.' };
-            }
-            return this.localGetRecords();
+            return { success: false, error: error.message, data: [] };
         }
     },
 
@@ -480,83 +451,41 @@ export const ipRecordsService = {
             const updatedTimestamp = new Date().toISOString();
             const recordRef = doc(db, 'ipRecords', recordId);
 
-            // Mevcut kaydı çekip güncel transaction'ları ekleyeceğiz
-            let currentRecord = {};
-            if (authService.isFirebaseAvailable && db) {
-                const docSnap = await getDoc(recordRef);
-                if (docSnap.exists()) {
-                    currentRecord = docSnap.data();
-                } else {
-                    throw new Error('Güncellenecek kayıt bulunamadı.');
-                }
-            } else {
-                const localRecords = this.getLocalRecords();
-                currentRecord = localRecords.find(r => r.id === recordId);
-                if (!currentRecord) throw new Error('Güncellenecek kayıt yerel depoda bulunamadı.');
-            }
-
+            const docSnap = await getDoc(recordRef);
+            if (!docSnap.exists()) throw new Error('Güncellenecek kayıt bulunamadı.');
+            
+            const currentRecord = docSnap.data();
             const newTransactions = [...(currentRecord.transactions || [])];
-            // Parent transaction ID'sini belirlemek için, eğer spesifik bir alt atama yapıldıysa, ana atamayı parent olarak kullanacağız.
-            let defaultParentTxId = null; 
 
-            // 1. Ana güncelleme işlemi (eğer temel alanlarda değişiklik varsa)
             const changedFields = [];
-            const fieldsToCompare = ['type', 'title', 'status', 'applicationNumber', 'applicationDate', 'description', 
-                                     'registrationDate', 'patentClass', 'expiryDate', 'priority', 'claims', 
-                                     'trademarkType', 'niceClass', 'registrationNumber', 'renewalDate', 
-                                     'goodsServices', 'bulletinDate', 'bulletinNumber', 'workType', 
-                                     'creationDate', 'publicationDate', 'publisher', 'designType', 
-                                     'locarnoClass', 'designDate', 'designFeatures', 'notes']; // Karşılaştırılacak alanlar
+            const fieldsToCompare = ['type', 'title', 'status', 'applicationNumber', 'applicationDate', 'description', 'registrationDate', 'patentClass', 'expiryDate', 'priority', 'claims', 'trademarkType', 'niceClass', 'registrationNumber', 'renewalDate', 'goodsServices', 'bulletinDate', 'bulletinNumber', 'workType', 'creationDate', 'publicationDate', 'publisher', 'designType', 'locarnoClass', 'designDate', 'designFeatures', 'notes'];
 
             fieldsToCompare.forEach(key => {
-                // Sadece güncellenen alanlar 'updates' içinde olur.
-                // Eğer key, updates içinde varsa ve değeri değişmişse
-                const oldValue = currentRecord[key] === undefined || currentRecord[key] === null ? '' : String(currentRecord[key]).trim();
-                const newValue = updates[key] === undefined || updates[key] === null ? '' : String(updates[key]).trim();
-                
-                if (updates.hasOwnProperty(key) && oldValue !== newValue) {
-                    changedFields.push(`${key}: '${oldValue}' -> '${newValue}'`);
+                if (updates.hasOwnProperty(key) && String(currentRecord[key] || '').trim() !== String(updates[key] || '').trim()) {
+                    changedFields.push(key);
                 }
             });
 
             if (changedFields.length > 0) {
-                const recordUpdateTxId = generateUUID();
                 newTransactions.unshift({
-                    transactionId: recordUpdateTxId,
+                    transactionId: generateUUID(),
                     type: "Record Updated",
-                    description: `Kayıt verileri güncellendi: ${changedFields.join('; ')}`,
+                    description: `Kayıt alanları güncellendi: ${changedFields.join(', ')}`,
                     timestamp: updatedTimestamp,
                     userId: user.uid,
                     userEmail: user.email,
-                    parentId: null // Bu işlem ana seviyede bir işlem
+                    parentId: null // Alan güncellemesi her zaman bir kök işlemdir.
                 });
-                defaultParentTxId = recordUpdateTxId; // Diğer işlemler bunun altında olabilir
-            } else if (currentRecord.transactions && currentRecord.transactions.length > 0) {
-                 // Eğer kayıt güncelleniyor ama temel alanlarda değişiklik yoksa,
-                 // son ana işlemi (Record Created veya Record Updated) parent olarak alabiliriz.
-                 // Bu, transaction ağacını daha anlamlı kılar.
-                 const lastRootTransaction = newTransactions.find(tx => tx.parentId === null);
-                 if (lastRootTransaction) {
-                     defaultParentTxId = lastRootTransaction.transactionId;
-                 }
             }
 
-            // Dosya ekleme/güncelleme/silme mantığı (burada transaction eklemesi yapılacak)
             const oldFiles = currentRecord.files || [];
             const newFiles = updates.files || [];
 
-            // 2. Yeni eklenen dosyalar için transaction
+            // GÜNCELLEME #2: Yeni eklenen dosyaların parentID'si her zaman null olacak
             newFiles.forEach(newFile => {
-                const existingFile = oldFiles.find(oldF => oldF.id === newFile.id);
-                if (!existingFile) {
-                    // Yeni eklenen dosya
-                    let parentTxIdForNewFile = newFile.selectedParentTransactionId || null; // Kullanıcının seçtiği parent veya null
-
-                    // Ana atama transaction'ı oluştur
+                if (!oldFiles.some(oldF => oldF.id === newFile.id)) {
                     const mainTxId = generateUUID();
                     const mainTxDescription = documentDesignationTranslations[newFile.documentDesignation] || newFile.documentDesignation || "Belge indekslendi.";
-
-                    // Yeni dosya için ana transaction
                     newTransactions.unshift({
                         transactionId: mainTxId,
                         type: "Document Indexed",
@@ -564,20 +493,19 @@ export const ipRecordsService = {
                         documentId: newFile.id,
                         documentName: newFile.name,
                         documentDesignation: newFile.documentDesignation,
-                        subDesignation: newFile.subDesignation, // Ana transaction'da da subDesignation tutulabilir
+                        subDesignation: newFile.subDesignation,
                         timestamp: newFile.uploadedAt || updatedTimestamp,
                         userId: user.uid,
                         userEmail: user.email,
-                        parentId: parentTxIdForNewFile // Kullanıcı seçtiyse o parent, yoksa null (kendi root'u olur)
+                        parentId: null // HATA DÜZELTİLDİ: Yeni belge işlemi her zaman KÖK işlemdir.
                     });
 
-                    // Eğer alt atama varsa, child transaction'ı oluştur
                     if (newFile.subDesignation) {
                         const childTxId = generateUUID();
                         const childTxDescription = subDesignationTranslations[newFile.subDesignation] || newFile.subDesignation;
                         newTransactions.unshift({
                             transactionId: childTxId,
-                            type: "Document Sub-Indexed", // Alt işlem tipi
+                            type: "Document Sub-Indexed",
                             description: childTxDescription,
                             documentId: newFile.id,
                             documentName: newFile.name,
@@ -586,320 +514,181 @@ export const ipRecordsService = {
                             timestamp: newFile.uploadedAt || updatedTimestamp,
                             userId: user.uid,
                             userEmail: user.email,
-                            parentId: mainTxId // Child transaction'ın parent'ı ana atama transaction'ı
-                        });
-                    }
-                } else {
-                    // 3. Mevcut dosyaların güncellenmesi için transaction
-                    const fileChanges = [];
-                    
-                    // documentDesignation değişti mi?
-                    if (existingFile.documentDesignation !== newFile.documentDesignation) {
-                        fileChanges.push(`ataması '${existingFile.documentDesignation || '-'}' -> '${newFile.documentDesignation || '-'}'`);
-                    }
-                    // subDesignation değişti mi?
-                    if (existingFile.subDesignation !== newFile.subDesignation) {
-                        fileChanges.push(`alt ataması '${existingFile.subDesignation || '-'}' -> '${newFile.subDesignation || '-'}'`);
-                    }
-                    // content değişti mi? (Boyut veya içerik hash'i ile karşılaştırmak daha sağlam olur)
-                    if (existingFile.content !== newFile.content) {
-                        fileChanges.push(`içeriği güncellendi`);
-                    }
-
-                    if (fileChanges.length > 0) {
-                         const fileTxId = generateUUID();
-                         newTransactions.unshift({
-                            transactionId: fileTxId,
-                            type: "Document Updated",
-                            description: `'${newFile.name}' belgesi güncellendi (${fileChanges.join(', ')}).`, // Bu açıklama değişmedi, kapsam dışı
-                            documentId: newFile.id,
-                            documentName: newFile.name,
-                            documentDesignation: newFile.documentDesignation, // Yeni
-                            subDesignation: newFile.subDesignation, // Yeni
-                            timestamp: updatedTimestamp,
-                            userId: user.uid,
-                            userEmail: user.email,
-                            parentId: defaultParentTxId
+                            parentId: mainTxId // YENİ OLUŞTURULAN ANA İŞLEME BAĞLANDI
                         });
                     }
                 }
             });
 
-            // 4. Dosya silme için transaction
             oldFiles.forEach(oldFile => {
-                const stillExists = newFiles.some(newF => newF.id === oldFile.id);
-                if (!stillExists) {
-                    let description = `Belge silindi.`; // Türkçe ve kısa açıklama
-                     if (oldFile.documentDesignation) {
-                        description += ` Atama: '${oldFile.documentDesignation}'`;
-                        if (oldFile.subDesignation) {
-                            description += ` (${oldFile.subDesignation})`;
-                        }
-                    }
-
-                    const fileTxId = generateUUID();
+                if (!newFiles.some(newF => newF.id === oldFile.id)) {
                     newTransactions.unshift({
-                        transactionId: fileTxId,
+                        transactionId: generateUUID(),
                         type: "Document Deleted",
-                        description: description, // Yeni kısa açıklama
+                        description: `Belge silindi: ${oldFile.name}`,
                         documentId: oldFile.id,
                         documentName: oldFile.name,
-                        documentDesignation: oldFile.documentDesignation, // Yeni
-                        subDesignation: oldFile.subDesignation, // Yeni
+                        documentDesignation: oldFile.documentDesignation,
+                        subDesignation: oldFile.subDesignation,
                         timestamp: updatedTimestamp,
                         userId: user.uid,
                         userEmail: user.email,
-                        parentId: defaultParentTxId
+                        parentId: null // Belge silme de bir KÖK işlemdir.
                     });
                 }
             });
-
-            const finalUpdates = {
-                updatedAt: updatedTimestamp,
-                transactions: newTransactions, // Güncel transaction dizisi
-                files: newFiles.map(file => ({ // Her dosya objesinin ID'si ve uploadedAt'i olduğundan emin ol
-                    ...file,
-                    id: file.id || generateUUID(),
-                    uploadedAt: file.uploadedAt || updatedTimestamp,
-                    documentDesignation: file.documentDesignation || null, // Ensure null if empty
-                    subDesignation: file.subDesignation || null // Ensure null if empty
-                }))
-            };
-
-            // updates objesindeki diğer alanları da finalUpdates'e eklerken undefined kontrolü yap
-            for (const key in updates) {
-                // 'files', 'transactions' ve 'updatedAt' zaten yukarıda ele alındı, tekrar ekleme
-                if (key === 'files' || key === 'transactions' || key === 'updatedAt') {
-                    continue;
-                }
-                
-                // Eğer değer undefined ise null olarak ayarla, aksi takdirde değeri olduğu gibi kullan
-                if (updates[key] === undefined) {
-                    finalUpdates[key] = null;
-                } else {
-                    finalUpdates[key] = updates[key];
-                }
-            }
+            
+            const finalUpdates = { ...updates, updatedAt: updatedTimestamp, transactions: newTransactions };
 
             if (authService.isFirebaseAvailable && db) {
                 await updateDoc(recordRef, finalUpdates);
-                console.log(`✅ Firebase record ${recordId} updated.`);
-                return { success: true };
             } else {
-                return this.localUpdateRecord(recordId, finalUpdates);
+                let records = JSON.parse(localStorage.getItem('ipRecords') || '[]');
+                const index = records.findIndex(r => r.id === recordId);
+                if (index > -1) {
+                    records[index] = { ...records[index], ...finalUpdates };
+                    localStorage.setItem('ipRecords', JSON.stringify(records));
+                }
             }
-        } catch (error) {
-            console.error('Update record error:', error);
-            return { success: false, error: error.message || 'Kayıt güncellenirken bir hata oluştu.' };
-        }
-    },
-
-    // Yeni: Transaction silme işlevi
-    async deleteTransaction(recordId, transactionId) {
-        console.log(`🗑️ Deleting transaction ${transactionId} from record ${recordId}`);
-        try {
-            const recordRef = doc(db, 'ipRecords', recordId);
-            const docSnap = await getDoc(recordRef);
-            if (!docSnap.exists()) {
-                throw new Error('Kayıt bulunamadı.');
-            }
-            const recordData = docSnap.data();
-            const newTransactions = recordData.transactions.filter(tx => tx.transactionId !== transactionId && tx.parentId !== transactionId); // Child'ları da sil
-
-            await updateDoc(recordRef, { transactions: newTransactions });
-            console.log(`✅ Firebase transaction ${transactionId} deleted.`);
             return { success: true };
         } catch (error) {
-            console.error('Delete transaction error:', error);
-            return { success: false, error: error.message || 'İşlem silinirken bir hata oluştu.' };
+            console.error('Update record error:', error);
+            return { success: false, error: error.message };
         }
     },
 
-    // Yeni: Transaction güncelleme işlevi
+    async deleteRecord(recordId) {
+        try {
+            if (authService.isFirebaseAvailable && db) {
+                await deleteDoc(doc(db, 'ipRecords', recordId));
+                return { success: true };
+            } else {
+                let records = JSON.parse(localStorage.getItem('ipRecords') || '[]');
+                records = records.filter(r => r.id !== recordId);
+                localStorage.setItem('ipRecords', JSON.stringify(records));
+                return { success: true };
+            }
+        } catch (error) {
+            return { success: false, error: error.message };
+        }
+    },
+
+    // GÜNCELLEME #3: Fonksiyon, tüm alt ağacı silecek şekilde yenilendi
+    async deleteTransaction(recordId, transactionIdToDelete) {
+        console.log(`🗑️ Deleting transaction ${transactionIdToDelete} and its children from record ${recordId}`);
+        try {
+            if (authService.isFirebaseAvailable && db) {
+                const recordRef = doc(db, 'ipRecords', recordId);
+                const docSnap = await getDoc(recordRef);
+                if (!docSnap.exists()) throw new Error('Kayıt bulunamadı.');
+                const recordData = docSnap.data();
+                const allTransactions = recordData.transactions || [];
+                const descendantIds = this.findAllDescendants(transactionIdToDelete, allTransactions);
+                const idsToDelete = new Set([transactionIdToDelete, ...descendantIds]);
+                const newTransactions = allTransactions.filter(tx => !idsToDelete.has(tx.transactionId));
+                await updateDoc(recordRef, { transactions: newTransactions });
+                console.log(`✅ Firebase transaction ${transactionIdToDelete} and ${descendantIds.length} descendants deleted.`);
+                return { success: true, remainingTransactions: newTransactions };
+            } else {
+                let records = JSON.parse(localStorage.getItem('ipRecords') || '[]');
+                const recordIndex = records.findIndex(r => r.id === recordId);
+                if (recordIndex !== -1) {
+                    const allTransactions = records[recordIndex].transactions || [];
+                    const descendantIds = this.findAllDescendants(transactionIdToDelete, allTransactions);
+                    const idsToDelete = new Set([transactionIdToDelete, ...descendantIds]);
+                    records[recordIndex].transactions = allTransactions.filter(tx => !idsToDelete.has(tx.transactionId));
+                    localStorage.setItem('ipRecords', JSON.stringify(records));
+                    return { success: true };
+                }
+                return { success: false, error: 'Kayıt bulunamadı' };
+            }
+        } catch (error) {
+            console.error('Delete transaction error:', error);
+            return { success: false, error: error.message };
+        }
+    },
+
     async updateTransaction(recordId, transactionId, updates) {
         console.log(`🔄 Updating transaction ${transactionId} in record ${recordId}`);
         try {
-            const recordRef = doc(db, 'ipRecords', recordId);
-            const docSnap = await getDoc(recordRef);
-            if (!docSnap.exists()) {
-                throw new Error('Kayıt bulunamadı.');
-            }
-            const recordData = docSnap.data();
-            const newTransactions = recordData.transactions.map(tx => {
-                if (tx.transactionId === transactionId) {
-                    return { ...tx, ...updates, timestamp: new Date().toISOString() };
+            if (authService.isFirebaseAvailable && db) {
+                const recordRef = doc(db, 'ipRecords', recordId);
+                const docSnap = await getDoc(recordRef);
+                if (!docSnap.exists()) throw new Error('Kayıt bulunamadı.');
+                const recordData = docSnap.data();
+                const newTransactions = recordData.transactions.map(tx => {
+                    if (tx.transactionId === transactionId) {
+                        return { ...tx, ...updates, timestamp: new Date().toISOString() };
+                    }
+                    return tx;
+                });
+                await updateDoc(recordRef, { transactions: newTransactions });
+                return { success: true };
+            } else {
+                let records = JSON.parse(localStorage.getItem('ipRecords') || '[]');
+                const recordIndex = records.findIndex(r => r.id === recordId);
+                if (recordIndex !== -1) {
+                    records[recordIndex].transactions = (records[recordIndex].transactions || []).map(tx => {
+                        if (tx.transactionId === transactionId) {
+                            return { ...tx, ...updates, timestamp: new Date().toISOString() };
+                        }
+                        return tx;
+                    });
+                    localStorage.setItem('ipRecords', JSON.stringify(records));
+                    return { success: true };
                 }
-                return tx;
-            });
-
-            await updateDoc(recordRef, { transactions: newTransactions });
-            console.log(`✅ Firebase transaction ${transactionId} updated.`);
-            return { success: true };
+                return { success: false, error: 'Kayıt bulunamadı' };
+            }
         } catch (error) {
             console.error('Update transaction error:', error);
-            return { success: false, error: error.message || 'İşlem güncellenirken bir hata oluştu.' };
+            return { success: false, error: error.message };
         }
     },
     
-    // localAddRecord ve localUpdateRecord metotlarını da transaction ve files yapısını destekleyecek şekilde güncelleyin
-    localAddRecord(recordData) { // recordData artık yeni yapıyı içeriyor
-        const records = this.getLocalRecords();
-        
-        // Yeni bir kayıt oluşturulduğunda, transactions dizisi zaten içinde olacaktır.
-        // Files dizisindeki her objenin id ve uploadedAt içermesi gerekiyor, bu da addRecord'da halledildi.
+    localGetRecords() {
+        return { success: true, data: JSON.parse(localStorage.getItem('ipRecords') || '[]') };
+    },
+
+    localAddRecord(recordData) {
+        const records = this.localGetRecords().data;
+        recordData.id = generateUUID();
         records.push(recordData);
         localStorage.setItem('ipRecords', JSON.stringify(records));
-        
-        console.log('✅ Local record added:', recordData);
-        
-        return {
-            success: true,
-            id: recordData.id,
-            data: recordData
-        };
+        return { success: true, id: recordData.id, data: recordData };
     },
 
-    localUpdateRecord(recordId, updates) { // updates artık yeni yapıyı içeriyor
-        const records = this.getLocalRecords();
+    localUpdateRecord(recordId, updates) {
+        const records = this.localGetRecords().data;
         const index = records.findIndex(r => r.id === recordId);
-        
         if (index !== -1) {
-            records[index] = {
-                ...records[index],
-                ...updates // updates objesi transaction ve files dizilerini doğru şekilde içerecek
-            };
+            records[index] = { ...records[index], ...updates };
             localStorage.setItem('ipRecords', JSON.stringify(records));
-            console.log(`✅ Local record ${recordId} updated.`);
-            return { success: true };
-        }
-        
-        console.warn(`Local update failed: Record ${recordId} not found.`);
-        return { success: false, error: 'Kayıt bulunamadı' };
-    },
-
-    localDeleteTransaction(recordId, transactionId) {
-        const records = this.getLocalRecords();
-        const recordIndex = records.findIndex(r => r.id === recordId);
-        if (recordIndex !== -1) {
-            const record = records[recordIndex];
-            record.transactions = (record.transactions || []).filter(tx => tx.transactionId !== transactionId && tx.parentId !== transactionId); // Child'ları da sil
-            localStorage.setItem('ipRecords', JSON.stringify(records));
-            console.log(`✅ Local transaction ${transactionId} deleted from record ${recordId}.`);
             return { success: true };
         }
         return { success: false, error: 'Kayıt bulunamadı' };
     },
-
-    localUpdateTransaction(recordId, transactionId, updates) {
-        const records = this.getLocalRecords();
-        const recordIndex = records.findIndex(r => r.id === recordId);
-        if (recordIndex !== -1) {
-            const record = records[recordIndex];
-            record.transactions = (record.transactions || []).map(tx => {
-                if (tx.transactionId === transactionId) {
-                    return { ...tx, ...updates, timestamp: new Date().toISOString() };
-                }
-                return tx;
-            });
-            localStorage.setItem('ipRecords', JSON.stringify(records));
-            console.log(`✅ Local transaction ${transactionId} updated in record ${recordId}.`);
-            return { success: true };
-        }
-        return { success: false, error: 'Kayıt bulunamadı' };
-    },
-
-    // ... (diğer metodlar) ...
 };
 
-// Export çeviri objeleri de dışarıdan erişilebilir olsun
-export { subDesignationTranslations, documentDesignationTranslations };
-
-// Create demo data with multiple users (Super Admin görür)
 export async function createDemoData() {
     console.log('🎯 Creating demo data...');
-    
-    // Demo kayıtları farklı kullanıcılar adına oluştur
     const demoRecords = [
-        {
-            type: 'patent',
-            title: 'Akıllı Enerji Yönetim Sistemi',
-            description: 'IoT tabanlı enerji tasarrufu sağlayan sistem',
-            status: 'pending',
-            applicationDate: '2024-01-15',
-            owners: [{ name: 'TechCorp A.Ş.', type: 'company' }],
-            applicationNumber: 'TR2024/001234',
-            userId: 'demo_user_1', // Bu UID'ler sadece demo amaçlıdır.
-            userEmail: 'demo@ipmanager.com',
-            files: [], // Dosya ve transaction yapısı için boş bırakıldı
-            transactions: []
-        },
-        {
-            type: 'trademark',
-            title: 'EcoSmart',
-            description: 'Çevre dostu teknoloji ürünleri markası',
-            status: 'approved',
-            applicationDate: '2023-11-20',
-            owners: [{ name: 'Green Tech Ltd.', type: 'company' }],
-            applicationNumber: 'TR2023/987654',
-            userId: 'admin_user_1', // Bu UID'ler sadece demo amaçlıdır.
-            userEmail: 'admin@ipmanager.com',
-            files: [],
-            transactions: []
-        },
-        {
-            type: 'copyright',
-            title: 'Dijital Pazarlama Yazılımı',
-            description: 'E-ticaret platformları için analitik yazılım',
-            status: 'approved',
-            applicationDate: '2024-02-10',
-            owners: [{ name: 'Software Solutions Inc.', type: 'company' }],
-            applicationNumber: 'TR2024/555666',
-            userId: 'test_user_1', // Bu UID'ler sadece demo amaçlıdır.
-            userEmail: 'test@example.com',
-            files: [],
-            transactions: []
-        },
-        {
-            type: 'design',
-            title: 'Modern Ofis Mobilyası Serisi',
-            description: 'Ergonomik tasarım prensipleriyle geliştirilmiş mobilya',
-            status: 'rejected',
-            applicationDate: '2023-12-05',
-            owners: [{ name: 'Design Studio X', type: 'company' }],
-            applicationNumber: 'TR2023/111222',
-            userId: 'another_user', // Bu UID'ler sadece demo amaçlıdır.
-            userEmail: 'designer@company.com',
-            files: [],
-            transactions: []
-        },
-        {
-            type: 'patent',
-            title: 'Yapay Zeka Destekli Otomasyon',
-            description: 'Endüstriyel süreçler için AI algoritmaları',
-            status: 'pending',
-            applicationDate: '2024-03-01',
-            owners: [{ name: 'AI Innovations Ltd.', type: 'company' }],
-            applicationNumber: 'TR2024/789012',
-            userId: 'ai_company', // Bu UID'ler sadece demo amaçlıdır.
-            userEmail: 'ai@innovations.com',
-            files: [],
-            transactions: []
-        }
+        { type: 'patent', title: 'Akıllı Enerji Yönetim Sistemi', description: 'IoT tabanlı enerji tasarrufu sağlayan sistem', status: 'pending', applicationDate: '2024-01-15', owners: [{ name: 'TechCorp A.Ş.', type: 'company' }], applicationNumber: 'TR2024/001234', userId: 'demo_user_1', userEmail: 'demo@ipmanager.com', files: [], transactions: [] },
+        { type: 'trademark', title: 'EcoSmart', description: 'Çevre dostu teknoloji ürünleri markası', status: 'approved', applicationDate: '2023-11-20', owners: [{ name: 'Green Tech Ltd.', type: 'company' }], applicationNumber: 'TR2023/987654', userId: 'admin_user_1', userEmail: 'admin@ipmanager.com', files: [], transactions: [] },
+        { type: 'copyright', title: 'Dijital Pazarlama Yazılımı', description: 'E-ticaret platformları için analitik yazılım', status: 'approved', applicationDate: '2024-02-10', owners: [{ name: 'Software Solutions Inc.', type: 'company' }], applicationNumber: 'TR2024/555666', userId: 'test_user_1', userEmail: 'test@example.com', files: [], transactions: [] },
     ];
-
-    // LocalStorage'a demo veriler ekle
     const existingRecords = JSON.parse(localStorage.getItem('ipRecords') || '[]');
-    const allRecords = [...existingRecords, ...demoRecords];
+    const allRecords = [...existingRecords];
+    demoRecords.forEach(rec => {
+        if (!allRecords.some(r => r.title === rec.title)) {
+            allRecords.push({ id: generateUUID(), ...rec });
+        }
+    });
     localStorage.setItem('ipRecords', JSON.stringify(allRecords));
-    
-    console.log('✅ Demo data oluşturuldu - Süper Admin tüm verileri görebilir');
-    console.log(`📊 Toplam ${allRecords.length} kayıt, ${demoRecords.length} yeni eklendi`);
+    console.log('✅ Demo data created');
 }
 
-// Export auth and db for direct access (db de eklendi)
+export { subDesignationTranslations, documentDesignationTranslations };
 export { auth, db, generateUUID };
 
 console.log('🔥 Firebase config loaded - SÜPER ADMİN DESTEĞİ AKTİF');
-console.log('🔥 Süper Admin Hesabı: superadmin@ipmanager.com / superadmin123');
-console.log('🐛 Debug Hesabı: debug@ipmanager.com / debug123');
 console.log('🧪 Available services: authService, ipRecordsService, personsService, createDemoData, auth, db');
