@@ -174,15 +174,16 @@
 
         class TaskManagementModule {
             constructor() {
-                this.currentUser = authService.getCurrentUser();
+                this.currentUser = null;
                 this.allTasks = [];
                 this.allUsers = [];
                 this.allIpRecords = [];
-                // init() metodu artık dışarıdan çağrılacak.
             }
 
             async init() {
-                // Rol kontrolünü doğrudan burada yapıyoruz
+                this.currentUser = authService.getCurrentUser();
+                
+                // Yetki kontrolü
                 if (this.currentUser.role !== 'superadmin' && this.currentUser.role !== 'admin') {
                     alert('Bu sayfaya erişim yetkiniz yoktur.');
                     window.location.href = 'dashboard.html';
@@ -190,8 +191,10 @@
                 }
 
                 document.getElementById('userAvatar').textContent = (this.currentUser.displayName || 'U').charAt(0);
+                document.getElementById('logoutBtn').addEventListener('click', () => authService.signOut());
+                
                 await this.loadInitialData();
-                this.setupEventListeners(); // Butonlar burada aktif ediliyor
+                this.setupEventListeners();
             }
 
             async loadInitialData() {
@@ -210,39 +213,171 @@
             }
             
             setupEventListeners() {
+                console.log("Setting up event listeners..."); // Hata ayıklama için
                 document.getElementById('createTaskBtn').addEventListener('click', () => this.openTaskModal());
                 document.querySelector('.close-btn').addEventListener('click', () => this.closeTaskModal());
                 document.getElementById('taskForm').addEventListener('submit', (e) => this.handleFormSubmit(e));
                 document.getElementById('userFilter').addEventListener('change', () => this.renderTasks());
                 document.getElementById('statusFilter').addEventListener('change', () => this.renderTasks());
-                document.getElementById('logoutBtn').addEventListener('click', () => authService.signOut());
             }
 
-            // ... (populateFilters, renderTasks, openTaskModal gibi diğer tüm metodlar burada yer almalı)
-             populateFilters() { /*...*/ }
-             renderTasks() { /*...*/ }
-             openTaskModal(taskId = null) { /*...*/ }
-             closeTaskModal() { /*...*/ }
-             async handleFormSubmit(e) { /*...*/ }
+            populateFilters() {
+                const userFilter = document.getElementById('userFilter');
+                userFilter.innerHTML = '<option value="all">Tüm Kullanıcılar</option>';
+                this.allUsers.forEach(user => {
+                    userFilter.innerHTML += `<option value="${user.id}">${user.displayName || user.email}</option>`;
+                });
+                
+                const statusFilter = document.getElementById('statusFilter');
+                statusFilter.innerHTML = `<option value="all">Tüm Durumlar</option>
+                    <option value="open">Açık</option>
+                    <option value="in_progress">Devam Ediyor</option>
+                    <option value="pending_review">Gözden Geçiriliyor</option>
+                    <option value="completed">Tamamlandı</option>`;
+            }
+
+            renderTasks() {
+                const tableBody = document.getElementById('tasksTableBody');
+                tableBody.innerHTML = '';
+                
+                const selectedUser = document.getElementById('userFilter').value;
+                const selectedStatus = document.getElementById('statusFilter').value;
+
+                const filteredTasks = this.allTasks.filter(task => {
+                    const userMatch = selectedUser === 'all' || task.assignedTo_uid === selectedUser;
+                    const statusMatch = selectedStatus === 'all' || task.status === selectedStatus;
+                    return userMatch && statusMatch;
+                });
+
+                filteredTasks.forEach(task => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${task.title}</td>
+                        <td>${task.assignedTo_email}</td>
+                        <td>${task.relatedIpRecordTitle || '-'}</td>
+                        <td>${task.status}</td>
+                        <td>
+                            <button onclick="taskManagementModule.openTaskModal('${task.id}')">Düzenle</button>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            }
+
+            openTaskModal(taskId = null) {
+                const modal = document.getElementById('taskModal');
+                const form = document.getElementById('taskForm');
+                form.reset();
+                document.getElementById('taskId').value = '';
+
+                const assignedToSelect = document.getElementById('assignedTo');
+                assignedToSelect.innerHTML = '';
+                this.allUsers.forEach(u => assignedToSelect.innerHTML += `<option value="${u.id}">${u.displayName || u.email}</option>`);
+
+                const ipRecordSelect = document.getElementById('relatedIpRecord');
+                ipRecordSelect.innerHTML = '<option value="">Yok</option>';
+                this.allIpRecords.forEach(r => ipRecordSelect.innerHTML += `<option value="${r.id}">${r.title}</option>`);
+
+                if (taskId) {
+                    const task = this.allTasks.find(t => t.id === taskId);
+                    document.getElementById('modalTitle').textContent = 'İşi Düzenle';
+                    document.getElementById('taskId').value = task.id;
+                    document.getElementById('taskTitle').value = task.title;
+                    document.getElementById('taskDescription').value = task.description;
+                    document.getElementById('taskType').value = task.taskType;
+                    document.getElementById('taskPriority').value = task.priority;
+                    document.getElementById('assignedTo').value = task.assignedTo_uid;
+                    document.getElementById('taskDueDate').value = task.dueDate || '';
+                    document.getElementById('relatedIpRecord').value = task.relatedIpRecordId || '';
+                } else {
+                    document.getElementById('modalTitle').textContent = 'Yeni İş Oluştur';
+                }
+                modal.style.display = 'block';
+            }
+
+            closeTaskModal() {
+                document.getElementById('taskModal').style.display = 'none';
+            }
+
+            async handleFormSubmit(e) {
+                e.preventDefault();
+                const taskId = document.getElementById('taskId').value;
+                const assignedToUser = this.allUsers.find(u => u.id === document.getElementById('assignedTo').value);
+                const relatedIpRecord = this.allIpRecords.find(r => r.id === document.getElementById('relatedIpRecord').value);
+
+                const taskData = {
+                    title: document.getElementById('taskTitle').value,
+                    description: document.getElementById('taskDescription').value,
+                    taskType: document.getElementById('taskType').value,
+                    priority: document.getElementById('taskPriority').value,
+                    assignedTo_uid: assignedToUser.id,
+                    assignedTo_email: assignedToUser.email,
+                    dueDate: document.getElementById('taskDueDate').value || null,
+                    relatedIpRecordId: relatedIpRecord ? relatedIpRecord.id : null,
+                    relatedIpRecordTitle: relatedIpRecord ? relatedIpRecord.title : null,
+                };
+                
+                let result;
+                if (taskId) {
+                    result = await taskService.updateTask(taskId, taskData);
+                } else {
+                    taskData.status = 'open';
+                    taskData.createdBy_uid = this.currentUser.uid;
+                    taskData.createdBy_email = this.currentUser.email;
+                    result = await taskService.createTask(taskData);
+                }
+
+                if (result.success) {
+                    alert(`İş başarıyla ${taskId ? 'güncellendi' : 'oluşturuldu'}!`);
+                    this.closeTaskModal();
+                    this.loadInitialData();
+                } else {
+                    alert('Hata: ' + result.error);
+                }
+            }
         }
 
-        // --- GÜVENİLİR BAŞLATMA KODU ---
+        // --- Sayfa Başlatma Mantığı ---
         let taskManagementModule;
         auth.onAuthStateChanged((user) => {
             if (user || authService.getCurrentUser()) {
                 if (!taskManagementModule) {
                     taskManagementModule = new TaskManagementModule();
-                    taskManagementModule.init(); // Modülü başlat
-                    window.taskManagementModule = taskManagementModule; // Gerekliyse global yap
+                    taskManagementModule.init(); // Modülü ve olay dinleyicilerini başlat
+                    window.taskManagementModule = taskManagementModule;
                 }
             } else {
                 window.location.href = 'index.html';
             }
         });
-
+        
         // Akordiyon menü için JS kodu
         document.addEventListener('DOMContentLoaded', function() {
-            // ... (Akordiyon menü JS kodunuz buraya)
+            const accordions = document.querySelectorAll('.accordion-header');
+            accordions.forEach(accordion => {
+                accordion.addEventListener('click', () => {
+                    const content = accordion.nextElementSibling;
+                    accordion.classList.toggle('active');
+                    if (content.style.maxHeight) {
+                        content.style.maxHeight = null;
+                    } else {
+                        content.style.maxHeight = content.scrollHeight + "px";
+                    }
+                });
+            });
+
+            const currentPage = window.location.pathname.split("/").pop();
+            const activeLink = document.querySelector(`.sidebar-nav a[href="${currentPage}"]`);
+            if (activeLink) {
+                document.querySelectorAll('.sidebar-nav-item.active, .accordion-content a.active').forEach(el => el.classList.remove('active'));
+                activeLink.classList.add('active');
+                const parentAccordion = activeLink.closest('.accordion-content');
+                if(parentAccordion) {
+                    const header = parentAccordion.previousElementSibling;
+                    header.classList.add('active');
+                    parentAccordion.style.maxHeight = parentAccordion.scrollHeight + "px";
+                }
+            }
         });
     </script>
 </body>
