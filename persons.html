@@ -169,8 +169,8 @@
             <div class="user-section">
                 <div class="user-avatar" id="userAvatar">D</div>
                 <div class="user-info">
-                    <div class="user-name" id="userNamePersons">Yükleniyor...</div>
-                    <div class="user-role" id="userRolePersons">Kullanıcı</div>
+                    <div class="user-name" id="userName">Yükleniyor...</div>
+                    <div class="user-role" id="userRole">Kullanıcı</div>
                 </div>
                 <button class="logout-btn" id="logoutBtn">Çıkış</button>
             </div>
@@ -259,17 +259,25 @@
                 this.init();
             }
 
-            init() { /* ... */ }
+            init() {
+                 auth.onAuthStateChanged(async (user) => {
+                    if (user || authService.getCurrentUser()) {
+                        this.currentUser = authService.getCurrentUser();
+                        this.updateUserInfo();
+                        this.setupEventListeners();
+                        await this.loadPersons();
+                    } else {
+                        window.location.href = 'index.html';
+                    }
+                });
+            }
             setupEventListeners() { /* ... */ }
             updateUserInfo() {
                  if (this.currentUser) {
                     const userName = this.currentUser.displayName || this.currentUser.email.split('@')[0] || 'Kullanıcı';
-                    const userAvatar = userName.charAt(0).toUpperCase();
-                    document.getElementById('userAvatar').textContent = userAvatar;
-                    const userNameEl = document.getElementById('userNamePersons');
-                    if (userNameEl) userNameEl.textContent = userName;
-                    const userRoleEl = document.getElementById('userRolePersons');
-                    if (userRoleEl) userRoleEl.textContent = this.currentUser.role === 'admin' ? 'Yönetici' : this.currentUser.role === 'superadmin' ? 'Süper Yönetici' : 'Kullanıcı';
+                    document.getElementById('userAvatar').textContent = userName.charAt(0).toUpperCase();
+                    document.getElementById('userName').textContent = userName;
+                    document.getElementById('userRole').textContent = this.currentUser.role === 'admin' ? 'Yönetici' : this.currentUser.role === 'superadmin' ? 'Süper Yönetici' : 'Kullanıcı';
                 }
             }
             async loadPersons() { /* ... */ }
