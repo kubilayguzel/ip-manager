@@ -58,7 +58,7 @@
         .user-info { display: flex; flex-direction: column; }
         .user-name { font-weight: 600; color: #333; }
         .user-role { font-size: 0.8em; color: #666; }
-        .logout-btn { background: #ff6b6b; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: font-size: 0.9em; transition: all 0.3s ease; }
+        .logout-btn { background: #ff6b6b; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 0.9em; transition: all 0.3s ease; }
         .logout-btn:hover { background: #ff5252; }
         .breadcrumb { display: flex; align-items: center; gap: 10px; color: #666; font-size: 1.1em; }
         .breadcrumb a { color: #1e3c72; text-decoration: none; }
@@ -81,7 +81,7 @@
         .form-input.error-field { border-color: #ff6b6b; }
         .error-message { color: #ff6b6b; font-size: 0.85em; margin-top: 5px; display: none; }
         .file-upload-area { border: 2px dashed #e1e8ed; border-radius: 10px; padding: 30px; text-align: center; cursor: pointer; transition: all 0.3s ease; }
-        .file-upload-area:hover { border-color: #1e3c72; background: #f8f9fa; }
+        .file-upload-area:hover { border-color: #1e3c72; background: #f0f4f8; }
         .file-list { margin-top: 15px; }
         .file-item { display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start; padding: 10px; background: #f8f9fa; border-radius: 8px; margin-bottom: 10px; }
         .file-item > span { font-weight: 500; color: #333; margin-bottom: 5px; }
@@ -120,7 +120,7 @@
         .transaction-toggle-btn { position: absolute; left: 0; top: 10px; background: #e9ecef; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 1em; font-weight: bold; line-height: 20px; text-align: center; cursor: pointer; transition: background 0.2s ease, transform 0.2s ease; }
         .transaction-toggle-btn:hover { background: #d0d0d0; }
         .transaction-toggle-btn.expanded { transform: rotate(45deg); }
-        .child-transactions { margin-left: 20px; padding-left: 15px; border-left: 2px solid #1e3c72; display: none; }
+        .child-transactions { margin-left: 20px; padding: 15px; border-left: 2px solid #1e3c72; display: none; }
         .child-transactions.show { display: block; }
         .transaction-actions { display: flex; gap: 5px; }
         .transaction-action-btn { padding: 4px 8px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.75em; transition: all 0.3s ease; }
@@ -165,7 +165,12 @@
 
     <div class="page-wrapper">
         <header class="top-header">
-            <div class="user-section">
+            <div class="breadcrumb">
+                <a href="portfolio.html">Portföy</a>
+                <span>&gt;</span>
+                <span>Belge İndeksleme</span>
+            </div>
+             <div class="user-section">
                 <div class="user-avatar" id="userAvatar">?</div>
                 <div class="user-info">
                     <div class="user-name" id="userName">Yükleniyor...</div>
@@ -179,7 +184,7 @@
             <div class="page-header-section">
                 <h1 class="page-title">Belge İndeksleme</h1>
                 <p class="page-subtitle">Mevcut fikri mülkiyet kayıtlarına belge ekleyin ve indeksleyin.</p>
-            </section>
+            </div>
     
             <div class="form-container">
                 <div class="notification-message success" id="formSuccessMessage" style="display: none;"><span>✅</span><span id="formSuccessText">Belgeler başarıyla indekslendi!</span></div>
@@ -207,7 +212,16 @@
     
                     <div class="form-section transaction-history-indexing-section" id="indexingTransactionHistorySection" style="display: none;">
                         <h2 class="section-title"><span class="section-icon">📜</span>4. Kayıt Geçmişi</h2>
-                        <div class="indexing-transaction-history" id="indexingTransactionHistory"><p style="text-align: center; color: #666;">İşlem geçmişi yükleniyor...</p></div>
+                        <div class="form-group">
+                            <label class="form-label" for="parentTransactionSelect">İlgili Üst İşlem Seçin (Opsiyonel)</label>
+                            <select id="parentTransactionSelect" class="form-select">
+                                <option value="">Yok (Ana Belge)</option>
+                            </select>
+                            <p class="help-text">Yüklediğiniz belgeler, seçtiğiniz üst işlem altında alt işlem olarak ilişkilendirilecektir.</p>
+                        </div>
+                        <div class="indexing-transaction-history" id="indexingTransactionHistory">
+                            <p style="text-align: center; color: #666;">İşlem geçmişi yükleniyor...</p>
+                        </div>
                     </div>
     
                     <div class="form-actions">
@@ -255,8 +269,9 @@
                         this.currentUser = authService.getCurrentUser();
                         this.updateUserInfo();
                         this.initializeEventListeners();
-                        await this.loadRecords();
+                        await this.loadRecords(); // allRecords'u yükler
                         this.populateStatusOptions();
+                        // this.renderSearchResults(this.allRecords); // Bu satırı kaldırdık
                     } else {
                         window.location.href = 'index.html';
                     }
@@ -304,13 +319,32 @@
             populateStatusOptions() {
                 const statusSelect = document.getElementById('updateRecordStatus');
                 statusSelect.innerHTML = '<option value="">Değiştirmeyin</option>';
-                const allStatuses = [
+                const statusTranslations = { 
+                    'application': 'Başvuru',
+                    'pending': 'Beklemede',
+                    'approved': 'Onaylandı',
+                    'rejected': 'Reddedildi',
+                    'expired': 'Süresi Doldu',
+                    'published': 'Yayınlandı',
+                    'partial_refusal': 'Kısmi Ret',
+                    'refused': 'Ret',
+                    'opposition_received': 'İtiraz Geldi',
+                    'opposition_filed': 'İtiraz Edildi',
+                    'registered': 'Tescilli',
+                    'not_renewed': 'Yenilenmedi',
+                    'invalid_void': 'Geçersiz/Hükümsüz'
+                };
+                const allStatuses = [ 
                     'application', 'pending', 'approved', 'rejected', 'expired',
                     'published', 'partial_refusal', 'refused', 'opposition_received',
                     'opposition_filed', 'registered', 'not_renewed', 'invalid_void'
                 ];
+
                 allStatuses.forEach(status => {
-                    statusSelect.innerHTML += `<option value="${status}">${status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</option>`;
+                    const option = document.createElement('option');
+                    option.value = status;
+                    option.textContent = statusTranslations[status] || status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                    statusSelect.appendChild(option);
                 });
             }
 
@@ -318,7 +352,7 @@
                 const result = await ipRecordsService.getRecords();
                 if (result.success) {
                     this.allRecords = result.data;
-                    this.renderSearchResults(this.allRecords); // İlk başta tüm kayıtları göster
+                    // this.renderSearchResults(this.allRecords); // İlk başta tüm kayıtları gösterme kaldırıldı
                 } else {
                     this.showNotification('Kayıtlar yüklenemedi: ' + result.error, 'error');
                 }
@@ -371,20 +405,20 @@
 
                 document.getElementById('selectedRecordDisplay').value = `${this.selectedRecord.title} (${this.selectedRecord.applicationNumber || 'Numara Yok'})`;
                 
-                // Seçim yapıldığında ilgili bölümleri görünür yap
                 document.getElementById('documentUploadSection').style.display = 'block';
                 document.getElementById('recordUpdateSection').style.display = 'block';
                 document.getElementById('indexingTransactionHistorySection').style.display = 'block';
                 
-                // Hata mesajını gizle
                 document.getElementById('recordSelectError').style.display = 'none';
 
-                // Dosya listesini temizle ve transaction geçmişini yükle
                 this.uploadedFiles = [];
                 this.updateFileList();
+                
+                // Parent transaction seçeneklerini doldur
+                this.populateParentTransactionSelect(this.selectedRecord.transactions);
                 this.renderTransactionHistory(this.selectedRecord.id, this.selectedRecord.transactions, this.selectedRecord.files);
 
-                this.toggleIndexButton(); // Buton durumunu kontrol et
+                this.toggleIndexButton();
             }
             
             showNotification(message, type = 'info') {
@@ -559,17 +593,22 @@
 
                 this.toggleLoading(true);
 
+                const selectedParentTransactionId = document.getElementById('parentTransactionSelect').value || null;
+
+                // Dosyaları, parentTransactionId bilgisi ile birlikte updates objesine ekle
+                const filesToUpdate = this.uploadedFiles.map(file => ({
+                    id: file.id,
+                    name: file.name,
+                    type: file.type,
+                    content: file.content,
+                    uploadedAt: file.uploadedAt,
+                    documentDesignation: file.documentDesignation,
+                    subDesignation: file.subDesignation || null,
+                    parentTransactionId: selectedParentTransactionId // Seçilen parent ID'yi ata
+                }));
+
                 const updates = {
-                    files: this.uploadedFiles.map(file => ({
-                        id: file.id,
-                        name: file.name,
-                        type: file.type,
-                        content: file.content,
-                        uploadedAt: file.uploadedAt,
-                        documentDesignation: file.documentDesignation,
-                        subDesignation: file.subDesignation || null,
-                        parentTransactionId: null // Belge indekslemede parent transaction her zaman null, child'lar için set edilecek
-                    })),
+                    files: filesToUpdate, // Güncellenmiş files dizisini ata
                     status: document.getElementById('updateRecordStatus').value || this.selectedRecord.status,
                     notes: document.getElementById('updateRecordNotes').value.trim() || null
                 };
@@ -579,7 +618,7 @@
                     if (result.success) {
                         this.showNotification('Belgeler başarıyla indekslendi ve kayıt güncellendi!', 'success');
                         this.resetForm(); // Formu temizle
-                        await this.loadRecords(); // Kayıtları yeniden yükle
+                        await this.loadRecords(); // Kayıtları yeniden yükle (güncel transaction'larla birlikte)
                     } else {
                         throw new Error(result.error);
                     }
@@ -603,6 +642,11 @@
                 document.getElementById('updateRecordStatus').value = '';
                 document.getElementById('updateRecordNotes').value = '';
                 document.getElementById('recordSelectError').style.display = 'none';
+                // Parent transaction select'i sıfırla
+                const parentTxSelect = document.getElementById('parentTransactionSelect');
+                if (parentTxSelect) {
+                    parentTxSelect.innerHTML = '<option value="">Yok (Ana Belge)</option>';
+                }
                 this.toggleIndexButton();
                 this.showNotification('Form temizlendi.', 'info');
             }
@@ -667,7 +711,7 @@
                                 <div class="transaction-node-content">
                                     <div class="transaction-info">
                                         <div class="transaction-description">${tx.description || tx.type}</div> 
-                                        <div class="transaction-meta">${new Date(tx.timestamp).toLocaleString('tr-TR')} by ${tx.userEmail}${documentLinkHtml}</div>
+                                        <div class="transaction-meta">${new Date(tx.timestamp).toLocaleDateString('tr-TR')} by ${tx.userEmail}${documentLinkHtml}</div>
                                     </div>
                                     <div class="transaction-actions">
                                         </div>
