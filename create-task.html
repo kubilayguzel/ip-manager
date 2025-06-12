@@ -380,19 +380,19 @@
                     'Menşe Memleket Belgesi',
                     'Bölünme',
                     'Vazgeçme',
-                    'Tanınmışlık Tespiti', // Bu da buraya dahil edilebilir, basit bir form
+                    'Tanınmışlık Tespiti', 
                     '3.Kişi Görüşü',
-                    'Madrid Başvurusu Ücret Ödeme', // Basit bir form
+                    'Madrid Başvurusu Ücret Ödeme', 
                     'Muvaffakat Sunumu',
-                    'Kullanım İspatı Sunma',
-                    'İtiraza Ek Belge',
-                    'Eşya Sınırlandırma'
+                    'Eşya Sınırlandırma' 
                 ];
                 // Transaction odaklı özel tipler (ilgilil transaction'ları listeleyecek olanlar)
                 const transactionSpecificTasks = [
                     'İtiraza Karşı Görüş (YIDD)',
                     'İtiraza Karşı Görüş (Markalar)',
-                    'İtirazı Geri Çekme'
+                    'İtirazı Geri Çekme',
+                    'Kullanım İspatı Sunma', 
+                    'İtiraza Ek Belge'
                 ];
 
                 if (transactionLikeTasks.includes(taskType)) {
@@ -568,8 +568,11 @@
                 if (this.selectedIpRecord.type === 'trademark' && this.selectedIpRecord.trademarkImage && this.selectedIpRecord.trademarkImage.content) {
                     imageHtml = `<img src="${this.selectedIpRecord.trademarkImage.content}" alt="Marka Görseli" style="width: 40px; height: 40px; object-fit: contain; margin-right: 10px; border-radius: 4px; border: 1px solid #ddd;">`;
                 }
-                display.innerHTML = `${imageHtml}<div><p><b>Seçilen Varlık:</b> ${this.selectedIpRecord.title}</p><p><small>Mevcut Sahip: ${this.selectedIpRecord.owners.map(o=>o.name).join(', ')}</small></p></div>`;
-                display.style.display = 'flex';
+                if (display) { // Null kontrolü eklendi
+                    display.innerHTML = `${imageHtml}<div><p><b>Seçilen Varlık:</b> ${this.selectedIpRecord.title}</p><p><small>Mevcut Sahip: ${this.selectedIpRecord.owners.map(o=>o.name).join(', ')}</small></p></div>`;
+                    display.style.display = 'flex';
+                }
+
                 document.getElementById('portfolioSearchResults').innerHTML = ''; // Sonuçları temizle
                 document.getElementById('portfolioSearchInput').value = ''; // Arama kutusunu temizle
                 this.checkFormCompleteness();
@@ -580,21 +583,32 @@
                     'İtiraza Karşı Görüş (YIDD)',
                     'İtiraza Karşı Görüş (Markalar)',
                     'İtirazı Geri Çekme',
-                    'Kullanım İspatı Sunma', // Bunu da buraya dahil ettim
-                    'İtiraza Ek Belge' // Bunu da buraya dahil ettim
+                    'Kullanım İspatı Sunma',
+                    'İtiraza Ek Belge'
                 ];
                 if (transactionSpecificTasks.includes(specificTaskType) && this.selectedIpRecord.transactions) {
                     this.populateRelatedTransactions(specificTaskType);
                 } else {
-                    document.getElementById('relatedTransactionSelect').innerHTML = '<option value="">Uygun İşlem Yok</option>';
-                    document.getElementById('relatedTransactionSelect').disabled = true;
-                    document.getElementById('relatedTransactionSection').style.display = 'none';
+                    const relatedTransactionSelect = document.getElementById('relatedTransactionSelect');
+                    const relatedTransactionSection = document.getElementById('relatedTransactionSection');
+                    if (relatedTransactionSelect && relatedTransactionSection) { // Null kontrolü eklendi
+                        relatedTransactionSelect.innerHTML = '<option value="">Uygun İşlem Yok</option>';
+                        relatedTransactionSelect.disabled = true;
+                        relatedTransactionSection.style.display = 'none';
+                    }
                 }
             }
 
             populateRelatedTransactions(specificTaskType) {
                 const selectElement = document.getElementById('relatedTransactionSelect');
                 const section = document.getElementById('relatedTransactionSection');
+                
+                if (!selectElement || !section) { // Null kontrolü eklendi
+                    // Eğer elementler henüz DOM'da yoksa (form render edilmediyse) veya başka bir hata varsa
+                    console.warn('relatedTransactionSelect veya relatedTransactionSection elementi bulunamadı. Form tipinin doğru yüklendiğinden emin olun.');
+                    return;
+                }
+
                 selectElement.innerHTML = '<option value="">İlgili İşlem Seçin</option>';
                 selectElement.disabled = true;
                 section.style.display = 'block';
@@ -605,23 +619,24 @@
                 }
 
                 let filteredTransactions = [];
-                const allTransactions = this.selectedIpRecord.transactions.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp)); // En son tarihli olan en üstte
+                // transaction'ları tarihe göre sırala (en yeni en üstte)
+                const allTransactions = this.selectedIpRecord.transactions.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp)); 
 
                 if (specificTaskType === 'İtirazı Geri Çekme' || specificTaskType === 'İtiraza Ek Belge') {
                     filteredTransactions = allTransactions.filter(tx => 
                         tx.description && (
                             tx.description.includes('Yayına İtiraz') || 
-                            tx.description.includes('Karara İtiraz') || 
-                            tx.description.includes('İtiraz')
-                        )
+                            tx.description.includes('Karara İtiraz') ||
+                            tx.description.includes('İtiraz') // Daha genel bir kapsayıcılık için
+                        ) && (tx.type === "Document Indexed" || tx.type === "Document Sub-Indexed") // Sadece belge indeksleme transaction'ları
                     );
                 } else if (specificTaskType === 'İtiraza Karşı Görüş (YIDD)') {
                     filteredTransactions = allTransactions.filter(tx => 
-                        tx.description && (tx.description.includes('Karara İtiraz'))
+                        tx.description && tx.description.includes('Karara İtiraz') && (tx.type === "Document Indexed" || tx.type === "Document Sub-Indexed")
                     );
                 } else if (specificTaskType === 'İtiraza Karşı Görüş (Markalar)' || specificTaskType === 'Kullanım İspatı Sunma') {
                     filteredTransactions = allTransactions.filter(tx => 
-                        tx.description && (tx.description.includes('Yayına İtiraz'))
+                        tx.description && tx.description.includes('Yayına İtiraz') && (tx.type === "Document Indexed" || tx.type === "Document Sub-Indexed")
                     );
                 }
 
@@ -750,14 +765,14 @@
                     '3.Kişi Görüşü',
                     'Madrid Başvurusu Ücret Ödeme',
                     'Muvaffakat Sunumu',
-                    'Kullanım İspatı Sunma',
-                    'İtiraza Ek Belge',
                     'Eşya Sınırlandırma'
                 ];
                 const transactionSpecificTasks = [
                     'İtiraza Karşı Görüş (YIDD)',
                     'İtiraza Karşı Görüş (Markalar)',
-                    'İtirazı Geri Çekme'
+                    'İtirazı Geri Çekme',
+                    'Kullanım İspatı Sunma',
+                    'İtiraza Ek Belge'
                 ];
 
                 let isComplete = false;
