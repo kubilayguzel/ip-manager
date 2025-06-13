@@ -126,7 +126,7 @@
                         <select id="statusFilter" class="filter-select"></select>
                     </div>
                     <div class="filter-group">
-                        <button class="btn-primary" id="createTaskBtn">+ Yeni İş Oluştur</button>
+                        <a href="create-task.html" class="btn-primary" id="createTaskBtn">+ Yeni İş Oluştur</a>
                         <button class="btn-secondary" id="assignSelectedBtn" disabled>Seçilenleri Ata</button>
                     </div>
                 </div>
@@ -144,7 +144,7 @@
                             </tr>
                         </thead>
                         <tbody id="tasksTableBody">
-                            </tbody>
+                        </tbody>
                     </table>
                      <div id="noTasksMessage" class="no-tasks-message" style="display: none;">
                         <p>Gösterilecek görev bulunamadı.</p>
@@ -251,7 +251,6 @@
                 this.allTasks = [];
                 this.allUsers = [];
                 this.allIpRecords = [];
-                this.allPersons = [];
                 this.currentEditTask = null;
             }
 
@@ -282,16 +281,15 @@
             }
 
             async loadInitialData() {
-                const [usersResult, tasksResult, ipRecordsResult, personsResult] = await Promise.all([
+                const [usersResult, tasksResult, ipRecordsResult] = await Promise.all([
                     taskService.getAllUsers(), 
                     taskService.getAllTasks(),
-                    ipRecordsService.getRecords(),
-                    personsService.getPersons()
+                    ipRecordsService.getRecords()
                 ]);
                 if (usersResult.success) this.allUsers = usersResult.data;
                 if (tasksResult.success) this.allTasks = tasksResult.data;
                 if (ipRecordsResult.success) this.allIpRecords = ipRecordsResult.data;
-                if (personsResult.success) this.allPersons = personsResult.data;
+                
                 this.populateFilters();
                 this.renderTasks();
             }
@@ -341,7 +339,6 @@
                         const closeBtn = modal.querySelector('.close-modal-btn');
                         if (closeBtn) closeBtn.addEventListener('click', () => this.closeModal(modalId));
                         
-                        // İptal butonları için genel bir seçici
                         const cancelBtn = modal.querySelector('#cancelAssignBtn, #cancelEditBtn');
                         if (cancelBtn) cancelBtn.addEventListener('click', () => this.closeModal(modalId));
                     }
@@ -415,9 +412,7 @@
                 this.handleSelectionChange();
             }
 
-            editTask(taskId) { 
-                this.showEditTaskModal(taskId);
-            }
+            editTask(taskId) { this.showEditTaskModal(taskId); }
 
             async deleteTask(taskId) {
                 if (confirm('Bu görevi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.')) {
@@ -532,7 +527,7 @@
                 this.handleSelectionChange();
             }
 
-            handleSelectionChange() {
+            handleSelectionChange() { 
                 const assignBtn = document.getElementById('assignSelectedBtn');
                 const selectAllCheckbox = document.getElementById('selectAllCheckbox');
                 if(!assignBtn || !selectAllCheckbox) return;
