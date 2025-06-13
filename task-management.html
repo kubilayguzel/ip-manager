@@ -74,15 +74,7 @@
 
     <div class="page-wrapper">
         <header class="top-header">
-            <div class="user-section">
-                <div class="user-avatar" id="userAvatar">?</div>
-                <div class="user-info">
-                    <div class="user-name" id="userName">Yükleniyor...</div>
-                    <div class="user-role" id="userRole">Kullanıcı</div>
-                </div>
-                <button class="logout-btn" id="logoutBtn">Çıkış</button>
-            </div>
-        </header>
+            </header>
 
         <main class="main-container">
             </main>
@@ -91,11 +83,11 @@
     <div id="viewTaskDetailModal" class="modal">
         <div class="modal-content-lg">
             <span class="close-modal-btn">&times;</span>
-            <h3 class="modal-title" id="modalViewTaskTitle">İş Detayı</h3>
+            <h3 class="modal-title">İş Detayı</h3>
             <div class="modal-body-content" id="viewTaskDetailBody"></div>
         </div>
     </div>
-    
+
     <div id="editTaskModal" class="modal">
         <div class="modal-content-lg">
             <span class="close-modal-btn">&times;</span>
@@ -301,7 +293,16 @@
                     const ipRecord = this.allIpRecords.find(r => r.id === task.relatedIpRecordId);
                     if (ipRecord) ipRecordText = `${ipRecord.title || ipRecord.applicationNumber || 'Kayıt'}`;
                 }
-                modalBody.innerHTML = `<div class="modal-detail-grid">...</div>`; // Gerekli HTML buraya eklenebilir
+                modalBody.innerHTML = `
+                    <div class="modal-detail-grid">
+                        <div class="modal-detail-item" style="grid-column: 1 / -1;"><div class="modal-detail-label">İş Başlığı</div><div class="modal-detail-value">${task.title || '-'}</div></div>
+                        <div class="modal-detail-item" style="grid-column: 1 / -1;"><div class="modal-detail-label">Açıklama</div><div class="modal-detail-value long-text">${task.description || '-'}</div></div>
+                        <div class="modal-detail-item"><div class="modal-detail-label">İş Türü</div><div class="modal-detail-value">${mainType.charAt(0).toUpperCase() + mainType.slice(1)} - ${specificType}</div></div>
+                        <div class="modal-detail-item"><div class="modal-detail-label">Öncelik</div><div class="modal-detail-value">${priorityMap[task.priority] || task.priority || '-'}</div></div>
+                        <div class="modal-detail-item"><div class="modal-detail-label">Atanan Kişi</div><div class="modal-detail-value">${task.assignedTo_email || '-'}</div></div>
+                        <div class="modal-detail-item"><div class="modal-detail-label">Bitiş Tarihi</div><div class="modal-detail-value">${task.dueDate ? new Date(task.dueDate).toLocaleDateString('tr-TR') : '-'}</div></div>
+                        <div class="modal-detail-item" style="grid-column: 1 / -1;"><div class="modal-detail-label">İlgili Fikri Mülkiyet Kaydı</div><div class="modal-detail-value">${ipRecordText}</div></div>
+                    </div>`;
             }
 
             showEditTaskModal(taskId) {
