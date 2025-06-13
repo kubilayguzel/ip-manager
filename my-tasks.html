@@ -424,49 +424,114 @@
             renderTasks(filter = 'all') {
                 const tableBody = document.getElementById('tasksTableBody');
                 const noTasksMessage = document.getElementById('noTasksMessage');
-                tableBody.innerHTML = '';
+                tableBody.innerHTML = ''; // Tablo içeriğini temizle
+                
                 const filteredTasks = this.tasks.filter(task => filter === 'all' || task.status === filter);
+                
                 if (filteredTasks.length === 0) {
                     noTasksMessage.style.display = 'block';
                     return;
                 }
                 noTasksMessage.style.display = 'none'; 
+
                 const priorityMap = { high: 'Yüksek', medium: 'Orta', low: 'Düşük' };
                 const statusMap = { open: 'Açık', in_progress: 'Devam Ediyor', completed: 'Tamamlandı', pending_review: 'Gözden Geçiriliyor' };
+                
                 filteredTasks.forEach(task => {
                     const row = document.createElement('tr');
+
+                    // Prioriy cell
+                    const priorityCell = document.createElement('td');
+                    const prioritySpan = document.createElement('span');
+                    prioritySpan.className = `priority-${task.priority}`;
+                    prioritySpan.textContent = priorityMap[task.priority] || 'Normal';
+                    priorityCell.appendChild(prioritySpan);
+                    row.appendChild(priorityCell);
+
+                    // Title cell
+                    const titleCell = document.createElement('td');
+                    titleCell.textContent = task.title;
+                    row.appendChild(titleCell);
+
+                    // Related IP Record cell
+                    const ipRecordCell = document.createElement('td');
                     const relatedIpRecordTitle = task.relatedIpRecordTitle || '-'; 
                     const relatedIpRecordId = task.relatedIpRecordId || '';
-                    row.innerHTML = `
-                        <td><span class="priority-${task.priority}">${priorityMap[task.priority] || 'Normal'}</span></td>
-                        <td>${task.title}</td>
-                        <td><a href="#" class="ip-record-link" data-ip-record-id="${relatedIpRecordId}">${relatedIpRecordTitle}</a></td> 
-                        <td>${task.dueDate ? new Date(task.dueDate).toLocaleDateString() : '-'}</td>
-                        <td><span class="status-badge status-${task.status}">${statusMap[task.status] || task.status}</span></td>
-                        <td>
-                            <button class="action-btn view-btn" data-id="${task.id}">Görüntüle</button>
-                            <button class="action-btn edit-btn" data-id="${task.id}">Güncelle</button>
-                            <button class="action-btn delete-btn" data-id="${task.id}">Sil</button>
-                            <button class="action-btn complete-btn" data-id="${task.id}" data-ip-record-id="${task.relatedIpRecordId}" ${task.status === 'completed' ? 'disabled' : ''}>İşi Bitir</button> 
-                        </td>
-                    `;
-                    row.querySelector('.view-btn').addEventListener('click', () => this.viewTaskDetailsModal(task.id));
-                    row.querySelector('.edit-btn').addEventListener('click', () => this.editTask(task.id));
-                    row.querySelector('.delete-btn').addEventListener('click', () => this.deleteTask(task.id));
-                    // complete-btn için olay dinleyicisi eklenmesi:
-                    const completeBtn = row.querySelector('.complete-btn'); // complete-btn'i seçiyoruz
-                    if (completeBtn) { // Eğer buton varsa (disabled değilse)
-                        completeBtn.addEventListener('click', (e) => { // Tıklama olayını dinliyoruz
-                            console.log('İşi Bitir butonuna tıklandı!'); // Konsola mesaj yazdır
-                            const taskId = e.currentTarget.dataset.id;
-                            const ipRecordId = e.currentTarget.dataset.ipRecordId;
-                            this.showCompleteTaskModal(taskId, ipRecordId); // Modalı açan fonksiyonu çağırıyoruz
+                    if (relatedIpRecordId) {
+                        const ipRecordLink = document.createElement('a');
+                        ipRecordLink.href = '#'; // Linkin sayfayı yenilemesini engellemek için
+                        ipRecordLink.className = 'ip-record-link';
+                        ipRecordLink.dataset.ipRecordId = relatedIpRecordId;
+                        ipRecordLink.textContent = relatedIpRecordTitle;
+                        ipRecordLink.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            this.showIpRecordDetailModal(relatedIpRecordId);
                         });
+                        ipRecordCell.appendChild(ipRecordLink);
+                    } else {
+                        ipRecordCell.textContent = relatedIpRecordTitle;
                     }
-                    const ipRecordLink = row.querySelector('.ip-record-link');
-                    if (ipRecordLink && relatedIpRecordId) {
-                        ipRecordLink.addEventListener('click', (e) => { e.preventDefault(); this.showIpRecordDetailModal(relatedIpRecordId); });
+                    row.appendChild(ipRecordCell);
+
+                    // Due Date cell
+                    const dueDateCell = document.createElement('td');
+                    dueDateCell.textContent = task.dueDate ? new Date(task.dueDate).toLocaleDateString() : '-';
+                    row.appendChild(dueDateCell);
+
+                    // Status cell
+                    const statusCell = document.createElement('td');
+                    const statusSpan = document.createElement('span');
+                    statusSpan.className = `status-badge status-${task.status}`;
+                    statusSpan.textContent = statusMap[task.status] || task.status;
+                    statusCell.appendChild(statusSpan);
+                    row.appendChild(statusCell);
+
+                    // Actions cell
+                    const actionsCell = document.createElement('td');
+                    const actionButtonsDiv = document.createElement('div');
+                    actionButtonsDiv.className = 'action-buttons';
+
+                    const viewBtn = document.createElement('button');
+                    viewBtn.className = 'action-btn view-btn';
+                    viewBtn.dataset.id = task.id;
+                    viewBtn.textContent = 'Görüntüle';
+                    viewBtn.addEventListener('click', () => this.viewTaskDetailsModal(task.id));
+                    actionButtonsDiv.appendChild(viewBtn);
+
+                    const editBtn = document.createElement('button');
+                    editBtn.className = 'action-btn edit-btn';
+                    editBtn.dataset.id = task.id;
+                    editBtn.textContent = 'Güncelle';
+                    editBtn.addEventListener('click', () => this.editTask(task.id));
+                    actionButtonsDiv.appendChild(editBtn);
+
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'action-btn delete-btn';
+                    deleteBtn.dataset.id = task.id;
+                    deleteBtn.textContent = 'Sil';
+                    deleteBtn.addEventListener('click', () => this.deleteTask(task.id));
+                    actionButtonsDiv.appendChild(deleteBtn);
+
+                    const completeBtn = document.createElement('button');
+                    completeBtn.className = 'action-btn complete-btn';
+                    completeBtn.dataset.id = task.id;
+                    completeBtn.dataset.ipRecordId = task.relatedIpRecordId;
+                    completeBtn.textContent = 'İşi Bitir';
+                    if (task.status === 'completed') {
+                        completeBtn.disabled = true;
                     }
+                    // BURASI ÖNEMLİ: complete-btn için olay dinleyicisi
+                    completeBtn.addEventListener('click', (e) => {
+                        console.log('İşi Bitir butonuna tıklandı! (Yeni DOM yöntemi ile)'); // Konsola mesaj yazdır
+                        const taskId = e.currentTarget.dataset.id;
+                        const ipRecordId = e.currentTarget.dataset.ipRecordId;
+                        this.showCompleteTaskModal(taskId, ipRecordId);
+                    });
+                    actionButtonsDiv.appendChild(completeBtn);
+
+                    actionsCell.appendChild(actionButtonsDiv);
+                    row.appendChild(actionsCell);
+
                     tableBody.appendChild(row);
                 });
             }
@@ -674,7 +739,9 @@
                 document.getElementById('completeTaskRelatedIpRecordId').value = relatedIpRecordId;
                 this.uploadedCompletionFiles = [];
                 document.getElementById('completeTaskFileList').innerHTML = '';
-                document.getElementById('completeTaskModal').classList.add('show'); // Modal'ı açan kısım eklendi.
+                // Hata ayıklama için buraya da bir console.log ekleyelim
+                console.log('showCompleteTaskModal fonksiyonu çağrıldı. Modalı göstermeye çalışılıyor.'); 
+                document.getElementById('completeTaskModal').classList.add('show'); // Modal'ı açan kısım
             }
 
             // NEW & REFACTORED: Central function to complete a task
