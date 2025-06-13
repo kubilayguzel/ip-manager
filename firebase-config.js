@@ -384,10 +384,7 @@ export const taskService = {
                 createdBy_email: user.email,
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
-                // İşlem ID'si başlangıçta atanırsa, silme sırasında kolayca bulunabilir.
-                // Bu örnekte, 'create-task.html' zaten bir transaction oluşturup portföy kaydına ekliyor.
-                // Eğer burada da bir taskTransactionId tutulacaksa, bu alan eklenmelidir.
-                // Örneğin: taskTransactionId: transactionResult.transaction.transactionId // eğer createTask sonrası eklenirse
+                // transactionIdForDeletion alanı artık create-task.html tarafından eklenecek
                 history: [{
                     timestamp: new Date().toISOString(),
                     userId: user.uid,
@@ -402,22 +399,31 @@ export const taskService = {
         }
     },
     
+    // updateTask metodunu task-detail.html'den gelen güncellemeleri işleyebilmesi için genişletiyoruz.
     async updateTask(taskId, updates) {
         if (!isFirebaseAvailable) return { success: false, error: "Firebase not connected." };
         try {
             const taskRef = doc(db, "tasks", taskId);
-            // Add a history entry for the update
             const user = authService.getCurrentUser();
+            
+            // Eğer bir status güncellemesi varsa özel aksiyon mesajı oluştur
+            let actionMessage = `İş güncellendi.`;
+            if (updates.status) {
+                actionMessage = `İş durumu "${updates.status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}" olarak güncellendi.`;
+            } else {
+                // Diğer güncellemeler için daha spesifik bir mesaj oluşturabiliriz (isteğe bağlı)
+                const changedFields = Object.keys(updates).filter(key => key !== 'updatedAt' && key !== 'history');
+                if (changedFields.length > 0) {
+                    actionMessage = `İş güncellendi. Değişen alanlar: ${changedFields.join(', ')}.`;
+                }
+            }
+
             const updateAction = {
                 timestamp: new Date().toISOString(),
                 userId: user.uid,
                 userEmail: user.email,
-                action: `İş güncellendi. Değişen alanlar: ${Object.keys(updates).join(', ')}`
+                action: actionMessage
             };
-            // Eğer güncelleme bir durum değişikliğini içeriyorsa, action mesajını özelleştir
-            if (updates.status) {
-                updateAction.action = `İş durumu "${updates.status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}" olarak güncellendi.`;
-            }
 
             await updateDoc(taskRef, {
                 ...updates,
@@ -457,10 +463,9 @@ export const taskService = {
         }
     },
 
-    // YENİ METOT: Belirli bir işi ID'sine göre getir
+    // Belirli bir işi ID'sine göre getir
     async getTaskById(taskId) {
         if (!isFirebaseAvailable) {
-            // LocalStorage modunda bu işlevi taklit edelim (sadece demo amaçlı)
             const allTasks = JSON.parse(localStorage.getItem('tasks') || '[]');
             const task = allTasks.find(t => t.id === taskId);
             return { success: !!task, data: task };
@@ -478,14 +483,12 @@ export const taskService = {
         }
     },
 
-    // YENİ METOT: Görev silme ve ilişkili transaction'ı silme
+    // Görev silme ve ilişkili transaction'ı silme
     async deleteTask(taskId) {
         if (!isFirebaseAvailable) {
-            // LocalStorage modunda bu işlevi taklit edelim
             let tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
             const taskToDelete = tasks.find(t => t.id === taskId);
-            if (taskToDelete && taskToDelete.relatedIpRecordId && taskToDelete.transactionIdForDeletion) { // transactionIdForDeletion alanı eklenecek
-                // Portföy kaydından transaction'ı sil
+            if (taskToDelete && taskToDelete.relatedIpRecordId && taskToDelete.transactionIdForDeletion) {
                 await ipRecordsService.deleteTransaction(taskToDelete.relatedIpRecordId, taskToDelete.transactionIdForDeletion);
             }
             tasks = tasks.filter(task => task.id !== taskId);
@@ -493,17 +496,13 @@ export const taskService = {
             return { success: true };
         }
         try {
-            // Firestore'dan görevi al, ilişkili transaction ID'sini bul
             const taskDoc = await getDoc(doc(db, 'tasks', taskId));
             if (taskDoc.exists()) {
                 const taskData = taskDoc.data();
-                // Eğer görevin ilişkili bir IP kaydı ve silinecek bir transaction ID'si varsa, önce onu sil
                 if (taskData.relatedIpRecordId && taskData.transactionIdForDeletion) {
                     await ipRecordsService.deleteTransaction(taskData.relatedIpRecordId, taskData.transactionIdForDeletion);
                 }
             }
-            
-            // Sonra görevi sil
             await deleteDoc(doc(db, 'tasks', taskId));
             return { success: true };
         } catch (error) {
@@ -575,7 +574,7 @@ export async function createDemoData() {
                     name: 'logo_ornek.jpg',
                     type: 'image/jpeg',
                     size: 1024,
-                    content: 'data:image/jpeg;base64,iVBORw0KGgoAAAANSUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='
+                    content: 'data:image/jpeg;base64,iVBORw0KGgoAAAANSUlFTkSuQmCC'
                 },
             }
         ];
