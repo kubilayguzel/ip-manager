@@ -574,13 +574,15 @@
                     period: 'all'
                 };
                 // Metot bağlamalarını constructor içinde yapın
+                // Metodlar aşağıda tanımlandığı için burada güvenle bind edebiliriz.
                 this.viewRecord = this.viewRecord.bind(this);
                 this.editRecord = this.editRecord.bind(this);
                 this.deleteRecord = this.deleteRecord.bind(this);
-                this.handleSort = this.handleSort.bind(this); // Bu da bağlı olmalı
-                this.init();
+                this.handleSort = this.handleSort.bind(this);
+                this.init(); // init constructor'ın sonunda çağrılmalı
             }
 
+            // Metotlar burada tanımlanmalı, constructor'dan sonra
             init() {
                 auth.onAuthStateChanged(async (user) => {
                     if (user) {
@@ -964,6 +966,7 @@
             }
         }
 
+        // Modülün global scope'ta tanımlanması
         window.portfolio = new PortfolioModule();
 
         // YENİ AKORDİYON MENÜ İÇİN JAVASCRIPT
