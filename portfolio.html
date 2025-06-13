@@ -578,7 +578,6 @@
                 // Bu şekilde 'this' bağlamı otomatik olarak constructor'a bağlanır
                 // ve bind() kullanımına gerek kalmaz.
                 this.viewRecord = (recordId) => {
-                    // ... (metodun içeriği)
                     const record = this.records.find(r => r.id === recordId);
                     if (!record) return;
 
@@ -657,12 +656,10 @@
                 };
 
                 this.editRecord = (recordId) => {
-                    // ... (metodun içeriği)
                     window.location.href = `data-entry.html?recordId=${recordId}`;
                 };
 
                 this.deleteRecord = async (recordId) => {
-                    // ... (metodun içeriği)
                     if (confirm('Kaydı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.')) {
                         try {
                             const result = await ipRecordsService.deleteRecord(recordId);
@@ -680,14 +677,12 @@
                 };
 
                 this.handleSort = (event) => { 
-                    // ... (metodun içeriği)
                     const column = event.currentTarget.dataset.sort; 
                     if (this.sortColumn === column) { this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc'; } else { this.sortColumn = column; this.sortDirection = 'asc'; }
                     this.sortRecords();
                     this.renderTable();
                 };
 
-                // init constructor'ın sonunda çağrılmalı
                 this.init(); 
             }
 
@@ -908,15 +903,15 @@
                     <td>${record.applicationDate ? new Date(record.applicationDate).toLocaleDateString('tr-TR') : '-'}</td>
                     <td>${(record.owners || []).map(o => o.name).join(', ') || '-'}</td>
                     <td><div class="action-buttons"><button class="table-action-btn btn-view" data-id="${record.id}" title="Görüntüle">👁️</button><button class="table-action-btn btn-edit" data-id="${record.id}" title="Düzenle">✏️</button><button class="table-action-btn btn-delete" data-id="${record.id}" title="Sil">🗑️</button></div></td>`;
-                row.querySelector('.btn-view').addEventListener('click', this.viewRecord); // `this.viewRecord` doğrudan arrow function olduğu için bind() gereksiz.
-                row.querySelector('.btn-edit').addEventListener('click', this.editRecord);   // `this.editRecord` doğrudan arrow function olduğu için bind() gereksiz.
-                row.querySelector('.btn-delete').addEventListener('click', this.deleteRecord); // `this.deleteRecord` doğrudan arrow function olduğu için bind() gereksiz.
+                
+                // Buradaki olay dinleyicilerini güncelliyoruz:
+                row.querySelector('.btn-view').addEventListener('click', () => this.viewRecord(record.id));
+                row.querySelector('.btn-edit').addEventListener('click', () => this.editRecord(record.id));
+                row.querySelector('.btn-delete').addEventListener('click', () => this.deleteRecord(record.id));
+                
                 return row;
             }
             
-            // viewRecord, editRecord, deleteRecord ve handleSort metotları yukarıdaki constructor içinde arrow function olarak tanımlanmıştır.
-            // Bu nedenle bu metotların dışarıda tekrar tanımlanmasına gerek yoktur.
-
             renderTransactionHistory(recordId, transactions, recordFiles) {
                 const historyContainer = document.getElementById('transactionHistory');
                 historyContainer.innerHTML = '';
