@@ -14,7 +14,7 @@ import {
     getDocs,
     doc,
     updateDoc,
-    deleteDoc,
+    deleteDoc, // deleteDoc eklendi
     query,
     orderBy,
     where,
@@ -384,6 +384,10 @@ export const taskService = {
                 createdBy_email: user.email,
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
+                // İşlem ID'si başlangıçta atanırsa, silme sırasında kolayca bulunabilir.
+                // Bu örnekte, 'create-task.html' zaten bir transaction oluşturup portföy kaydına ekliyor.
+                // Eğer burada da bir taskTransactionId tutulacaksa, bu alan eklenmelidir.
+                // Örneğin: taskTransactionId: transactionResult.transaction.transactionId // eğer createTask sonrası eklenirse
                 history: [{
                     timestamp: new Date().toISOString(),
                     userId: user.uid,
@@ -474,6 +478,40 @@ export const taskService = {
         }
     },
 
+    // YENİ METOT: Görev silme ve ilişkili transaction'ı silme
+    async deleteTask(taskId) {
+        if (!isFirebaseAvailable) {
+            // LocalStorage modunda bu işlevi taklit edelim
+            let tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+            const taskToDelete = tasks.find(t => t.id === taskId);
+            if (taskToDelete && taskToDelete.relatedIpRecordId && taskToDelete.transactionIdForDeletion) { // transactionIdForDeletion alanı eklenecek
+                // Portföy kaydından transaction'ı sil
+                await ipRecordsService.deleteTransaction(taskToDelete.relatedIpRecordId, taskToDelete.transactionIdForDeletion);
+            }
+            tasks = tasks.filter(task => task.id !== taskId);
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+            return { success: true };
+        }
+        try {
+            // Firestore'dan görevi al, ilişkili transaction ID'sini bul
+            const taskDoc = await getDoc(doc(db, 'tasks', taskId));
+            if (taskDoc.exists()) {
+                const taskData = taskDoc.data();
+                // Eğer görevin ilişkili bir IP kaydı ve silinecek bir transaction ID'si varsa, önce onu sil
+                if (taskData.relatedIpRecordId && taskData.transactionIdForDeletion) {
+                    await ipRecordsService.deleteTransaction(taskData.relatedIpRecordId, taskData.transactionIdForDeletion);
+                }
+            }
+            
+            // Sonra görevi sil
+            await deleteDoc(doc(db, 'tasks', taskId));
+            return { success: true };
+        } catch (error) {
+            console.error("Error deleting task:", error);
+            return { success: false, error: error.message };
+        }
+    },
+
     async getAllUsers() {
         if (!isFirebaseAvailable) return { success: true, data: [] };
         try {
@@ -537,7 +575,7 @@ export async function createDemoData() {
                     name: 'logo_ornek.jpg',
                     type: 'image/jpeg',
                     size: 1024,
-                    content: 'data:image/jpeg;base64,iVBORw0KGgoAAAANSUjEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='
+                    content: 'data:image/jpeg;base64,iVBORw0KGgoAAAANSUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='
                 },
             }
         ];
