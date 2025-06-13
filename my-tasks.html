@@ -841,5 +841,32 @@
             }
         });
     </script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const completeButtons = document.querySelectorAll('.complete-btn');
+    const modal = document.querySelector('.modal');
+
+    completeButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            modal.classList.add('show');
+        });
+    });
+
+    const closeModalBtn = document.querySelector('.close-modal-btn');
+    if (closeModalBtn) {
+        closeModalBtn.addEventListener('click', () => {
+            modal.classList.remove('show');
+        });
+    }
+
+    window.addEventListener('click', (event) => {
+        if (event.target === modal) {
+            modal.classList.remove('show');
+        }
+    });
+});
+</script>
+
 </body>
 </html>
