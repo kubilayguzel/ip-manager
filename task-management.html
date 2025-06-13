@@ -79,6 +79,15 @@
         .form-input, .form-select, .form-textarea { width: 100%; padding: 12px 15px; border: 2px solid #e1e8ed; border-radius: 10px; font-size: 1em; transition: all 0.3s ease; background: white; }
         .form-input:focus, .form-select:focus, .form-textarea:focus { outline: none; border-color: #1e3c72; box-shadow: 0 0 0 3px rgba(30, 60, 114, 0.1); }
         .form-actions { display: flex; justify-content: flex-end; gap: 15px; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e1e8ed; }
+
+        /* İşlemler butonu stili */
+        .table-action-btn { background: #6c757d; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; transition: all 0.3s ease; }
+        .table-action-btn.view-btn { background-color: #17a2b8; }
+        .table-action-btn.view-btn:hover { background-color: #138496; }
+        .table-action-btn.edit-btn { background-color: #ffc107; color: #212529; }
+        .table-action-btn.edit-btn:hover { background-color: #e0a800; }
+        .table-action-btn.delete-btn { background-color: #dc3545; }
+        .table-action-btn.delete-btn:hover { background-color: #c82333; }
     </style>
 </head>
 <body>
@@ -156,13 +165,12 @@
                         </div>
                     </div>
                 </div>
-
-                </div>
+            </div>
         </main>
     </div>
 
     <script type="module">
-        import { authService, taskService, ipRecordsService, auth } from './firebase-config.js';
+        import { authService, taskService, ipRecordsService, personsService, auth } from './firebase-config.js'; // personsService eklendi
 
         class TaskManagementModule {
             constructor() {
@@ -170,6 +178,7 @@
                 this.allTasks = [];
                 this.allUsers = [];
                 this.allIpRecords = [];
+                this.allPersons = []; // Yeni eklendi
             }
 
             async init() {
@@ -185,13 +194,6 @@
                 
                 await this.loadInitialData();
                 this.setupEventListeners();
-
-                // task-management.html'den gelen action=create URL parametresi create-task.html'e yönlendirilmeli
-                // Bu kısım burada gereksiz hale geldiği için kaldırıldı.
-                // const urlParams = new URLSearchParams(window.location.search);
-                // if (urlParams.get('action') === 'create') {
-                //     setTimeout(() => this.showTaskForm(), 100);
-                // }
             }
 
             updateUserInfo() {
@@ -206,70 +208,29 @@
             }
 
             async loadInitialData() {
-                const [usersResult, tasksResult, ipRecordsResult] = await Promise.all([
+                const [usersResult, tasksResult, ipRecordsResult, personsResult] = await Promise.all([ // personsResult eklendi
                     taskService.getAllUsers(), 
                     taskService.getAllTasks(),
-                    ipRecordsService.getRecords()
+                    ipRecordsService.getRecords(),
+                    personsService.getPersons() // Kişileri de yükle
                 ]);
 
                 if (usersResult.success) this.allUsers = usersResult.data;
                 if (tasksResult.success) this.allTasks = tasksResult.data;
                 if (ipRecordsResult.success) this.allIpRecords = ipRecordsResult.data;
+                if (personsResult.success) this.allPersons = personsResult.data; // Yeni eklendi
                 
                 this.populateFilters();
                 this.renderTasks();
             }
             
             setupEventListeners() {
-                // Yeni İş Oluştur butonu create-task.html'e yönlendirilmeli
                 document.getElementById('createTaskBtn').addEventListener('click', () => {window.location.href = 'create-task.html';});
-                
-                // Formla ilgili butonlar kaldırıldı veya taşındı
-                // document.getElementById('cancelTaskFormBtn').addEventListener('click', () => this.showTaskList());
-                // document.getElementById('taskForm').addEventListener('submit', (e) => this.handleFormSubmit(e));
                 
                 document.getElementById('userFilter').addEventListener('change', () => this.renderTasks());
                 document.getElementById('statusFilter').addEventListener('change', () => this.renderTasks());
                 document.getElementById('logoutBtn').addEventListener('click', () => authService.signOut());
             }
-
-            // showTaskList ve showTaskForm metodları task-detail.html'e taşındığı için kaldırıldı.
-            // showTaskList() {
-            //     document.getElementById('taskListContainer').style.display = 'block';
-            //     document.getElementById('taskFormContainer').style.display = 'none';
-            // }
-
-            // showTaskForm(taskId = null) {
-            //     document.getElementById('taskListContainer').style.display = 'none';
-            //     document.getElementById('taskFormContainer').style.display = 'block';
-                
-            //     const form = document.getElementById('taskForm');
-            //     form.reset();
-            //     document.getElementById('taskId').value = '';
-
-            //     const assignedToSelect = document.getElementById('assignedTo');
-            //     assignedToSelect.innerHTML = '';
-            //     this.allUsers.forEach(u => assignedToSelect.innerHTML += `<option value="${u.id}">${u.displayName || u.email}</option>`);
-
-            //     const ipRecordSelect = document.getElementById('relatedIpRecord');
-            //     ipRecordSelect.innerHTML = '<option value="">Yok</option>';
-            //     this.allIpRecords.forEach(r => ipRecordSelect.innerHTML += `<option value="${r.id}">${r.title}</option>`);
-
-            //     if (taskId) {
-            //         const task = this.allTasks.find(t => t.id === taskId);
-            //         document.getElementById('formTitle').textContent = 'İşi Düzenle';
-            //         document.getElementById('taskId').value = task.id;
-            //         document.getElementById('taskTitle').value = task.title;
-            //         document.getElementById('taskDescription').value = task.description;
-            //         document.getElementById('taskType').value = task.taskType;
-            //         document.getElementById('taskPriority').value = task.priority;
-            //         document.getElementById('assignedTo').value = task.assignedTo_uid;
-            //         document.getElementById('taskDueDate').value = task.dueDate || '';
-            //         document.getElementById('relatedIpRecord').value = task.relatedIpRecordId || '';
-            //     } else {
-            //         document.getElementById('formTitle').textContent = 'Yeni İş Oluştur';
-            //     }
-            // }
             
             renderTasks() {
                 const tableBody = document.getElementById('tasksTableBody');
@@ -289,12 +250,19 @@
                     row.innerHTML = `
                         <td>${task.title}</td>
                         <td>${task.assignedTo_email}</td>
-                        <td>${task.relatedIpRecordTitle || '-'}</td>
+                        <td><a href="portfolio.html?recordId=${task.relatedIpRecordId}">${task.relatedIpRecordTitle || '-'}</a></td>
                         <td>${task.status}</td>
                         <td>
-                            <button onclick="window.taskManagementModule.viewTaskDetails('${task.id}')">Düzenle</button>
+                            <button class="table-action-btn view-btn" data-id="${task.id}">Görüntüle</button>
+                            <button class="table-action-btn edit-btn" data-id="${task.id}">Düzenle</button>
+                            <button class="table-action-btn delete-btn" data-id="${task.id}">Sil</button>
                         </td>
                     `;
+                    // Olay dinleyicilerini ekle
+                    row.querySelector('.view-btn').addEventListener('click', () => this.viewTaskDetailsModal(task.id));
+                    row.querySelector('.edit-btn').addEventListener('click', () => this.editTask(task.id));
+                    row.querySelector('.delete-btn').addEventListener('click', () => this.deleteTask(task.id));
+
                     tableBody.appendChild(row);
                 });
             }
@@ -314,47 +282,151 @@
                     <option value="completed">Tamamlandı</option>`;
             }
 
-            // handleFormSubmit metodu task-detail.html'e taşındığı için kaldırıldı.
-            // async handleFormSubmit(e) {
-            //     e.preventDefault();
-            //     const taskId = document.getElementById('taskId').value;
-            //     const assignedToUser = this.allUsers.find(u => u.id === document.getElementById('assignedTo').value);
-            //     const relatedIpRecord = this.allIpRecords.find(r => r.id === document.getElementById('relatedIpRecord').value);
-
-            //     const taskData = {
-            //         title: document.getElementById('taskTitle').value,
-            //         description: document.getElementById('taskDescription').value,
-            //         taskType: document.getElementById('taskType').value,
-            //         priority: document.getElementById('taskPriority').value,
-            //         assignedTo_uid: assignedToUser.id,
-            //         assignedTo_email: assignedToUser.email,
-            //         dueDate: document.getElementById('taskDueDate').value || null,
-            //         relatedIpRecordId: relatedIpRecord ? relatedIpRecord.id : null,
-            //         relatedIpRecordTitle: relatedIpRecord ? relatedIpRecord.title : null,
-            //     };
-                
-            //     let result;
-            //     if (taskId) {
-            //         result = await taskService.updateTask(taskId, taskData);
-            //     } else {
-            //         taskData.status = 'open';
-            //         taskData.createdBy_uid = this.currentUser.uid;
-            //         taskData.createdBy_email = this.currentUser.email;
-            //         result = await taskService.createTask(taskData);
-            //     }
-
-            //     if (result.success) {
-            //         alert(`İş başarıyla ${taskId ? 'güncellendi' : 'oluşturuldu'}!`);
-            //         this.showTaskList();
-            //         await this.loadInitialData();
-            //     } else {
-            //         alert('Hata: ' + result.error);
-            //     }
-            // }
-
-            // Yeni İş Yönetimi sayfasındaki 'Düzenle' butonu için yönlendirme metodu
-            viewTaskDetails(taskId) {
+            editTask(taskId) {
+                // İş Detayları sayfasına yönlendir (düzenlenebilir modda)
                 window.location.href = `task-detail.html?taskId=${taskId}`;
+            }
+
+            async deleteTask(taskId) {
+                if (confirm('Bu görevi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.')) {
+                    try {
+                        const result = await taskService.deleteTask(taskId);
+                        if (result.success) {
+                            alert('Görev başarıyla silindi.');
+                            await this.loadInitialData(); // Listeyi yeniden yükle
+                        } else {
+                            throw new Error(result.error);
+                        }
+                    } catch (error) {
+                        console.error('Görev silinirken hata:', error);
+                        alert('Görev silinirken bir hata oluştu: ' + error.message);
+                    }
+                }
+            }
+            
+            // İş Yönetimi sayfasında modal göstermek için yeni fonksiyon
+            async viewTaskDetailsModal(taskId) {
+                const task = this.allTasks.find(t => t.id === taskId);
+                if (!task) {
+                    alert('Görev bulunamadı.');
+                    return;
+                }
+                
+                // task-detail.html'deki modal yapısını ve stilini tekrar kullanıyoruz.
+                // Bu kod bloğu, task-detail.html'den kopyalanmıştır.
+                const modal = document.getElementById('viewTaskDetailModal');
+                if (!modal) {
+                    // Eğer modal bu sayfada yoksa, dinamik olarak ekle veya hata ver.
+                    // Şimdilik sadece uyarı verelim.
+                    alert('İş Detayları Modalı bu sayfada tanımlı değil. Lütfen task-detail.html içeriğini kopyalayın.');
+                    return;
+                }
+
+                // Modal başlığını ayarla
+                document.getElementById('modalViewTaskTitle').textContent = `İş Detayı: ${task.title || '-'}`;
+
+                // Detayları doldur
+                document.getElementById('modalViewTaskTitleValue').textContent = task.title || '-';
+                document.getElementById('modalViewTaskDescriptionValue').textContent = task.description || '-';
+                
+                const taskTypeParts = task.taskType ? task.taskType.split('_') : [];
+                const mainType = taskTypeParts[0] || '';
+                const specificType = taskTypeParts.slice(1).join(' ').replace(/\b\w/g, l => l.toUpperCase());
+                document.getElementById('modalViewTaskTypeValue').textContent = `${mainType.charAt(0).toUpperCase() + mainType.slice(1)} - ${specificType}` || '-';
+
+                const priorityMap = { high: 'Yüksek', medium: 'Orta', low: 'Düşük' };
+                document.getElementById('modalViewTaskPriorityValue').textContent = priorityMap[task.priority] || task.priority || '-';
+                
+                document.getElementById('modalViewAssignedToValue').textContent = task.assignedTo_email || '-';
+                document.getElementById('modalViewTaskDueDateValue').textContent = task.dueDate ? new Date(task.dueDate).toLocaleDateString('tr-TR') : '-';
+
+                let relatedIpRecordText = '-';
+                if (task.relatedIpRecordId) {
+                    const ipRecord = this.allIpRecords.find(r => r.id === task.relatedIpRecordId);
+                    if (ipRecord) {
+                        relatedIpRecordText = `${ipRecord.title || ipRecord.applicationNumber || 'Kayıt'}`;
+                    } else {
+                        relatedIpRecordText = task.relatedIpRecordTitle || 'Kayıt Bulunamadı';
+                    }
+                }
+                document.getElementById('modalViewRelatedIpRecordValue').textContent = relatedIpRecordText;
+
+                const modalViewRelatedPartyGroup = document.getElementById('modalViewRelatedPartyGroup');
+                const modalViewRelatedPartyLabel = document.getElementById('modalViewRelatedPartyLabel');
+                const modalViewRelatedPartyValue = document.getElementById('modalViewRelatedPartyValue');
+                if (task.details?.relatedParty?.id) {
+                    const person = this.allPersons.find(p => p.id === task.details.relatedParty.id);
+                    if (person) {
+                        const taskType = task.taskType.split('_')[1];
+                        const labelMap = { 'devir': 'Devralan Taraf', 'lisans': 'Lisans Alan Taraf', 'rehin': 'Rehin Alan Taraf', 'birleşme': 'Birleşilen Taraf', 'veraset': 'Mirasçı', 'teminat': 'Rehin Alan Taraf' };
+                        modalViewRelatedPartyLabel.textContent = labelMap[taskType] || 'İlgili Taraf';
+                        modalViewRelatedPartyValue.textContent = person.name;
+                        modalViewRelatedPartyGroup.style.display = 'block';
+                    } else {
+                        modalViewRelatedPartyGroup.style.display = 'none';
+                    }
+                } else {
+                    modalViewRelatedPartyGroup.style.display = 'none';
+                }
+
+                const modalViewRelatedTransactionGroup = document.getElementById('modalViewRelatedTransactionGroup');
+                const modalViewRelatedTransactionLabel = document.getElementById('modalViewRelatedTransactionLabel');
+                const modalViewRelatedTransactionValue = document.getElementById('modalViewRelatedTransactionValue');
+                if (task.details?.relatedTransactionId && task.relatedIpRecordId) {
+                    const ipRecord = this.allIpRecords.find(r => r.id === task.relatedIpRecordId);
+                    if (ipRecord && ipRecord.transactions) {
+                        const transaction = ipRecord.transactions.find(tx => tx.transactionId === task.details.relatedTransactionId);
+                        if (transaction) {
+                            modalViewRelatedTransactionLabel.textContent = 'İlgili Üst İşlem';
+                            modalViewRelatedTransactionValue.textContent = transaction.description || transaction.type;
+                            modalViewRelatedTransactionGroup.style.display = 'block';
+                        } else {
+                            modalViewRelatedTransactionGroup.style.display = 'none';
+                        }
+                    } else {
+                        modalViewRelatedTransactionGroup.style.display = 'none';
+                    }
+                } else {
+                    modalViewRelatedTransactionGroup.style.display = 'none';
+                }
+
+                const modalViewTaskHistory = document.getElementById('modalViewTaskHistory');
+                modalViewTaskHistory.innerHTML = '';
+                if (!task.history || task.history.length === 0) {
+                    modalViewTaskHistory.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">İşlem geçmişi bulunmuyor.</p>';
+                } else {
+                    const sortedHistory = [...task.history].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                    sortedHistory.forEach(entry => {
+                        const item = document.createElement('div');
+                        item.className = 'task-history-item';
+                        item.innerHTML = `
+                            <div class="task-history-item-content">
+                                <div class="task-history-info">
+                                    <div class="task-history-description">${entry.action}</div>
+                                    <div class="task-history-meta">${new Date(entry.timestamp).toLocaleString('tr-TR')} by ${entry.userEmail}</div>
+                                </div>
+                            </div>
+                        `;
+                        modalViewTaskHistory.appendChild(item);
+                    });
+                }
+                
+                modal.classList.add('show');
+
+                // Modal kapatma olay dinleyicisi de bu sayfada olmalı
+                // Buraya eklemek yerine, task-detail.html'deki modal yapısını
+                // bu sayfaya da kopyalayıp onunla birlikte JS'ini de kopyalamak daha mantıklı.
+                // Bu kısım, `task-detail.html` içeriğinin `my-tasks.html`'e kopyalandığı varsayılarak yazılmıştır.
+                document.getElementById('closeViewTaskDetailModal').addEventListener('click', () => this.closeModal('viewTaskDetailModal'));
+                document.getElementById('viewTaskDetailModal').addEventListener('click', (e) => {
+                    if (e.target.id === 'viewTaskDetailModal') {
+                        this.closeModal('viewTaskDetailModal');
+                    }
+                });
+            }
+
+            closeModal(modalId) {
+                document.getElementById(modalId).classList.remove('show');
             }
         }
 
