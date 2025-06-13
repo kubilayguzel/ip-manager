@@ -900,7 +900,7 @@
                 return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
             }
 
-            // --- Portföy Detayı Modalı İçin Fonksiyonlar ---
+            // --- Portföy Detayı Modalı İçin Fonksiyonlar (MyTasksModule içinde) ---
             async showIpRecordDetailModal(recordId) {
                 const record = this.allIpRecords.find(r => r.id === recordId);
                 if (!record) {
@@ -962,7 +962,7 @@
                     modalContentHtml += renderField('Nice Sınıfı', record.niceClass);
                     modalContentHtml += renderField('Yenileme Tarihi', formatDate(record.renewalDate));
                     modalContentHtml += renderField('Bülten Tarihi', formatDate(record.bulletinDate));
-                    modalContentHtml += renderField('Bülten Numarası', record.bulletinNumber);
+                    modalContentHtml += renderField('Bülten Numarası', record.bulletenNumber); // 'bulletenNumber' olarak düzeltildi
                     modalContentHtml += renderField('Mal ve Hizmetler', record.goodsServices, true);
                 }
                 if (record.type === 'copyright') {
@@ -1055,17 +1055,17 @@
                         let documentLinkHtml = '';
                         if (tx.documentId && recordFiles) {
                             const relatedFile = recordFiles.find(file => file.id === tx.documentId);
-                            if (relatedFile) documentLinkHtml = ` | <a href="${relatedFile.content}" download="${relatedFile.name}" class="transaction-document-link">📄 Belge</a>`;
+                            if (relatedFile) documentLinkHtml = ` | <a href="${relatedFile.content}" download="${relatedFile.name}" class="task-history-document-link">📄 Belge</a>`;
                         }
                         html += `
-                            <div class="transaction-node" data-id="${tx.transactionId}">
+                            <div class="task-history-item" data-id="${tx.transactionId}">
                                 ${hasChildren ? `<button class="transaction-toggle-btn" data-target-id="${tx.transactionId}">${children.length > 0 ? '+' : ''}</button>` : ''}
-                                <div class="transaction-node-content">
-                                    <div class="transaction-info">
-                                        <div class="transaction-description">${tx.description || tx.type}</div> 
-                                        <div class="transaction-meta">${new Date(tx.timestamp).toLocaleDateString('tr-TR')} by ${tx.userEmail}${documentLinkHtml}</div>
+                                <div class="task-history-item-content">
+                                    <div class="task-history-info">
+                                        <div class="task-history-description">${tx.description || tx.type}</div> 
+                                        <div class="task-history-meta">${new Date(tx.timestamp).toLocaleDateString('tr-TR')} by ${tx.userEmail}${documentLinkHtml}</div>
                                     </div>
-                                    </div>
+                                </div>
                             </div>
                             ${hasChildren ? `<div class="child-transactions" id="children-of-${tx.transactionId}">${buildTreeHtml(children)}</div>` : ''}`;
                     });
