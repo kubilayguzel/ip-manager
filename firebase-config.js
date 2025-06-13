@@ -294,12 +294,15 @@ export const ipRecordsService = {
             const currentData = currentDoc.data();
             let newTransactions = [...(currentData.transactions || [])]; 
 
-            // Dosya ekleme mantığını güncellendi: sadece yeni dosyalar için transaction oluştur.
+            // Dokümanları güncelleme mantığı: Mevcut dokümanları koru ve yenilerini ekle.
+            // Eğer updates.files varsa, bu, formdan gelen güncellenmiş dosya listesidir.
+            // Bu liste, hem eski dokümanları hem de yeni yüklenenleri içerebilir.
+            // Sadece gerçekten yeni olan dokümanlar için transaction oluştur.
+            const existingFileIds = new Set((currentData.files || []).map(f => f.id));
             (updates.files || []).forEach(newFile => {
-                const isExistingFile = (currentData.files || []).some(oldFile => oldFile.id === newFile.id);
-                if (!isExistingFile) { 
+                if (!existingFileIds.has(newFile.id)) { 
                     const transactionType = newFile.indexingType || (newFile.parentTransactionId ? "Document Sub-Indexed" : "Document Indexed");
-                    const transactionDescription = newFile.indexingName || newFile.name; // indexingName veya dosya adı
+                    const transactionDescription = newFile.indexingName || newFile.name;
 
                     newTransactions.push({ 
                         transactionId: generateUUID(), 
@@ -317,12 +320,14 @@ export const ipRecordsService = {
                 }
             });
             
+            // `updates` objesindeki `files` anahtarını, formdan gelen tüm güncel dosyalar listesiyle değiştir.
+            // Bu, hem eski hem de yeni dosyaları içermelidir.
             const updatedFiles = updates.files !== undefined ? updates.files : currentData.files;
 
 
             await updateDoc(recordRef, { 
                 ...updates, 
-                files: updatedFiles, 
+                files: updatedFiles, // Güncellenmiş dosya listesini ata
                 updatedAt: timestamp, 
                 transactions: newTransactions 
             });
@@ -412,7 +417,7 @@ export const taskService = {
                 actionMessage = `İş durumu "${updates.status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}" olarak güncellendi.`;
             } else {
                 // Diğer güncellemeler için daha spesifik bir mesaj oluşturabiliriz (isteğe bağlı)
-                const changedFields = Object.keys(updates).filter(key => key !== 'updatedAt' && key !== 'history');
+                const changedFields = Object.keys(updates).filter(key => key !== 'updatedAt' && key !== 'history' && key !== 'files'); // files filtresi eklendi
                 if (changedFields.length > 0) {
                     actionMessage = `İş güncellendi. Değişen alanlar: ${changedFields.join(', ')}.`;
                 }
@@ -424,9 +429,21 @@ export const taskService = {
                 userEmail: user.email,
                 action: actionMessage
             };
+            
+            // Mevcut task dokümanını al
+            const currentTaskDoc = await getDoc(taskRef);
+            const currentTaskData = currentTaskDoc.data();
+
+            // Dosya güncellemelerini yönet: Mevcut dosyalara yeni dosyaları ekle
+            let updatedFilesArray = currentTaskData.files || [];
+            if (updates.files) { // Eğer updates objesinde files varsa, bu, yeni yüklenenler ve mevcutlardan filtrelenmiş halidir.
+                updatedFilesArray = updates.files; // task-detail'den gelen tam liste
+                delete updates.files; // updates objesinden files'ı kaldır, Firestore'a manuel olarak ekleyeceğiz
+            }
 
             await updateDoc(taskRef, {
                 ...updates,
+                files: updatedFilesArray, // Güncellenmiş dosya listesini ata
                 updatedAt: new Date().toISOString(),
                 history: arrayUnion(updateAction)
             });
@@ -486,11 +503,9 @@ export const taskService = {
     // Görev silme ve ilişkili transaction'ı silme
     async deleteTask(taskId) {
         if (!isFirebaseAvailable) {
-            // LocalStorage modunda bu işlevi taklit edelim
             let tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
             const taskToDelete = tasks.find(t => t.id === taskId);
-            if (taskToDelete && taskToDelete.relatedIpRecordId && taskToDelete.transactionIdForDeletion) { // transactionIdForDeletion alanı kontrol edildi
-                // Portföy kaydından transaction'ı sil
+            if (taskToDelete && taskToDelete.relatedIpRecordId && taskToDelete.transactionIdForDeletion) {
                 await ipRecordsService.deleteTransaction(taskToDelete.relatedIpRecordId, taskToDelete.transactionIdForDeletion);
             }
             tasks = tasks.filter(task => task.id !== taskId);
@@ -498,17 +513,13 @@ export const taskService = {
             return { success: true };
         }
         try {
-            // Firestore'dan görevi al, ilişkili transaction ID'sini bul
             const taskDoc = await getDoc(doc(db, 'tasks', taskId));
             if (taskDoc.exists()) {
                 const taskData = taskDoc.data();
-                // Eğer görevin ilişkili bir IP kaydı ve silinecek bir transaction ID'si varsa, önce onu sil
                 if (taskData.relatedIpRecordId && taskData.transactionIdForDeletion) {
                     await ipRecordsService.deleteTransaction(taskData.relatedIpRecordId, taskData.transactionIdForDeletion);
                 }
             }
-            
-            // Sonra görevi sil
             await deleteDoc(doc(db, 'tasks', taskId));
             return { success: true };
         } catch (error) {
