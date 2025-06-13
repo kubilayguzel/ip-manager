@@ -142,6 +142,7 @@
         .modal-body-content {
             padding: 10px 0;
         }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; padding-top: 15px; border-top: 1px solid #e1e8ed; }
 
         /* Ortak detay gridi stilini modal için de kullan */
         .modal-detail-grid {
@@ -215,7 +216,7 @@
             white-space: nowrap;
             margin-top: 4px;
         }
-    </style>
+</style>
 </head>
 <body>
 <aside class="sidebar">
@@ -341,8 +342,32 @@
 </div>
 </div>
 </div>
+
+<div id="editTaskModal" class="modal">
+    <div class="modal-content-lg">
+        <span class="close-modal-btn" id="closeEditTaskModal">&times;</span>
+        <h3 class="modal-title">İşi Düzenle</h3>
+        <form id="editTaskForm" onsubmit="return false;">
+            <input type="hidden" id="editTaskId">
+            <div class="modal-body-content">
+                <div class="modal-detail-grid">
+                    <div class="form-group" style="grid-column: 1 / -1;"><label class="form-label" for="modalEditTaskTitle">İş Başlığı</label><input type="text" id="modalEditTaskTitle" class="form-input"></div>
+                    <div class="form-group" style="grid-column: 1 / -1;"><label class="form-label" for="modalEditTaskDescription">Açıklama</label><textarea id="modalEditTaskDescription" class="form-textarea" rows="4"></textarea></div>
+                    <div class="form-group"><label class="form-label" for="modalEditTaskPriority">Öncelik</label><select id="modalEditTaskPriority" class="form-select"></select></div>
+                    <div class="form-group"><label class="form-label" for="modalEditAssignedTo">Atanan Kişi</label><select id="modalEditAssignedTo" class="form-select"></select></div>
+                    <div class="form-group" style="grid-column: 1 / -1;"><label class="form-label" for="modalEditTaskDueDate">Bitiş Tarihi</label><input type="date" id="modalEditTaskDueDate" class="form-input"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" id="cancelEditTaskBtn">İptal</button>
+                <button type="button" class="btn-primary" id="saveTaskChangesBtn">Değişiklikleri Kaydet</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script type="module">
-        import { authService, taskService, ipRecordsService, personsService, auth } from './firebase-config.js'; // personsService eklendi
+        import { authService, taskService, ipRecordsService, personsService, auth, generateUUID } from './firebase-config.js'; // personsService ve generateUUID eklendi
 
         class TaskManagementModule {
             constructor() {
@@ -350,7 +375,8 @@
                 this.allTasks = [];
                 this.allUsers = [];
                 this.allIpRecords = [];
-                this.allPersons = []; // Yeni eklendi
+                this.allPersons = [];
+                this.currentEditTask = null; // Düzenlenen görevi tutmak için
             }
 
             async init() {
@@ -380,17 +406,17 @@
             }
 
             async loadInitialData() {
-                const [usersResult, tasksResult, ipRecordsResult, personsResult] = await Promise.all([ // personsResult eklendi
+                const [usersResult, tasksResult, ipRecordsResult, personsResult] = await Promise.all([
                     taskService.getAllUsers(), 
                     taskService.getAllTasks(),
                     ipRecordsService.getRecords(),
-                    personsService.getPersons() // Kişileri de yükle
+                    personsService.getPersons()
                 ]);
 
                 if (usersResult.success) this.allUsers = usersResult.data;
                 if (tasksResult.success) this.allTasks = tasksResult.data;
                 if (ipRecordsResult.success) this.allIpRecords = ipRecordsResult.data;
-                if (personsResult.success) this.allPersons = personsResult.data; // Yeni eklendi
+                if (personsResult.success) this.allPersons = personsResult.data;
                 
                 this.populateFilters();
                 this.renderTasks();
@@ -406,10 +432,13 @@
                 // Modal kapatma olay dinleyicileri
                 document.getElementById('closeViewTaskDetailModal').addEventListener('click', () => this.closeModal('viewTaskDetailModal'));
                 document.getElementById('viewTaskDetailModal').addEventListener('click', (e) => {
-                    if (e.target.id === 'viewTaskDetailModal') { // Modal dışına tıklayınca kapat
-                        this.closeModal('viewTaskDetailModal');
-                    }
+                    if (e.target.id === 'viewTaskDetailModal') this.closeModal('viewTaskDetailModal');
                 });
+                
+                // Edit Modal Listeners
+                document.getElementById('closeEditTaskModal').addEventListener('click', () => this.closeModal('editTaskModal'));
+                document.getElementById('cancelEditTaskBtn').addEventListener('click', () => this.closeModal('editTaskModal'));
+                document.getElementById('saveTaskChangesBtn').addEventListener('click', () => this.saveTaskChanges());
             }
             
             renderTasks() {
@@ -440,7 +469,7 @@
                     `;
                     // Olay dinleyicilerini ekle
                     row.querySelector('.view-btn').addEventListener('click', () => this.viewTaskDetailsModal(task.id));
-                    row.querySelector('.edit-btn').addEventListener('click', () => this.editTask(task.id));
+                    row.querySelector('.edit-btn').addEventListener('click', () => this.showEditTaskModal(task.id)); // Yönlendirme yerine modalı aç
                     row.querySelector('.delete-btn').addEventListener('click', () => this.deleteTask(task.id));
 
                     tableBody.appendChild(row);
@@ -462,11 +491,6 @@
                     <option value="completed">Tamamlandı</option>`;
             }
 
-            editTask(taskId) {
-                // İş Detayları sayfasına yönlendir (düzenlenebilir modda)
-                window.location.href = `task-detail.html?taskId=${taskId}&mode=edit`;
-            }
-
             async deleteTask(taskId) {
                 if (confirm('Bu görevi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.')) {
                     try {
@@ -484,7 +508,6 @@
                 }
             }
             
-            // İş Yönetimi sayfasında modal göstermek için fonksiyon
             async viewTaskDetailsModal(taskId) {
                 const task = this.allTasks.find(t => t.id === taskId);
                 if (!task) {
@@ -492,9 +515,69 @@
                     return;
                 }
                 
-                // IP Kayıtları ve Kişiler verilerini modal doldurma fonksiyonuna geçiriyoruz.
                 this.populateModalTaskDetails(task, this.allIpRecords, this.allPersons);
                 document.getElementById('viewTaskDetailModal').classList.add('show');
+            }
+            
+            showEditTaskModal(taskId) {
+                const task = this.allTasks.find(t => t.id === taskId);
+                if (!task) { alert('Düzenlenecek görev bulunamadı.'); return; }
+                
+                this.currentEditTask = task;
+                
+                document.getElementById('editTaskId').value = task.id;
+                document.getElementById('modalEditTaskTitle').value = task.title || '';
+                document.getElementById('modalEditTaskDescription').value = task.description || '';
+                document.getElementById('modalEditTaskDueDate').value = task.dueDate || '';
+                
+                const prioritySelect = document.getElementById('modalEditTaskPriority');
+                prioritySelect.innerHTML = '';
+                const priorities = { low: 'Düşük', medium: 'Orta', high: 'Yüksek' };
+                for (const [key, value] of Object.entries(priorities)) {
+                    const option = document.createElement('option');
+                    option.value = key;
+                    option.textContent = value;
+                    if (key === task.priority) option.selected = true;
+                    prioritySelect.appendChild(option);
+                }
+                
+                const assignedToSelect = document.getElementById('modalEditAssignedTo');
+                assignedToSelect.innerHTML = '';
+                this.allUsers.forEach(user => {
+                    const option = document.createElement('option');
+                    option.value = user.id;
+                    option.textContent = user.displayName || user.email;
+                    if (user.id === task.assignedTo_uid) option.selected = true;
+                    assignedToSelect.appendChild(option);
+                });
+                
+                document.getElementById('editTaskModal').classList.add('show');
+            }
+
+            async saveTaskChanges() {
+                const taskId = document.getElementById('editTaskId').value;
+                const newAssignedToUid = document.getElementById('modalEditAssignedTo').value;
+                const newAssignedToUser = this.allUsers.find(u => u.id === newAssignedToUid);
+                
+                const updates = {
+                    title: document.getElementById('modalEditTaskTitle').value.trim(),
+                    description: document.getElementById('modalEditTaskDescription').value.trim(),
+                    priority: document.getElementById('modalEditTaskPriority').value,
+                    assignedTo_uid: newAssignedToUid,
+                    assignedTo_email: newAssignedToUser.email, // E-postayı da güncelle
+                    dueDate: document.getElementById('modalEditTaskDueDate').value,
+                };
+                
+                try {
+                    const result = await taskService.updateTask(taskId, updates);
+                    if (result.success) {
+                        alert('İş başarıyla güncellendi!');
+                        this.closeModal('editTaskModal');
+                        await this.loadInitialData();
+                    } else { throw new Error(result.error); }
+                } catch(error) {
+                    alert('İş güncellenirken bir hata oluştu: ' + error.message);
+                }
             }
 
             populateModalTaskDetails(task, ipRecords, persons) {
