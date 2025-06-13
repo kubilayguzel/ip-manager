@@ -165,26 +165,7 @@
     </div>
 
     <div id="viewTaskDetailModal" class="modal">
-        <div class="modal-content-lg">
-            <span class="close-modal-btn" id="closeViewTaskDetailModal">&times;</span>
-            <h3 class="modal-title" id="modalViewTaskTitle">İş Detayı</h3>
-            <div class="modal-body-content">
-                <div class="modal-detail-grid">
-                    <div class="modal-detail-item full-width"><div class="modal-detail-label">İş Başlığı</div><div class="modal-detail-value" id="modalViewTaskTitleValue"></div></div>
-                    <div class="modal-detail-item full-width"><div class="modal-detail-label">Açıklama</div><div class="modal-detail-value long-text" id="modalViewTaskDescriptionValue"></div></div>
-                    <div class="modal-detail-item"><div class="modal-detail-label">İş Türü</div><div class="modal-detail-value" id="modalViewTaskTypeValue"></div></div>
-                    <div class="modal-detail-item"><div class="modal-detail-label">Öncelik</div><div class="modal-detail-value" id="modalViewTaskPriorityValue"></div></div>
-                    <div class="modal-detail-item"><div class="modal-detail-label">Atanan Kişi</div><div class="modal-detail-value" id="modalViewAssignedToValue"></div></div>
-                    <div class="modal-detail-item"><div class="modal-detail-label">Bitiş Tarihi</div><div class="modal-detail-value" id="modalViewTaskDueDateValue"></div></div>
-                    <div class="modal-detail-item full-width"><div class="modal-detail-label">İlgili Fikri Mülkiyet Kaydı</div><div class="modal-detail-value" id="modalViewRelatedIpRecordValue"></div></div>
-                    <div class="modal-detail-item full-width" id="modalViewRelatedPartyGroup" style="display:none;"><div class="modal-detail-label" id="modalViewRelatedPartyLabel"></div><div class="modal-detail-value" id="modalViewRelatedPartyValue"></div></div>
-                    <div class="modal-detail-item full-width" id="modalViewRelatedTransactionGroup" style="display:none;"><div class="modal-detail-label" id="modalViewRelatedTransactionLabel"></div><div class="modal-detail-value" id="modalViewRelatedTransactionValue"></div></div>
-                    <h4 class="modal-detail-section-title">İşlem Geçmişi</h4>
-                    <div class="modal-detail-item full-width task-history" id="modalViewTaskHistory"><p style="text-align: center; color: #666;">İşlem geçmişi bulunmuyor.</p></div>
-                </div>
-            </div>
         </div>
-    </div>
 
     <div id="assignTaskModal" class="modal">
         <div class="modal-content">
@@ -260,12 +241,13 @@
                 document.getElementById('logoutBtn').addEventListener('click', () => authService.signOut());
                 document.getElementById('closeViewTaskDetailModal').addEventListener('click', () => this.closeModal('viewTaskDetailModal'));
                 
-                // New Listeners for Assignment
                 document.getElementById('assignSelectedBtn').addEventListener('click', () => this.showAssignModal());
                 document.getElementById('closeAssignModal').addEventListener('click', () => this.closeModal('assignTaskModal'));
                 document.getElementById('cancelAssignBtn').addEventListener('click', () => this.closeModal('assignTaskModal'));
                 document.getElementById('confirmAssignBtn').addEventListener('click', () => this.handleAssignment());
                 document.getElementById('selectAllCheckbox').addEventListener('click', (e) => this.handleSelectAll(e.target.checked));
+                
+                // Delegate listener for dynamic elements
                 document.getElementById('tasksTableBody').addEventListener('click', (e) => {
                     if (e.target.classList.contains('task-checkbox')) {
                         this.handleSelectionChange();
@@ -299,9 +281,11 @@
                             <button class="table-action-btn delete-btn" data-id="${task.id}">Sil</button>
                         </td>
                     `;
+                    // DÜZELTME: Olay dinleyicileri burada ekleniyor
                     row.querySelector('.view-btn').addEventListener('click', () => this.viewTaskDetailsModal(task.id));
                     row.querySelector('.edit-btn').addEventListener('click', () => this.editTask(task.id));
                     row.querySelector('.delete-btn').addEventListener('click', () => this.deleteTask(task.id));
+                    
                     tableBody.appendChild(row);
                 });
                 this.handleSelectionChange(); // Reset selection state
