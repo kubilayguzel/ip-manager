@@ -573,17 +573,18 @@
                     status: '',
                     period: 'all'
                 };
-                // Metot bağlamalarını constructor içinde yapın
-                // Metodlar aşağıda tanımlandığı için burada güvenle bind edebiliriz.
-                this.viewRecord = this.viewRecord.bind(this);
-                this.editRecord = this.editRecord.bind(this);
-                this.deleteRecord = this.deleteRecord.bind(this);
-                this.handleSort = this.handleSort.bind(this);
-                this.init(); // init constructor'ın sonunda çağrılmalı
+                // init constructor'ın sonunda çağrılmalı
+                this.init(); 
             }
 
             // Metotlar burada tanımlanmalı, constructor'dan sonra
             init() {
+                // Metot bağlamalarını burada yapın
+                this.viewRecord = this.viewRecord.bind(this);
+                this.editRecord = this.editRecord.bind(this);
+                this.deleteRecord = this.deleteRecord.bind(this);
+                this.handleSort = this.handleSort.bind(this);
+
                 auth.onAuthStateChanged(async (user) => {
                     if (user) {
                         this.currentUser = authService.getCurrentUser();
@@ -963,6 +964,120 @@
                 if (rootTransactions.length === 0) {
                     historyContainer.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Gösterilebilir işlem bulunmuyor.</p>';
                 }
+            }
+            
+            // Yeni eklenen veya düzenlenen metotlar (modal işlemleri, transaction düzenleme/silme)
+            openEditTransactionModal(recordId, transactionId) {
+                const record = this.records.find(r => r.id === recordId);
+                const transaction = record.transactions.find(tx => tx.transactionId === transactionId);
+
+                if (record && transaction) {
+                    document.getElementById('editTransactionRecordId').value = recordId;
+                    document.getElementById('editTransactionId').value = transactionId;
+                    document.getElementById('editTransactionDescription').value = transaction.description || transaction.type;
+                    document.getElementById('editTransactionModal').classList.add('show');
+                }
+            }
+
+            hideEditTransactionModal() {
+                document.getElementById('editTransactionModal').classList.remove('show');
+            }
+
+            async saveTransactionChanges() {
+                const recordId = document.getElementById('editTransactionRecordId').value;
+                const transactionId = document.getElementById('editTransactionId').value;
+                const newDescription = document.getElementById('editTransactionDescription').value;
+
+                try {
+                    const result = await ipRecordsService.updateTransaction(recordId, transactionId, { description: newDescription });
+                    if (result.success) {
+                        alert('İşlem başarıyla güncellendi!');
+                        this.hideEditTransactionModal();
+                        // Güncellenmiş veriyi almak için kayıtları yeniden yükle
+                        await this.loadRecords(); 
+                        // Detay modalı açıksa, transaction geçmişini de güncelle
+                        if (document.getElementById('detailModal').classList.contains('show')) {
+                            const record = this.records.find(r => r.id === recordId);
+                            this.renderTransactionHistory(record.id, record.transactions, record.files);
+                        }
+                    } else {
+                        alert('İşlem güncellenirken hata: ' + result.error);
+                    }
+                } catch (error) {
+                    console.error('İşlem güncelleme hatası:', error);
+                    alert('İşlem güncellenirken beklenmeyen bir hata oluştu.');
+                }
+            }
+
+            async deleteTransaction(recordId, transactionId) {
+                if (confirm('Bu işlemi silmek istediğinizden emin misiniz? Altındaki tüm bağlı işlemler de silinecektir.')) {
+                    try {
+                        const result = await ipRecordsService.deleteTransaction(recordId, transactionId);
+                        if (result.success) {
+                            alert('İşlem ve altındaki tüm bağlı işlemler başarıyla silindi.');
+                            // Güncellenmiş veriyi almak için kayıtları yeniden yükle
+                            await this.loadRecords();
+                            // Detay modalı açıksa, transaction geçmişini de güncelle
+                            if (document.getElementById('detailModal').classList.contains('show')) {
+                                const record = this.records.find(r => r.id === recordId);
+                                this.renderTransactionHistory(record.id, record.transactions, record.files);
+                            }
+                        } else {
+                            alert('İşlem silinirken hata: ' + result.error);
+                        }
+                    } catch (error) {
+                        console.error('İşlem silme hatası:', error);
+                        alert('İşlem silinirken beklenmeyen bir hata oluştu.');
+                    }
+                }
+            }
+
+            closeModal(modalId) {
+                document.getElementById(modalId).classList.remove('show');
+            }
+
+            exportData() {
+                if (this.filteredRecords.length === 0) {
+                    alert('Dışa aktarılacak kayıt bulunamadı.');
+                    return;
+                }
+
+                const headers = ["Tür", "Başlık", "Başvuru Numarası", "Durum", "Başvuru Tarihi", "Tescil Tarihi", "Hak Sahipleri", "Açıklama"];
+                const data = this.filteredRecords.map(record => {
+                    const owners = (record.owners || []).map(o => o.name).join(', ');
+                    const applicationDate = record.applicationDate ? new Date(record.applicationDate).toLocaleDateString('tr-TR') : '';
+                    const registrationDate = record.registrationDate ? new Date(record.registrationDate).toLocaleDateString('tr-TR') : '';
+                    return [
+                        record.type || '',
+                        `"${record.title}"` || '', // Başlık içinde virgül olabileceği için tırnak içine al
+                        record.applicationNumber || '',
+                        record.status || '',
+                        applicationDate,
+                        registrationDate,
+                        `"${owners}"` || '',
+                        `"${record.description || ''}"` // Açıklama içinde virgül olabileceği için tırnak içine al
+                    ];
+                });
+
+                let csvContent = "data:text/csv;charset=utf-8,\uFEFF" // UTF-8 BOM ekleme
+                csvContent += headers.join(';') + '\r\n'; // Başlıkları noktalı virgülle ayır
+                data.forEach(row => {
+                    csvContent += row.join(';') + '\r\n'; // Satırları noktalı virgülle ayır
+                });
+
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", "fikri_mulkiyet_portfoyu.csv");
+                document.body.appendChild(link); // Required for Firefox
+                link.click();
+                document.body.removeChild(link);
+            }
+
+            showEmptyState() {
+                document.getElementById('portfolioTable').style.display = 'none';
+                document.getElementById('pagination').style.display = 'none';
+                document.getElementById('noRecords').style.display = 'block';
             }
         }
 
