@@ -860,8 +860,13 @@
                                 indexingName: `İş Tamamlama Dokümanı: ${file.name}`
                             }));
 
+                            // ipRecordsService.updateRecord'a ikinci parametre olarak sadece eklenecek dosyaları göndermeliyiz,
+                            // var olanları almak için mevcut kaydı çekip birleştirmeliyiz.
+                            const currentIpRecord = this.allIpRecords.find(r => r.id === relatedIpRecordId);
+                            const updatedIpRecordFiles = (currentIpRecord?.files || []).concat(filesToUpload);
+
                             const ipRecordUpdateResult = await ipRecordsService.updateRecord(relatedIpRecordId, {
-                                files: filesToUpload // Bu, mevcut dosyalara ekleme yapacaktır
+                                files: updatedIpRecordFiles 
                             });
 
                             if (!ipRecordUpdateResult.success) {
