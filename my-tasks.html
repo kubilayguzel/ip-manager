@@ -176,7 +176,7 @@
             padding-bottom: 5px;
             border-bottom: 1px dashed #e1e8ed;
         }
-        /* İşlem Geçmişi için özel stil, indexing.html'den türetildi */
+        /* İşlem Geçmişi için özel stil */
         .task-history { /* task-detail.html'deki ile aynı */
             margin-top: 20px;
             padding-top: 20px;
@@ -479,7 +479,7 @@
             
             editTask(taskId) {
                 // İş Detayları sayfasına yönlendir (düzenlenebilir modda)
-                window.location.href = `task-detail.html?taskId=${taskId}`;
+                window.location.href = `task-detail.html?taskId=${taskId}&mode=edit`; // mode=edit parametresi eklendi
             }
 
             async deleteTask(taskId) {
