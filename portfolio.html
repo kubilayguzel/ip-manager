@@ -573,18 +573,127 @@
                     status: '',
                     period: 'all'
                 };
+                
+                // Metotları arrow function olarak tanımlayın
+                // Bu şekilde 'this' bağlamı otomatik olarak constructor'a bağlanır
+                // ve bind() kullanımına gerek kalmaz.
+                this.viewRecord = (recordId) => {
+                    // ... (metodun içeriği)
+                    const record = this.records.find(r => r.id === recordId);
+                    if (!record) return;
+
+                    const modal = document.getElementById('detailModal');
+                    document.getElementById('modalTitle').textContent = `Detay: ${record.title}`;
+                    
+                    const typeNames = { patent: 'Patent', trademark: 'Marka', copyright: 'Telif Hakkı', design: 'Tasarım' };
+                    const statusNames = { application: 'Başvuru', pending: 'Beklemede', approved: 'Onaylandı', rejected: 'Reddedildi', expired: 'Süresi Doldu', published: 'Yayınlandı', partial_refusal: 'Kısmi Ret', refused: 'Ret', opposition_received: 'İtiraz Geldi', opposition_filed: 'İtiraz Edildi', registered: 'Tescilli', not_renewed: 'Yenilenmedi', invalid_void: 'Geçersiz' };
+
+                    const formatDate = (dateString) => dateString ? new Date(dateString).toLocaleDateString('tr-TR') : '-';
+                    const renderField = (label, value) => value || value === 0 ? `<div class="detail-item"><div class="detail-label">${label}</div><div class="detail-value">${value}</div></div>` : '';
+                    const renderLongTextField = (label, value) => value ? `<div class="detail-item" style="grid-column: 1 / -1;"><div class="detail-label">${label}</div><div class="detail-value long-text">${value}</div></div>` : '';
+
+                    let modalContentHtml = `<div class="detail-grid">`;
+                    
+                    modalContentHtml += `<h4 class="detail-section-title">Genel Bilgiler</h4>`;
+                    modalContentHtml += renderField('Tür', `<span class="ip-type ${record.type}">${typeNames[record.type] || 'Bilinmiyor'}</span>`);
+                    modalContentHtml += renderField('Başlık', record.title);
+                    modalContentHtml += renderField('Durum', `<span class="status-badge ${record.status}">${statusNames[record.status] || record.status}</span>`);
+                    modalContentHtml += renderField('Başvuru Numarası', record.applicationNumber);
+                    modalContentHtml += renderField('Tescil Numarası', record.registrationNumber);
+                    modalContentHtml += renderField('Başvuru Tarihi', formatDate(record.applicationDate));
+                    modalContentHtml += renderField('Tescil Tarihi', formatDate(record.registrationDate));
+                    modalContentHtml += renderField('Hak Sahipleri', (record.owners || []).map(o => o.name).join(', '));
+                    if(this.currentUser && this.currentUser.role === 'superadmin') {
+                        modalContentHtml += renderField('Oluşturan Kullanıcı', record.userEmail);
+                    }
+
+                    if (record.type === 'patent') {
+                        modalContentHtml += `<h4 class="detail-section-title">Patent Detayları</h4>`;
+                        modalContentHtml += renderField('Patent Sınıfı', record.patentClass);
+                        modalContentHtml += renderField('Öncelik Tarihi', formatDate(record.priority));
+                        modalContentHtml += renderField('Son Geçerlilik Tarihi', formatDate(record.expiryDate));
+                        modalContentHtml += renderLongTextField('Patent İstekleri (Claims)', record.claims);
+                    }
+                    if (record.type === 'trademark') {
+                        modalContentHtml += `<h4 class="detail-section-title">Marka Detayları</h4>`;
+                        if (record.trademarkImage && record.trademarkImage.content) {
+                            modalContentHtml += `
+                                <div class="detail-item detail-trademark-image-container">
+                                    <div class="detail-label">Marka Örneği</div>
+                                    <img src="${record.trademarkImage.content}" class="detail-trademark-image" alt="Marka Örneği">
+                                </div>`;
+                        }
+                        modalContentHtml += renderField('Marka Türü', record.trademarkType);
+                        modalContentHtml += renderField('Nice Sınıfı', record.niceClass);
+                        modalContentHtml += renderField('Yenileme Tarihi', formatDate(record.renewalDate));
+                        modalContentHtml += renderField('Bülten Tarihi', formatDate(record.bulletinDate));
+                        modalContentHtml += renderField('Bülten Numarası', record.bulletinNumber);
+                        modalContentHtml += renderLongTextField('Mal ve Hizmetler', record.goodsServices);
+                    }
+                    if (record.type === 'copyright') {
+                        modalContentHtml += `<h4 class="detail-section-title">Telif Hakkı Detayları</h4>`;
+                        modalContentHtml += renderField('Eser Türü', record.workType);
+                        modalContentHtml += renderField('Oluşturulma Tarihi', formatDate(record.creationDate));
+                        modalContentHtml += renderField('Yayın Tarihi', formatDate(record.publicationDate));
+                        modalContentHtml += renderField('Yayımcı/Yapımcı', record.publisher);
+                    }
+                    if (record.type === 'design') {
+                        modalContentHtml += `<h4 class="detail-section-title">Tasarım Detayları</h4>`;
+                        modalContentHtml += renderField('Tasarım Türü', record.designType);
+                        modalContentHtml += renderField('Locarno Sınıfı', record.locarnoClass);
+                        modalContentHtml += renderField('Tasarım Tarihi', formatDate(record.designDate));
+                        modalContentHtml += renderLongTextField('Tasarım Özellikleri', record.designFeatures);
+                    }
+                    
+                    modalContentHtml += `<h4 class="detail-section-title">Açıklama</h4>`;
+                    modalContentHtml += renderLongTextField('Açıklama', record.description);
+                    
+                    modalContentHtml += `</div>`;
+                    document.getElementById('modalBody').innerHTML = modalContentHtml;
+
+                    this.renderTransactionHistory(record.id, record.transactions, record.files);
+                    
+                    modal.classList.add('show');
+                };
+
+                this.editRecord = (recordId) => {
+                    // ... (metodun içeriği)
+                    window.location.href = `data-entry.html?recordId=${recordId}`;
+                };
+
+                this.deleteRecord = async (recordId) => {
+                    // ... (metodun içeriği)
+                    if (confirm('Kaydı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.')) {
+                        try {
+                            const result = await ipRecordsService.deleteRecord(recordId);
+                            if (result.success) {
+                                alert('Kayıt başarıyla silindi.');
+                                await this.loadRecords(); // Tabloyu yenile
+                            } else {
+                                throw new Error(result.error);
+                            }
+                        } catch (error) {
+                            console.error('Kayıt silinirken hata:', error);
+                            alert('Kayıt silinirken bir hata oluştu: ' + error.message);
+                        }
+                    }
+                };
+
+                this.handleSort = (event) => { 
+                    // ... (metodun içeriği)
+                    const column = event.currentTarget.dataset.sort; 
+                    if (this.sortColumn === column) { this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc'; } else { this.sortColumn = column; this.sortDirection = 'asc'; }
+                    this.sortRecords();
+                    this.renderTable();
+                };
+
                 // init constructor'ın sonunda çağrılmalı
                 this.init(); 
             }
 
-            // Metotlar burada tanımlanmalı, constructor'dan sonra
+            // Metotlar artık doğrudan sınıf içinde arrow function olarak tanımlanmıştır.
+            // Bu nedenle, init() içinde bind() çağrılarına gerek kalmaz.
             init() {
-                // Metot bağlamalarını burada yapın
-                this.viewRecord = this.viewRecord.bind(this);
-                this.editRecord = this.editRecord.bind(this);
-                this.deleteRecord = this.deleteRecord.bind(this);
-                this.handleSort = this.handleSort.bind(this);
-
                 auth.onAuthStateChanged(async (user) => {
                     if (user) {
                         this.currentUser = authService.getCurrentUser();
@@ -641,6 +750,7 @@
                         this.applyFilters();
                     });
                 });
+                // handleSort artık doğrudan arrow function olarak tanımlandığı için bind() gereksizdir.
                 document.querySelectorAll('.portfolio-table th.sortable').forEach(th => {
                     th.addEventListener('click', this.handleSort); 
                 });
@@ -729,12 +839,12 @@
                 return (record.title.toLowerCase().includes(search) || (record.applicationNumber && record.applicationNumber.toLowerCase().includes(search)) || (record.description && record.description.toLowerCase().includes(search)) || ownersString.includes(search));
             }
             
-            handleSort(event) { 
-                const column = event.currentTarget.dataset.sort; 
-                if (this.sortColumn === column) { this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc'; } else { this.sortColumn = column; this.sortDirection = 'asc'; }
-                this.sortRecords();
-                this.renderTable();
-            }
+            // handleSort, viewRecord, editRecord, deleteRecord metotları artık arrow function olarak tanımlandığı için bind() gereksizdir.
+            // Sadece metodun içeriği kalacaktır.
+            // Örnek:
+            // handleSort = (event) => { ... }
+            // viewRecord = (recordId) => { ... }
+            // vb.
             
             sortRecords() {
                 this.filteredRecords.sort((a, b) => {
@@ -798,89 +908,14 @@
                     <td>${record.applicationDate ? new Date(record.applicationDate).toLocaleDateString('tr-TR') : '-'}</td>
                     <td>${(record.owners || []).map(o => o.name).join(', ') || '-'}</td>
                     <td><div class="action-buttons"><button class="table-action-btn btn-view" data-id="${record.id}" title="Görüntüle">👁️</button><button class="table-action-btn btn-edit" data-id="${record.id}" title="Düzenle">✏️</button><button class="table-action-btn btn-delete" data-id="${record.id}" title="Sil">🗑️</button></div></td>`;
-                row.querySelector('.btn-view').addEventListener('click', () => this.viewRecord(record.id));
-                row.querySelector('.btn-edit').addEventListener('click', () => this.editRecord(record.id));
-                row.querySelector('.btn-delete').addEventListener('click', () => this.deleteRecord(record.id));
+                row.querySelector('.btn-view').addEventListener('click', this.viewRecord); // `this.viewRecord` doğrudan arrow function olduğu için bind() gereksiz.
+                row.querySelector('.btn-edit').addEventListener('click', this.editRecord);   // `this.editRecord` doğrudan arrow function olduğu için bind() gereksiz.
+                row.querySelector('.btn-delete').addEventListener('click', this.deleteRecord); // `this.deleteRecord` doğrudan arrow function olduğu için bind() gereksiz.
                 return row;
             }
             
-            viewRecord(recordId) {
-                const record = this.records.find(r => r.id === recordId);
-                if (!record) return;
-
-                const modal = document.getElementById('detailModal');
-                document.getElementById('modalTitle').textContent = `Detay: ${record.title}`;
-                
-                const typeNames = { patent: 'Patent', trademark: 'Marka', copyright: 'Telif Hakkı', design: 'Tasarım' };
-                const statusNames = { application: 'Başvuru', pending: 'Beklemede', approved: 'Onaylandı', rejected: 'Reddedildi', expired: 'Süresi Doldu', published: 'Yayınlandı', partial_refusal: 'Kısmi Ret', refused: 'Ret', opposition_received: 'İtiraz Geldi', opposition_filed: 'İtiraz Edildi', registered: 'Tescilli', not_renewed: 'Yenilenmedi', invalid_void: 'Geçersiz' };
-
-                const formatDate = (dateString) => dateString ? new Date(dateString).toLocaleDateString('tr-TR') : '-';
-                const renderField = (label, value) => value || value === 0 ? `<div class="detail-item"><div class="detail-label">${label}</div><div class="detail-value">${value}</div></div>` : '';
-                const renderLongTextField = (label, value) => value ? `<div class="detail-item" style="grid-column: 1 / -1;"><div class="detail-label">${label}</div><div class="detail-value long-text">${value}</div></div>` : '';
-
-                let modalContentHtml = `<div class="detail-grid">`;
-                
-                modalContentHtml += `<h4 class="detail-section-title">Genel Bilgiler</h4>`;
-                modalContentHtml += renderField('Tür', `<span class="ip-type ${record.type}">${typeNames[record.type] || 'Bilinmiyor'}</span>`);
-                modalContentHtml += renderField('Başlık', record.title);
-                modalContentHtml += renderField('Durum', `<span class="status-badge ${record.status}">${statusNames[record.status] || record.status}</span>`);
-                modalContentHtml += renderField('Başvuru Numarası', record.applicationNumber);
-                modalContentHtml += renderField('Tescil Numarası', record.registrationNumber);
-                modalContentHtml += renderField('Başvuru Tarihi', formatDate(record.applicationDate));
-                modalContentHtml += renderField('Tescil Tarihi', formatDate(record.registrationDate));
-                modalContentHtml += renderField('Hak Sahipleri', (record.owners || []).map(o => o.name).join(', '));
-                if(this.currentUser && this.currentUser.role === 'superadmin') {
-                    modalContentHtml += renderField('Oluşturan Kullanıcı', record.userEmail);
-                }
-
-                if (record.type === 'patent') {
-                    modalContentHtml += `<h4 class="detail-section-title">Patent Detayları</h4>`;
-                    modalContentHtml += renderField('Patent Sınıfı', record.patentClass);
-                    modalContentHtml += renderField('Öncelik Tarihi', formatDate(record.priority));
-                    modalContentHtml += renderField('Son Geçerlilik Tarihi', formatDate(record.expiryDate));
-                    modalContentHtml += renderLongTextField('Patent İstekleri (Claims)', record.claims);
-                }
-                if (record.type === 'trademark') {
-                    modalContentHtml += `<h4 class="detail-section-title">Marka Detayları</h4>`;
-                    if (record.trademarkImage && record.trademarkImage.content) {
-                        modalContentHtml += `
-                            <div class="detail-item detail-trademark-image-container">
-                                <div class="detail-label">Marka Örneği</div>
-                                <img src="${record.trademarkImage.content}" class="detail-trademark-image" alt="Marka Örneği">
-                            </div>`;
-                    }
-                    modalContentHtml += renderField('Marka Türü', record.trademarkType);
-                    modalContentHtml += renderField('Nice Sınıfı', record.niceClass);
-                    modalContentHtml += renderField('Yenileme Tarihi', formatDate(record.renewalDate));
-                    modalContentHtml += renderField('Bülten Tarihi', formatDate(record.bulletinDate));
-                    modalContentHtml += renderField('Bülten Numarası', record.bulletinNumber);
-                    modalContentHtml += renderLongTextField('Mal ve Hizmetler', record.goodsServices);
-                }
-                if (record.type === 'copyright') {
-                    modalContentHtml += `<h4 class="detail-section-title">Telif Hakkı Detayları</h4>`;
-                    modalContentHtml += renderField('Eser Türü', record.workType);
-                    modalContentHtml += renderField('Oluşturulma Tarihi', formatDate(record.creationDate));
-                    modalContentHtml += renderField('Yayın Tarihi', formatDate(record.publicationDate));
-                    modalContentHtml += renderField('Yayımcı/Yapımcı', record.publisher);
-                }
-                if (record.type === 'design') {
-                    modalContentHtml += `<h4 class="detail-section-title">Tasarım Detayları</h4>`;
-                    modalContentHtml += renderField('Tasarım Türü', record.designType);
-                    modalContentHtml += renderField('Locarno Sınıfı', record.locarnoClass);
-                    modalContentHtml += renderField('Tasarım Tarihi', formatDate(record.designDate));
-                    modalContentHtml += renderLongTextField('Tasarım Özellikleri', record.designFeatures);
-                }
-                
-                modalContentHtml += `<h4 class="detail-section-title">Açıklama</h4>`;
-                modalContentHtml += renderLongTextField('Açıklama', record.description);
-                
-                modalContentHtml += `</div>`;
-                document.getElementById('modalBody').innerHTML = modalContentHtml;
-
-                this.renderTransactionHistory(record.id, record.transactions, record.files);
-                
-                modal.classList.add('show');
-            }
+            // viewRecord, editRecord, deleteRecord ve handleSort metotları yukarıdaki constructor içinde arrow function olarak tanımlanmıştır.
+            // Bu nedenle bu metotların dışarıda tekrar tanımlanmasına gerek yoktur.
 
             renderTransactionHistory(recordId, transactions, recordFiles) {
                 const historyContainer = document.getElementById('transactionHistory');
