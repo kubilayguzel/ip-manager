@@ -87,7 +87,7 @@
         .action-btn.delete-btn:hover { background-color: #c82333; }
         .action-btn.complete-btn { background-color: #28a745; } /* Yeni buton rengi */
         .action-btn.complete-btn:hover { background-color: #218838; }
-        .no-tasks { text-align: center; padding: 50px; color: #666; }
+        .no-tasks { text-align: center; padding: 50px; color: #666; **display: none;** } /* Varsayılan olarak gizli */
         .loading { text-align: center; padding: 50px; }
 
         /* Modal Stilleri (task-detail.html ve portfolio.html'den kopyalandı) */
@@ -385,7 +385,7 @@
                         </tbody>
                     </table>
                      <div id="loadingIndicator" class="loading">Yükleniyor...</div>
-                     <div id="noTasksMessage" class="no-tasks" style="display: none;">Size atanmış aktif bir iş bulunmamaktadır.</div>
+                     <div id="noTasksMessage" class="no-tasks">Size atanmış aktif bir iş bulunmamaktadır.</div>
                 </div>
             </div>
         </main>
@@ -504,6 +504,8 @@
                     if (user) {
                         this.currentUser = authService.getCurrentUser();
                         this.updateUserInfo();
+                        // Kullanıcının UID'sini kontrol edelim.
+                        console.log("DEBUG: Current User UID:", this.currentUser.uid); // Yeni log
                         await this.loadInitialData();
                         this.setupEventListeners();
                     } else {
@@ -524,8 +526,10 @@
             }
             
             async loadInitialData() {
-                console.log("DEBUG: loadInitialData başlatıldı."); // Hata ayıklama logu
+                console.log("DEBUG: loadInitialData başlatıldı.");
                 document.getElementById('loadingIndicator').style.display = 'block';
+                document.getElementById('noTasksMessage').style.display = 'none'; // Başlangıçta boş mesajı gizle
+                document.getElementById('tasksTableBody').innerHTML = ''; // Tablo içeriğini temizle
                 try {
                     const [tasksResult, ipRecordsResult, personsResult] = await Promise.all([
                         taskService.getTasksForUser(this.currentUser.uid),
@@ -535,24 +539,24 @@
 
                     if (tasksResult.success) {
                         this.tasks = tasksResult.data;
-                        console.log("DEBUG: Görevler yüklendi:", this.tasks); // Hata ayıklama logu
+                        console.log("DEBUG: Görevler yüklendi:", this.tasks);
                     } else {
                         console.error('İşler yüklenirken hata:', tasksResult.error);
-                        alert('Görevler yüklenirken bir hata oluştu: ' + tasksResult.error); // Kullanıcıya bildirim
+                        alert('Görevler yüklenirken bir hata oluştu: ' + tasksResult.error);
                     }
                     if (ipRecordsResult.success) {
                         this.allIpRecords = ipRecordsResult.data;
-                        console.log("DEBUG: IP Kayıtları yüklendi:", this.allIpRecords); // Hata ayıklama logu
+                        console.log("DEBUG: IP Kayıtları yüklendi:", this.allIpRecords);
                     } else {
                         console.error('IP Kayıtları yüklenirken hata:', ipRecordsResult.error);
-                        alert('IP Kayıtları yüklenirken hata: ' + ipRecordsResult.error); // Kullanıcıya bildirim
+                        alert('IP Kayıtları yüklenirken hata: ' + ipRecordsResult.error);
                     }
                     if (personsResult.success) {
                         this.allPersons = personsResult.data;
-                        console.log("DEBUG: Kişiler yüklendi:", this.allPersons); // Hata ayıklama logu
+                        console.log("DEBUG: Kişiler yüklendi:", this.allPersons);
                     } else {
                         console.error('Kişiler yüklenirken hata:', personsResult.error);
-                        alert('Kişiler yüklenirken bir hata oluştu: ' + personsResult.error); // Kullanıcıya bildirim
+                        alert('Kişiler yüklenirken bir hata oluştu: ' + personsResult.error);
                     }
                     this.renderTasks();
 
@@ -560,8 +564,8 @@
                     console.error('Başlangıç verileri yüklenirken hata:', error);
                     alert('Veriler yüklenirken bir hata oluştu: ' + error.message);
                 } finally {
-                    document.getElementById('loadingIndicator').style.display = 'none';
-                    console.log("DEBUG: loadInitialData tamamlandı. Yükleniyor göstergesi kapatıldı."); // Hata ayıklama logu
+                    console.log("DEBUG: loadInitialData tamamlandı. loadingIndicator gizleniyor...");
+                    document.getElementById('loadingIndicator').style.display = 'none'; // Yükleme göstergesini gizle
                 }
             }
 
@@ -596,39 +600,43 @@
             }
 
             renderTasks(filter = 'all') {
-                console.log("DEBUG: renderTasks başlatıldı. Filtre:", filter); // Hata ayıklama logu
+                console.log("DEBUG: renderTasks başlatıldı. Filtre:", filter);
                 const tableBody = document.getElementById('tasksTableBody');
                 const noTasksMessage = document.getElementById('noTasksMessage');
-                tableBody.innerHTML = '';
+                tableBody.innerHTML = ''; // Önceki içeriği temizle
 
                 const filteredTasks = this.tasks.filter(task => {
                     if (filter === 'all') return true;
                     return task.status === filter;
                 });
-                console.log("DEBUG: Filtrelenmiş görevler:", filteredTasks); // Hata ayıklama logu
+                console.log("DEBUG: Filtrelenmiş görevler:", filteredTasks);
                 
                 if (filteredTasks.length === 0) {
-                    noTasksMessage.style.display = 'block';
-                    console.log("DEBUG: Görev yok, 'noTasksMessage' gösteriliyor."); // Hata ayıklama logu
-                    return;
+                    noTasksMessage.style.display = 'block'; // Görev yoksa mesajı göster
+                    console.log("DEBUG: Görev yok, 'noTasksMessage' gösteriliyor.");
+                    return; // Fonksiyondan çık
                 }
-                noTasksMessage.style.display = 'none';
-                console.log("DEBUG: Görevler render ediliyor..."); // Hata ayıklama logu
+                
+                // Görev varsa boş mesajı gizle
+                noTasksMessage.style.display = 'none'; 
+                console.log("DEBUG: Görevler render ediliyor...");
 
                 const priorityMap = { high: 'Yüksek', medium: 'Orta', low: 'Düşük' };
                 const statusMap = { open: 'Açık', in_progress: 'Devam Ediyor', completed: 'Tamamlandı', pending_review: 'Gözden Geçiriliyor' };
 
                 try {
                     filteredTasks.forEach(task => {
-                        console.log("DEBUG: Current task for rendering:", task); // Her görevi logla
+                        console.log("DEBUG: Current task for rendering:", task);
                         const row = document.createElement('tr');
                         
+                        // relatedIpRecordTitle ve relatedIpRecordId null/undefined ise boş dize kullan
                         const relatedIpRecordTitle = task.relatedIpRecordTitle || '-'; 
+                        const relatedIpRecordId = task.relatedIpRecordId || ''; // Link için boş dize olursa daha iyi
 
                         row.innerHTML = `
                             <td><span class="priority-${task.priority}">${priorityMap[task.priority] || 'Normal'}</span></td>
                             <td>${task.title}</td>
-                            <td><a href="#" class="ip-record-link" data-ip-record-id="${task.relatedIpRecordId}" data-task-id="${task.id}">${relatedIpRecordTitle}</a></td> 
+                            <td><a href="#" class="ip-record-link" data-ip-record-id="${relatedIpRecordId}" data-task-id="${task.id}">${relatedIpRecordTitle}</a></td> 
                             <td>${task.dueDate ? new Date(task.dueDate).toLocaleDateString() : '-'}</td>
                             <td><span class="status-badge status-${task.status}">${statusMap[task.status] || task.status}</span></td>
                             <td>
@@ -645,19 +653,26 @@
                         row.querySelector('.complete-btn').addEventListener('click', () => this.showCompleteTaskModal(task.id, task.relatedIpRecordId));
                         
                         const ipRecordLink = row.querySelector('.ip-record-link');
-                        if (ipRecordLink) {
+                        if (ipRecordLink) { // ipRecordLink null ise hata vermemesi için kontrol
                             ipRecordLink.addEventListener('click', (e) => {
                                 e.preventDefault();
-                                this.showIpRecordDetailModal(e.currentTarget.dataset.ipRecordId);
+                                // Eğer relatedIpRecordId boşsa, modal açmaya çalışma
+                                if (e.currentTarget.dataset.ipRecordId) {
+                                    this.showIpRecordDetailModal(e.currentTarget.dataset.ipRecordId);
+                                } else {
+                                    console.warn("İlgili IP kaydı ID'si boş, modal açılamadı.");
+                                    alert("Bu görevle ilişkili bir IP kaydı bulunamadı."); // Kullanıcıya bildirim
+                                }
                             });
                         }
 
 
                         tableBody.appendChild(row);
                     });
-                    console.log("DEBUG: renderTasks tamamlandı. Tabloya görevler eklendi."); // Hata ayıklama logu
+                    console.log("DEBUG: renderTasks tamamlandı. Tabloya görevler eklendi.");
                 } catch (error) {
-                    console.error("HATA: renderTasks sırasında bir hata oluştu:", error); // Hata ayıklama logu
+                    console.error("HATA: renderTasks sırasında bir hata oluştu:", error);
+                    // Hata durumunda tabloya bir hata mesajı ekle
                     tableBody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: red;">Görevler yüklenirken bir hata oluştu. Lütfen konsolu kontrol edin.</td></tr>`;
                     noTasksMessage.style.display = 'none'; // Bu durumda boş mesajı gösterme
                 }
@@ -1162,10 +1177,6 @@
             }
         }
 
-        // Modülün global scope'ta tanımlanması
-        // window.portfolio = new PortfolioModule(); // Bu satır artık my-tasks.html'de kaldırıldı
-
-        // YENİ AKORDİYON MENÜ İÇİN JAVASCRIPT (my-tasks.html içinde çalışmaya devam edecek)
         document.addEventListener('DOMContentLoaded', function() {
             const accordions = document.querySelectorAll('.accordion-header');
             accordions.forEach(accordion => {
@@ -1201,6 +1212,23 @@
             }
 
             setActiveMenu();
+        });
+
+        // Modül başlatma
+        // Önemli: MyTasksModule'ü DOMContentLoaded dışında başlatıyoruz, çünkü Firebase Auth dinleyicisi
+        // asenkron çalışır ve sayfa yüklendiğinde kullanıcı durumu hemen belli olmayabilir.
+        // auth.onAuthStateChanged zaten init metodunu çağırıyor.
+        let myTasksModuleInstance;
+        auth.onAuthStateChanged((user) => {
+            if (user || authService.getCurrentUser()) {
+                if (!myTasksModuleInstance) {
+                    myTasksModuleInstance = new MyTasksModule();
+                    // myTasksModuleInstance.init(); // init zaten onAuthStateChanged içinde çağrılıyor
+                    window.myTasksModuleInstance = myTasksModuleInstance; // Konsoldan erişim için
+                }
+            } else {
+                window.location.href = 'index.html';
+            }
         });
     </script>
 </body>
