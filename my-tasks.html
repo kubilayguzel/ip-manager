@@ -585,6 +585,26 @@
                         modalViewRelatedPartyGroup.style.display = 'block';
                     } else { modalViewRelatedPartyGroup.style.display = 'none'; }
                 } else { modalViewRelatedPartyGroup.style.display = 'none'; }
+                const modalViewRelatedTransactionGroup = document.getElementById('modalViewRelatedTransactionGroup');
+                const modalViewRelatedTransactionLabel = document.getElementById('modalViewRelatedTransactionLabel');
+                const modalViewRelatedTransactionValue = document.getElementById('modalViewRelatedTransactionValue');
+                if (task.details?.relatedTransactionId && task.relatedIpRecordId) {
+                    const ipRecord = ipRecords.find(r => r.id === task.relatedIpRecordId);
+                    if (ipRecord && ipRecord.transactions) {
+                        const transaction = ipRecord.transactions.find(tx => tx.transactionId === task.details.relatedTransactionId);
+                        if (transaction) {
+                            modalViewRelatedTransactionLabel.textContent = 'İlgili Üst İşlem';
+                            modalViewRelatedTransactionValue.textContent = transaction.description || transaction.type;
+                            modalViewRelatedTransactionGroup.style.display = 'block';
+                        } else {
+                            modalViewRelatedTransactionGroup.style.display = 'none';
+                        }
+                    } else {
+                        modalViewRelatedTransactionGroup.style.display = 'none';
+                    }
+                } else {
+                    modalViewRelatedTransactionGroup.style.display = 'none'; 
+                }
                 const modalViewTaskHistory = document.getElementById('modalViewTaskHistory');
                 modalViewTaskHistory.innerHTML = '';
                 if (!task.history || task.history.length === 0) {
@@ -614,7 +634,7 @@
                 document.getElementById('completeTaskRelatedIpRecordId').value = relatedIpRecordId;
                 this.uploadedCompletionFiles = [];
                 document.getElementById('completeTaskFileList').innerHTML = '';
-                document.getElementById('completeTaskModal').classList.add('show');
+                document.getElementById('completeTaskModal').classList.add('show'); // Modal'ı açan kısım eklendi.
             }
 
             // NEW & REFACTORED: Central function to complete a task
