@@ -76,8 +76,18 @@
         .notification-message.info { background: #cce5ff; color: #004085; border-left: 4px solid #007bff; }
         .form-group { margin-bottom: 25px; }
         .form-label { display: block; margin-bottom: 8px; color: #333; font-weight: 500; }
-        .form-input, .form-select { width: 100%; padding: 12px 15px; border: 2px solid #e1e8ed; border-radius: 10px; font-size: 1em; transition: all 0.3s ease; background: white; }
-        .form-input:focus, .form-select:focus { outline: none; border-color: #1e3c72; box-shadow: 0 0 0 3px rgba(30, 60, 114, 0.1); }
+        /* Font düzenlemesi için form-input, form-select'e ekleme */
+        .form-input, .form-select, .form-textarea { 
+            width: 100%; 
+            padding: 12px 15px; 
+            border: 2px solid #e1e8ed; 
+            border-radius: 10px; 
+            font-size: 1em; 
+            transition: all 0.3s ease; 
+            background: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Eklenen stil */
+        }
+        .form-input:focus, .form-select:focus, .form-textarea:focus { outline: none; border-color: #1e3c72; box-shadow: 0 0 0 3px rgba(30, 60, 114, 0.1); }
         .form-input.error-field { border-color: #ff6b6b; }
         .error-message { color: #ff6b6b; font-size: 0.85em; margin-top: 5px; display: none; }
         .file-upload-area { border: 2px dashed #e1e8ed; border-radius: 10px; padding: 30px; text-align: center; cursor: pointer; transition: all 0.3s ease; }
@@ -87,7 +97,8 @@
         .file-item > span { font-weight: 500; color: #333; margin-bottom: 5px; }
         /* Dosya kontrol alanındaki input ve select'i yan yana yapmak için flex kullanıldı */
         .file-item-controls { display: flex; align-items: flex-start; gap: 10px; flex-wrap: wrap; width: 100%; }
-        .file-item-select { flex-grow: 1; min-width: 150px; width: 100%; padding: 5px 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 0.85em; }
+        /* file-item-select için font düzenlemesi */
+        .file-item-select { flex-grow: 1; min-width: 150px; width: 100%; padding: 5px 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 0.85em; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         .remove-file { background: #ff6b6b; color: white; border: none; border-radius: 50%; width: 25px; height: 25px; font-size: 0.9em; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.3s ease; flex-shrink: 0; margin-top: 5px; align-self: flex-end; }
         .remove-file:hover { background: #c82333; }
         .form-actions { display: flex; gap: 15px; margin-top: 40px; padding-top: 30px; border-top: 2px solid #e1e8ed; justify-content: flex-end; }
