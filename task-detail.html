@@ -11,9 +11,9 @@
         /* === ANA SAYFA YAPISI === */
         .page-wrapper { flex-grow: 1; display: flex; flex-direction: column; height: 100vh; overflow-y: auto; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); }
         .main-container { 
-            width: 100%;
-            padding: 30px;
-            margin: 0;
+            width: 100%; /* Genişliği tamamen doldurmasını sağlar */
+            padding: 30px; /* İçeriğin kenarlara yapışmaması için boşluk bırakır */
+            margin: 0; /* Otomatik ortalamayı kaldırır */
         }
         
         /* === SOL MENÜ (SIDEBAR) === */
@@ -70,6 +70,7 @@
         .form-group { display: flex; flex-direction: column; }
         .form-group.full-width { grid-column: 1 / -1; }
         .form-label { display: block; margin-bottom: 8px; color: #333; font-weight: 500; }
+        /* Font düzenlemesi için form-input, form-select'e ekleme */
         .form-input, .form-select, .form-textarea { 
             width: 100%; 
             padding: 12px 15px; 
@@ -78,7 +79,7 @@
             font-size: 1em; 
             transition: all 0.3s ease; 
             background: white;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Eklenen stil */
         }
         /* Salt okunur alanlar için stil */
         .form-input[readonly], .form-select[readonly], .form-textarea[readonly] {
@@ -484,7 +485,6 @@
                                 <ul class="document-list" id="taskDocumentList">
                                     <li id="noTaskDocumentsMessage" style="text-align: center; color: #666; padding: 10px;">Henüz doküman yok.</li>
                                 </ul>
-                                <!-- Doküman Ekleme Alanı (Sadece düzenleme modunda görünür) -->
                                 <div id="documentUploadSection" style="display:none;">
                                     <div class="file-upload-area-task-detail" id="taskDetailFileUploadArea">
                                         <div class="upload-icon">📄</div>
@@ -519,10 +519,8 @@
         </main>
     </div>
 
-    <!-- İş Detayı Görüntüleme Modalı (Sadece görüntüleme için bu sayfada kullanılmıyor, diğer sayfalara kopyalandı) -->
     <div id="viewTaskDetailModal" class="modal" style="display:none;">
-        <!-- Bu modalın içeriği my-tasks.html ve task-management.html'e kopyalandı -->
-    </div>
+        </div>
 
 
     <script type="module">
@@ -609,7 +607,7 @@
                         this.allUsers = usersResult.data || [];
                         this.populateTaskDetails();
                         this.populateStatusDropdown();
-                        this.renderTaskHistory();
+                        this.renderTaskHistory(); // <-- Hata veren çağrı artık doğru metodu çağırıyor
                         this.renderTaskDocuments(); // Dokümanları render et
                         document.getElementById('taskDetailContent').style.display = 'block';
                     } else {
@@ -1072,6 +1070,34 @@
                         targetMessage.style.display = 'none';
                     }, 5000);
                 }
+            }
+            
+            // YENİ EKLENEN METOT
+            renderTaskHistory() {
+                const taskHistoryContainer = document.getElementById('taskHistory');
+                taskHistoryContainer.innerHTML = ''; // İçeriği temizle
+
+                if (!this.currentTask || !this.currentTask.history || this.currentTask.history.length === 0) {
+                    taskHistoryContainer.innerHTML = '<p style="text-align: center; color: #666;">İşlem geçmişi bulunmuyor.</p>';
+                    return;
+                }
+
+                // Tarihe göre ters sırala (en yeniden eskiye)
+                const sortedHistory = [...this.currentTask.history].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+                sortedHistory.forEach(entry => {
+                    const item = document.createElement('div');
+                    item.className = 'task-history-item';
+                    item.innerHTML = `
+                        <div class="task-history-item-content">
+                            <div class="task-history-info">
+                                <div class="task-history-description">${entry.action}</div>
+                                <div class="task-history-meta">${new Date(entry.timestamp).toLocaleString('tr-TR')} by ${entry.userEmail}</div>
+                            </div>
+                        </div>
+                    `;
+                    taskHistoryContainer.appendChild(item);
+                });
             }
         }
 
