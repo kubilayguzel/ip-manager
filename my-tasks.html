@@ -1,11 +1,10 @@
 <!DOCTYPE html>
-
 <html lang="tr">
 <head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>IP Manager - İşlerim</title>
-<style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IP Manager - İşlerim</title>
+    <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
         /* BODY VE YENİ LAYOUT */
@@ -79,7 +78,7 @@
         .status-in_progress { background-color: #ffc107; color: #333; }
         .status-completed { background-color: #28a745; }
         .status-pending_review { background-color: #17a2b8; }
-        .action-btn { background: #6c757d; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; transition: all 0.3s ease; }
+        .action-btn { background: #6c757d; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; transition: all 0.3s ease; margin-right: 5px; }
         .action-btn.view-btn { background-color: #17a2b8; }
         .action-btn.view-btn:hover { background-color: #138496; }
         .action-btn.edit-btn { background-color: #ffc107; color: #212529; }
@@ -88,28 +87,66 @@
         .action-btn.delete-btn:hover { background-color: #c82333; }
         .action-btn.complete-btn { background-color: #28a745; }
         .action-btn.complete-btn:hover { background-color: #218838; }
+        .action-btn:disabled { background-color: #6c757d; opacity: 0.5; cursor: not-allowed; }
         .no-tasks { text-align: center; padding: 50px; color: #666; display: none; }
         .loading { text-align: center; padding: 50px; }
 
-        /* Modal Stilleri */
+        /* Modal Stilleri - Z-INDEX SORUNU DÜZELTİLDİ */
         .modal { 
-            display: none; /* Varsayılan olarak gizli */
+            display: none; 
             position: fixed; 
-            z-index: 1000; /* Diğer her şeyin üstünde olmalı */
+            z-index: 9999; /* Yüksek z-index */
             left: 0; 
             top: 0; 
             width: 100%; 
             height: 100%; 
             overflow: auto; 
-            background-color: rgba(0,0,0,0.4); 
+            background-color: rgba(0,0,0,0.6); /* Daha koyu overlay */
             align-items: center; 
             justify-content: center; 
         }
         .modal.show { 
-            display: flex; /* 'show' sınıfı eklendiğinde görünür olmalı */
+            display: flex !important; 
         }
-        .modal-content-lg { background-color: #fefefe; margin: auto; padding: 30px; border: 1px solid #888; width: 90%; max-width: 900px; border-radius: 20px; box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19); animation-name: animatetop; animation-duration: 0.4s; max-height: 90vh; overflow-y: auto; }
-        .modal-content { background-color: #fefefe; margin: auto; padding: 30px; border: 1px solid #888; width: 95%; max-width: 1200px; max-height: 90vh; overflow-y: auto; border-radius: 20px; box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19); animation-name: animatetop; animation-duration: 0.4s; }
+        .modal-content-lg { 
+            background-color: #fefefe; 
+            margin: auto; 
+            padding: 30px; 
+            border: 1px solid #888; 
+            width: 90%; 
+            max-width: 900px; 
+            border-radius: 20px; 
+            box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19); 
+            animation-name: animatetop; 
+            animation-duration: 0.4s; 
+            max-height: 90vh; 
+            overflow-y: auto; 
+            position: relative;
+            z-index: 10000;
+        }
+        .modal-content { 
+            background-color: #fefefe; 
+            margin: auto; 
+            padding: 30px; 
+            border: 1px solid #888; 
+            width: 95%; 
+            max-width: 1200px; 
+            max-height: 90vh; 
+            overflow-y: auto; 
+            border-radius: 20px; 
+            box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19); 
+            animation-name: animatetop; 
+            animation-duration: 0.4s; 
+            position: relative;
+            z-index: 10000;
+        }
+        
+        /* Complete Task Modal için özel stil */
+        #completeTaskModal .modal-content {
+            width: 90%;
+            max-width: 600px;
+        }
+        
         @keyframes animatetop { from {top: -300px; opacity: 0} to {top: 0; opacity: 1} }
         .close-modal-btn { color: #aaa; float: right; font-size: 28px; font-weight: bold; }
         .close-modal-btn:hover, .close-modal-btn:focus { color: black; text-decoration: none; cursor: pointer; }
@@ -162,171 +199,167 @@
         .file-list-task-detail { margin-top: 10px; }
         .file-item-task-detail { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #f8f9fa; border-radius: 6px; margin-bottom: 5px; }
         .remove-file-task-detail { background: #ff6b6b; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; }
-    
-.modal {
-  display: none;
-  position: fixed;
-  z-index: 1000;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0,0,0,0.4);
-  align-items: center;
-  justify-content: center;
-}
-.modal.show {
-  display: flex;
-}
-</style>
+        
+        .form-group { margin-bottom: 15px; }
+        .form-label { display: block; margin-bottom: 5px; font-weight: 600; color: #333; }
+    </style>
 </head>
 <body>
-<aside class="sidebar">
-<div class="sidebar-header">
-<a class="sidebar-logo" href="dashboard.html">🔥 IP Manager</a>
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <a href="dashboard.html" class="sidebar-logo">🔥 IP Manager</a>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-category-title">Ana Menü</div>
+            <a href="dashboard.html" class="sidebar-nav-item"><span class="nav-icon">📊</span><span>Dashboard</span></a>
+            <a href="portfolio.html" class="sidebar-nav-item"><span class="nav-icon">📋</span><span>Portföy</span></a>
+            <div class="nav-category-title">Veri Girişi</div>
+            <a href="data-entry.html" class="sidebar-nav-item"><span class="nav-icon">➕</span><span>Yeni Kayıt</span></a>
+            <a href="excel-upload.html" class="sidebar-nav-item"><span class="nav-icon">📄</span><span>Excel ile Yükle</span></a>
+            <div class="nav-category-title">Yönetim</div>
+         <div class="accordion">
+    <div class="accordion-header"><span class="nav-icon">⚙️</span><span>Yönetim</span></div>
+    <div class="accordion-content">
+        <a href="create-task.html" class="new-task-link">Yeni İş Oluştur</a>
+        
+        <a href="task-management.html">İş Yönetimi</a>
+        <a href="my-tasks.html">İşlerim</a>
+        <a href="persons.html">Kişiler Yönetimi</a>
+        <a href="user-management.html">Kullanıcı Yönetimi</a>
+    </div>
 </div>
-<nav class="sidebar-nav">
-<div class="nav-category-title">Ana Menü</div>
-<a class="sidebar-nav-item" href="dashboard.html"><span class="nav-icon">📊</span><span>Dashboard</span></a>
-<a class="sidebar-nav-item" href="portfolio.html"><span class="nav-icon">📋</span><span>Portföy</span></a>
-<div class="nav-category-title">Veri Girişi</div>
-<a class="sidebar-nav-item" href="data-entry.html"><span class="nav-icon">➕</span><span>Yeni Kayıt</span></a>
-<a class="sidebar-nav-item" href="excel-upload.html"><span class="nav-icon">📄</span><span>Excel ile Yükle</span></a>
-<div class="nav-category-title">Yönetim</div>
-<div class="accordion">
-<div class="accordion-header"><span class="nav-icon">⚙️</span><span>Yönetim</span></div>
-<div class="accordion-content">
-<a class="new-task-link" href="create-task.html">Yeni İş Oluştur</a>
-<a href="task-management.html">İş Yönetimi</a>
-<a href="my-tasks.html">İşlerim</a>
-<a href="persons.html">Kişiler Yönetimi</a>
-<a href="user-management.html">Kullanıcı Yönetimi</a>
-</div>
-</div>
-<div class="nav-category-title">Araçlar</div>
-<a class="sidebar-nav-item" href="indexing.html"><span class="nav-icon">📁</span><span>Belge İndeksleme</span></a>
-<a class="sidebar-nav-item" href="#" style="opacity: 0.5; cursor: not-allowed;"><span class="nav-icon">📈</span><span>Raporlar</span></a>
-<a class="sidebar-nav-item" href="#" style="opacity: 0.5; cursor: not-allowed;"><span class="nav-icon">🔧</span><span>Ayarlar</span></a>
-</nav>
-</aside>
-<div class="page-wrapper">
-<header class="top-header">
-<div class="user-section">
-<div class="user-avatar" id="userAvatar">?</div>
-<div class="user-info">
-<div class="user-name" id="userName">Yükleniyor...</div>
-<div class="user-role" id="userRole">Kullanıcı</div>
-</div>
-<button class="logout-btn" id="logoutBtn">Çıkış</button>
-</div>
-</header>
-<main class="main-container">
-<section class="page-header">
-<h1 class="page-title">Bana Atanan İşler</h1>
-<p class="page-subtitle">Size atanmış olan tüm görevleri buradan takip edebilirsiniz.</p>
-</section>
-<div class="tasks-container">
-<div class="tasks-header">
-<div class="filter-group">
-<label class="filter-label" for="statusFilter">Duruma Göre Filtrele:</label>
-<select class="filter-select" id="statusFilter">
-<option value="all">Tümü</option>
-<option value="open">Açık</option>
-<option value="in_progress">Devam Ediyor</option>
-<option value="pending_review">Gözden Geçiriliyor</option>
-<option value="completed">Tamamlandı</option>
-</select>
-</div>
-</div>
-<div class="table-container">
-<table class="task-table">
-<thead>
-<tr>
-<th>Öncelik</th>
-<th>İş Başlığı</th>
-<th>İlgili Kayıt</th>
-<th>Bitiş Tarihi</th>
-<th>Durum</th>
-<th>İşlemler</th>
-</tr>
-</thead>
-<tbody id="tasksTableBody">
-</tbody>
-</table>
-<div class="loading" id="loadingIndicator">Yükleniyor...</div>
-<div class="no-tasks" id="noTasksMessage">Size atanmış aktif bir iş bulunmamaktadır.</div>
-</div>
-</div>
-</main>
-</div>
-<div class="modal" id="viewTaskDetailModal">
-<div class="modal-content-lg">
-<span class="close-modal-btn" id="closeViewTaskDetailModal">×</span>
-<h3 class="modal-title" id="modalViewTaskTitle">İş Detayı</h3>
-<div class="modal-body-content">
-<div class="modal-detail-grid">
-<div class="modal-detail-item full-width"><div class="modal-detail-label">İş Başlığı</div><div class="modal-detail-value" id="modalViewTaskTitleValue"></div></div>
-<div class="modal-detail-item full-width"><div class="modal-detail-label">Açıklama</div><div class="modal-detail-value long-text" id="modalViewTaskDescriptionValue"></div></div>
-<div class="modal-detail-item"><div class="modal-detail-label">İş Türü</div><div class="modal-detail-value" id="modalViewTaskTypeValue"></div></div>
-<div class="modal-detail-item"><div class="modal-detail-label">Öncelik</div><div class="modal-detail-value" id="modalViewTaskPriorityValue"></div></div>
-<div class="modal-detail-item"><div class="modal-detail-label">Atanan Kişi</div><div class="modal-detail-value" id="modalViewAssignedToValue"></div></div>
-<div class="modal-detail-item"><div class="modal-detail-label">Bitiş Tarihi</div><div class="modal-detail-value" id="modalViewTaskDueDateValue"></div></div>
-<div class="modal-detail-item full-width"><div class="modal-detail-label">İlgili Fikri Mülkiyet Kaydı</div><div class="modal-detail-value" id="modalViewRelatedIpRecordValue"></div></div>
-<div class="modal-detail-item full-width" id="modalViewRelatedPartyGroup" style="display:none;"><div class="modal-detail-label" id="modalViewRelatedPartyLabel"></div><div class="modal-detail-value" id="modalViewRelatedPartyValue"></div></div>
-<div class="modal-detail-item full-width" id="modalViewRelatedTransactionGroup" style="display:none;"><div class="modal-detail-label" id="modalViewRelatedTransactionLabel"></div><div class="modal-detail-value" id="modalViewRelatedTransactionValue"></div></div>
-<h4 class="modal-detail-section-title">İşlem Geçmişi</h4>
-<div class="modal-detail-item full-width task-history" id="modalViewTaskHistory"><p style="text-align: center; color: #666;">İşlem geçmişi bulunmuyor.</p></div>
-</div>
-</div>
-</div>
-</div>
-<div class="modal" id="editTaskModal">
-<div class="modal-content-lg">
-<span class="close-modal-btn" id="closeEditTaskModal">×</span>
-<h3 class="modal-title">İşi Düzenle</h3>
-<div class="modal-body-content">
-<form id="editTaskForm" onsubmit="return false;">
-<input id="editTaskId" type="hidden"/>
-<div class="modal-detail-grid">
-<div class="detail-item" style="grid-column: 1 / -1;"><label class="detail-label" for="modalEditTaskTitle">İş Başlığı</label><input class="form-input" id="modalEditTaskTitle" type="text"/></div>
-<div class="detail-item" style="grid-column: 1 / -1;"><label class="detail-label" for="modalEditTaskDescription">Açıklama</label><textarea class="form-textarea" id="modalEditTaskDescription" rows="4"></textarea></div>
-<div class="detail-item"><label class="detail-label" for="modalEditTaskPriority">Öncelik</label><select class="form-select" id="modalEditTaskPriority"></select></div>
-<div class="detail-item"><label class="detail-label" for="modalEditAssignedTo">Atanan Kişi</label><select class="form-select" id="modalEditAssignedTo"></select></div>
-<div class="detail-item" style="grid-column: 1 / -1;"><label class="detail-label" for="modalEditTaskDueDate">Bitiş Tarihi</label><input class="form-input" id="modalEditTaskDueDate" type="date"/></div>
-<h4 class="modal-detail-section-title">Dokümanlar</h4>
-<div class="detail-item" style="grid-column: 1 / -1;"><label class="detail-label">Mevcut Dokümanlar</label><ul class="document-list" id="modalEditTaskDocumentList"><li id="modalNoTaskDocumentsMessage">Henüz doküman yok.</li></ul><div class="file-upload-area-task-detail" id="modalTaskDetailFileUploadArea"><div>Yeni Dosyaları buraya sürükleyin veya tıklayın</div><input hidden="" id="modalTaskDetailFileInput" multiple="" type="file"/></div><div class="file-list-task-detail" id="modalTaskDetailUploadedFileList"></div></div>
-</div>
-</form>
-</div>
-<div class="modal-footer"><button class="btn btn-secondary" id="cancelEditTaskBtn" type="button">İptal</button><button class="btn btn-primary" id="saveTaskChangesBtn" type="button">Değişiklikleri Kaydet</button></div>
-</div>
-</div>
-<div class="modal" id="completeTaskModal">
-<div class="modal-content" style="max-width: 600px;">
-<span class="close-modal-btn" id="closeCompleteTaskModal">×</span>
-<h3 class="modal-title">İşi Tamamla</h3>
-<div class="modal-body-content">
-<p>Bu işi tamamlamak için bir yöntem seçin. Doküman yüklemek isterseniz, aşağıdaki alanı kullanabilirsiniz.</p>
-<input id="completeTaskId" type="hidden"/><input id="completeTaskRelatedIpRecordId" type="hidden"/>
-<div class="form-group"><label class="form-label" for="completeTaskDocumentInput">Tamamlama Dokümanı (Opsiyonel)</label><div class="file-upload-area-modal" id="completeTaskFileUploadArea"><div>Dosyayı buraya sürükleyin veya tıklayın</div><input hidden="" id="completeTaskDocumentInput" multiple="" type="file"/></div><div class="file-list-modal" id="completeTaskFileList"></div></div>
-</div>
-<div class="modal-footer">
-<button class="btn btn-secondary" id="cancelCompleteTaskBtn" type="button">İptal</button>
-<button class="btn btn-warning" id="clientApprovalBtn" type="button">Müvekkil Onayı</button>
-<button class="btn btn-info" id="manualCloseBtn" type="button">Manuel Kapat</button>
-<button class="btn btn-primary" id="submitCompleteTaskBtn" type="button">İşi Tamamla</button>
-</div>
-</div>
-</div>
-<div class="modal" id="ipRecordDetailModal">
-<div class="modal-content portfolio-detail">
-<div class="modal-header"><h3 class="modal-title" id="ipRecordModalTitle">Kayıt Detayları</h3><button class="close-modal-btn" id="closeIpRecordModalBtn">×</button></div>
-<div id="ipRecordModalBody"></div>
-<h4 class="modal-detail-section-title" style="margin-top: 30px;">Belge İşlem Geçmişi</h4>
-<div class="task-history" id="ipRecordTransactionHistory"><p style="text-align: center; color: #666;">Yükleniyor...</p></div>
-</div>
-</div>
-<script type="module">
+            <div class="nav-category-title">Araçlar</div>
+            <a href="indexing.html" class="sidebar-nav-item"><span class="nav-icon">📁</span><span>Belge İndeksleme</span></a>
+            <a href="#" class="sidebar-nav-item" style="opacity: 0.5; cursor: not-allowed;"><span class="nav-icon">📈</span><span>Raporlar</span></a>
+            <a href="#" class="sidebar-nav-item" style="opacity: 0.5; cursor: not-allowed;"><span class="nav-icon">🔧</span><span>Ayarlar</span></a>
+        </nav>
+    </aside>
+
+    <div class="page-wrapper">
+        <header class="top-header">
+            <div class="user-section">
+                <div class="user-avatar" id="userAvatar">?</div>
+                <div class="user-info">
+                    <div class="user-name" id="userName">Yükleniyor...</div>
+                    <div class="user-role" id="userRole">Kullanıcı</div>
+                </div>
+                <button class="logout-btn" id="logoutBtn">Çıkış</button>
+            </div>
+        </header>
+
+        <main class="main-container">
+            <section class="page-header">
+                <h1 class="page-title">Bana Atanan İşler</h1>
+                <p class="page-subtitle">Size atanmış olan tüm görevleri buradan takip edebilirsiniz.</p>
+            </section>
+    
+            <div class="tasks-container">
+                <div class="tasks-header">
+                    <div class="filter-group">
+                        <label class="filter-label" for="statusFilter">Duruma Göre Filtrele:</label>
+                        <select id="statusFilter" class="filter-select">
+                            <option value="all">Tümü</option>
+                            <option value="open">Açık</option>
+                            <option value="in_progress">Devam Ediyor</option>
+                            <option value="pending_review">Gözden Geçiriliyor</option>
+                            <option value="completed">Tamamlandı</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table class="task-table">
+                        <thead>
+                            <tr>
+                                <th>Öncelik</th>
+                                <th>İş Başlığı</th>
+                                <th>İlgili Kayıt</th>
+                                <th>Bitiş Tarihi</th>
+                                <th>Durum</th>
+                                <th>İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tasksTableBody">
+                        </tbody>
+                    </table>
+                     <div id="loadingIndicator" class="loading">Yükleniyor...</div>
+                     <div id="noTasksMessage" class="no-tasks">Size atanmış aktif bir iş bulunmamaktadır.</div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="viewTaskDetailModal" class="modal">
+        <div class="modal-content-lg">
+            <span class="close-modal-btn" id="closeViewTaskDetailModal">&times;</span>
+            <h3 class="modal-title" id="modalViewTaskTitle">İş Detayı</h3>
+            <div class="modal-body-content">
+                <div class="modal-detail-grid">
+                    <div class="modal-detail-item full-width"><div class="modal-detail-label">İş Başlığı</div><div class="modal-detail-value" id="modalViewTaskTitleValue"></div></div>
+                    <div class="modal-detail-item full-width"><div class="modal-detail-label">Açıklama</div><div class="modal-detail-value long-text" id="modalViewTaskDescriptionValue"></div></div>
+                    <div class="modal-detail-item"><div class="modal-detail-label">İş Türü</div><div class="modal-detail-value" id="modalViewTaskTypeValue"></div></div>
+                    <div class="modal-detail-item"><div class="modal-detail-label">Öncelik</div><div class="modal-detail-value" id="modalViewTaskPriorityValue"></div></div>
+                    <div class="modal-detail-item"><div class="modal-detail-label">Atanan Kişi</div><div class="modal-detail-value" id="modalViewAssignedToValue"></div></div>
+                    <div class="modal-detail-item"><div class="modal-detail-label">Bitiş Tarihi</div><div class="modal-detail-value" id="modalViewTaskDueDateValue"></div></div>
+                    <div class="modal-detail-item full-width"><div class="modal-detail-label">İlgili Fikri Mülkiyet Kaydı</div><div class="modal-detail-value" id="modalViewRelatedIpRecordValue"></div></div>
+                    <div class="modal-detail-item full-width" id="modalViewRelatedPartyGroup" style="display:none;"><div class="modal-detail-label" id="modalViewRelatedPartyLabel"></div><div class="modal-detail-value" id="modalViewRelatedPartyValue"></div></div>
+                    <div class="modal-detail-item full-width" id="modalViewRelatedTransactionGroup" style="display:none;"><div class="modal-detail-label" id="modalViewRelatedTransactionLabel"></div><div class="modal-detail-value" id="modalViewRelatedTransactionValue"></div></div>
+                    <h4 class="modal-detail-section-title">İşlem Geçmişi</h4>
+                    <div class="modal-detail-item full-width task-history" id="modalViewTaskHistory"><p style="text-align: center; color: #666;">İşlem geçmişi bulunmuyor.</p></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="editTaskModal" class="modal">
+        <div class="modal-content-lg">
+            <span class="close-modal-btn" id="closeEditTaskModal">&times;</span>
+            <h3 class="modal-title">İşi Düzenle</h3>
+            <div class="modal-body-content">
+                <form id="editTaskForm" onsubmit="return false;">
+                    <input type="hidden" id="editTaskId">
+                    <div class="modal-detail-grid">
+                        <div class="detail-item" style="grid-column: 1 / -1;"><label class="detail-label" for="modalEditTaskTitle">İş Başlığı</label><input type="text" id="modalEditTaskTitle" class="form-input"></div>
+                        <div class="detail-item" style="grid-column: 1 / -1;"><label class="detail-label" for="modalEditTaskDescription">Açıklama</label><textarea id="modalEditTaskDescription" class="form-textarea" rows="4"></textarea></div>
+                        <div class="detail-item"><label class="detail-label" for="modalEditTaskPriority">Öncelik</label><select id="modalEditTaskPriority" class="form-select"></select></div>
+                        <div class="detail-item"><label class="detail-label" for="modalEditAssignedTo">Atanan Kişi</label><select id="modalEditAssignedTo" class="form-select"></select></div>
+                        <div class="detail-item" style="grid-column: 1 / -1;"><label class="detail-label" for="modalEditTaskDueDate">Bitiş Tarihi</label><input type="date" id="modalEditTaskDueDate" class="form-input"></div>
+                        <h4 class="modal-detail-section-title">Dokümanlar</h4>
+                        <div class="detail-item" style="grid-column: 1 / -1;"><label class="detail-label">Mevcut Dokümanlar</label><ul class="document-list" id="modalEditTaskDocumentList"><li id="modalNoTaskDocumentsMessage">Henüz doküman yok.</li></ul><div class="file-upload-area-task-detail" id="modalTaskDetailFileUploadArea"><div>Yeni Dosyaları buraya sürükleyin veya tıklayın</div><input type="file" id="modalTaskDetailFileInput" multiple hidden></div><div class="file-list-task-detail" id="modalTaskDetailUploadedFileList"></div></div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer"><button type="button" class="btn btn-secondary" id="cancelEditTaskBtn">İptal</button><button type="button" class="btn btn-primary" id="saveTaskChangesBtn">Değişiklikleri Kaydet</button></div>
+        </div>
+    </div>
+
+    <div id="completeTaskModal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <span class="close-modal-btn" id="closeCompleteTaskModal">&times;</span>
+            <h3 class="modal-title">İşi Tamamla</h3>
+            <div class="modal-body-content">
+                <p>Bu işi tamamlamak için bir yöntem seçin. Doküman yüklemek isterseniz, aşağıdaki alanı kullanabilirsiniz.</p>
+                <input type="hidden" id="completeTaskId"><input type="hidden" id="completeTaskRelatedIpRecordId">
+                <div class="form-group"><label class="form-label" for="completeTaskDocumentInput">Tamamlama Dokümanı (Opsiyonel)</label><div class="file-upload-area-modal" id="completeTaskFileUploadArea"><div>Dosyayı buraya sürükleyin veya tıklayın</div><input type="file" id="completeTaskDocumentInput" multiple hidden></div><div class="file-list-modal" id="completeTaskFileList"></div></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancelCompleteTaskBtn">İptal</button>
+                <button type="button" class="btn btn-warning" id="clientApprovalBtn">Müvekkil Onayı</button>
+                <button type="button" class="btn btn-info" id="manualCloseBtn">Manuel Kapat</button>
+                <button type="button" class="btn btn-primary" id="submitCompleteTaskBtn">İşi Tamamla</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="ipRecordDetailModal">
+        <div class="modal-content portfolio-detail">
+            <div class="modal-header"><h3 class="modal-title" id="ipRecordModalTitle">Kayıt Detayları</h3><button class="close-modal-btn" id="closeIpRecordModalBtn">&times;</button></div>
+            <div id="ipRecordModalBody"></div>
+            <h4 class="modal-detail-section-title" style="margin-top: 30px;">Belge İşlem Geçmişi</h4>
+            <div class="task-history" id="ipRecordTransactionHistory"><p style="text-align: center; color: #666;">Yükleniyor...</p></div>
+        </div>
+    </div>
+
+    <script type="module">
         import { authService, taskService, ipRecordsService, personsService, auth, generateUUID } from './firebase-config.js';
 
         class MyTasksModule {
@@ -391,8 +424,11 @@
             }
 
             setupEventListeners() {
+                // Temel event listener'lar
                 document.getElementById('logoutBtn').addEventListener('click', () => authService.signOut().then(() => window.location.href = 'index.html'));
                 document.getElementById('statusFilter').addEventListener('change', (e) => this.renderTasks(e.target.value));
+                
+                // Modal close event'leri
                 document.getElementById('closeViewTaskDetailModal').addEventListener('click', () => this.closeModal('viewTaskDetailModal'));
                 document.getElementById('closeEditTaskModal').addEventListener('click', () => this.closeModal('editTaskModal'));
                 document.getElementById('cancelEditTaskBtn').addEventListener('click', () => this.closeModal('editTaskModal'));
@@ -400,7 +436,7 @@
                 document.getElementById('modalTaskDetailFileUploadArea').addEventListener('click', () => document.getElementById('modalTaskDetailFileInput').click());
                 document.getElementById('modalTaskDetailFileInput').addEventListener('change', (e) => this.handleEditDocumentUpload(e.target.files));
                 
-                // Complete Task Modal Listeners (UPDATED)
+                // Complete Task Modal Listeners
                 document.getElementById('closeCompleteTaskModal').addEventListener('click', () => this.closeModal('completeTaskModal'));
                 document.getElementById('cancelCompleteTaskBtn').addEventListener('click', () => this.closeModal('completeTaskModal'));
                 document.getElementById('submitCompleteTaskBtn').addEventListener('click', () => this.completeTask('completed_with_doc'));
@@ -408,143 +444,102 @@
                 document.getElementById('manualCloseBtn').addEventListener('click', () => this.completeTask('manually_closed'));
                 document.getElementById('completeTaskDocumentInput').addEventListener('change', (e) => this.handleDocumentUploadForTaskCompletion(e.target.files));
                 document.getElementById('completeTaskFileUploadArea').addEventListener('click', () => document.getElementById('completeTaskDocumentInput').click());
-                // Add drag and drop listeners for completeTaskFileUploadArea
-                document.getElementById('completeTaskFileUploadArea').addEventListener('dragover', (e) => {
-                    e.preventDefault();
-                    e.currentTarget.style.borderColor = '#1e3c72';
-                    e.currentTarget.style.background = '#f0f4f8';
-                });
-                document.getElementById('completeTaskFileUploadArea').addEventListener('dragleave', (e) => {
-                    e.preventDefault();
-                    e.currentTarget.style.borderColor = '#e1e8ed';
-                    e.currentTarget.style.background = 'transparent';
-                });
-                document.getElementById('completeTaskFileUploadArea').addEventListener('drop', (e) => {
-                    e.preventDefault();
-                    e.currentTarget.style.borderColor = '#e1e8ed';
-                    e.currentTarget.style.background = 'transparent';
-                    this.handleDocumentUploadForTaskCompletion(e.dataTransfer.files);
-                });
-
+                
                 document.getElementById('closeIpRecordModalBtn').addEventListener('click', () => this.closeModal('ipRecordDetailModal'));
+
+                // EVENT DELEGATION İLE BUTON CLICK HANDLER'LARI
+                document.addEventListener('click', (event) => {
+                    const target = event.target;
+                    
+                    // İşi Bitir butonları için
+                    if (target.classList.contains('complete-btn')) {
+                        console.log('İşi Bitir butonuna tıklandı!'); // Debug log
+                        event.preventDefault();
+                        
+                        const taskId = target.getAttribute('data-id');
+                        const relatedIpRecordId = target.getAttribute('data-ip-record-id');
+                        
+                        console.log('Task ID:', taskId, 'Related IP Record ID:', relatedIpRecordId); // Debug log
+                        
+                        if (taskId) {
+                            this.showCompleteTaskModal(taskId, relatedIpRecordId);
+                        } else {
+                            console.error('Task ID bulunamadı!');
+                        }
+                        return;
+                    }
+                    
+                    // Diğer butonlar için
+                    if (target.classList.contains('view-btn')) {
+                        const taskId = target.getAttribute('data-id');
+                        if (taskId) this.viewTaskDetailsModal(taskId);
+                        return;
+                    }
+                    
+                    if (target.classList.contains('edit-btn')) {
+                        const taskId = target.getAttribute('data-id');
+                        if (taskId) this.editTask(taskId);
+                        return;
+                    }
+                    
+                    if (target.classList.contains('delete-btn')) {
+                        const taskId = target.getAttribute('data-id');
+                        if (taskId) this.deleteTask(taskId);
+                        return;
+                    }
+                    
+                    // IP Record link için
+                    if (target.classList.contains('ip-record-link')) {
+                        event.preventDefault();
+                        const recordId = target.getAttribute('data-ip-record-id');
+                        if (recordId) this.showIpRecordDetailModal(recordId);
+                        return;
+                    }
+                });
             }
 
             renderTasks(filter = 'all') {
                 const tableBody = document.getElementById('tasksTableBody');
                 const noTasksMessage = document.getElementById('noTasksMessage');
-                tableBody.innerHTML = ''; // Tablo içeriğini temizle
-                
+                tableBody.innerHTML = '';
                 const filteredTasks = this.tasks.filter(task => filter === 'all' || task.status === filter);
                 
                 if (filteredTasks.length === 0) {
                     noTasksMessage.style.display = 'block';
                     return;
                 }
+                
                 noTasksMessage.style.display = 'none'; 
-
                 const priorityMap = { high: 'Yüksek', medium: 'Orta', low: 'Düşük' };
                 const statusMap = { open: 'Açık', in_progress: 'Devam Ediyor', completed: 'Tamamlandı', pending_review: 'Gözden Geçiriliyor' };
                 
                 filteredTasks.forEach(task => {
                     const row = document.createElement('tr');
-
-                    // Prioriy cell
-                    const priorityCell = document.createElement('td');
-                    const prioritySpan = document.createElement('span');
-                    prioritySpan.className = `priority-${task.priority}`;
-                    prioritySpan.textContent = priorityMap[task.priority] || 'Normal';
-                    priorityCell.appendChild(prioritySpan);
-                    row.appendChild(priorityCell);
-
-                    // Title cell
-                    const titleCell = document.createElement('td');
-                    titleCell.textContent = task.title;
-                    row.appendChild(titleCell);
-
-                    // Related IP Record cell
-                    const ipRecordCell = document.createElement('td');
                     const relatedIpRecordTitle = task.relatedIpRecordTitle || '-'; 
                     const relatedIpRecordId = task.relatedIpRecordId || '';
-                    if (relatedIpRecordId) {
-                        const ipRecordLink = document.createElement('a');
-                        ipRecordLink.href = '#'; // Linkin sayfayı yenilemesini engellemek için
-                        ipRecordLink.className = 'ip-record-link';
-                        ipRecordLink.dataset.ipRecordId = relatedIpRecordId;
-                        ipRecordLink.textContent = relatedIpRecordTitle;
-                        ipRecordLink.addEventListener('click', (e) => {
-                            e.preventDefault();
-                            this.showIpRecordDetailModal(relatedIpRecordId);
-                        });
-                        ipRecordCell.appendChild(ipRecordLink);
-                    } else {
-                        ipRecordCell.textContent = relatedIpRecordTitle;
-                    }
-                    row.appendChild(ipRecordCell);
-
-                    // Due Date cell
-                    const dueDateCell = document.createElement('td');
-                    dueDateCell.textContent = task.dueDate ? new Date(task.dueDate).toLocaleDateString() : '-';
-                    row.appendChild(dueDateCell);
-
-                    // Status cell
-                    const statusCell = document.createElement('td');
-                    const statusSpan = document.createElement('span');
-                    statusSpan.className = `status-badge status-${task.status}`;
-                    statusSpan.textContent = statusMap[task.status] || task.status;
-                    statusCell.appendChild(statusSpan);
-                    row.appendChild(statusCell);
-
-                    // Actions cell
-                    const actionsCell = document.createElement('td');
-                    const actionButtonsDiv = document.createElement('div');
-                    actionButtonsDiv.className = 'action-buttons';
-
-                    const viewBtn = document.createElement('button');
-                    viewBtn.className = 'action-btn view-btn';
-                    viewBtn.dataset.id = task.id;
-                    viewBtn.textContent = 'Görüntüle';
-                    viewBtn.addEventListener('click', () => this.viewTaskDetailsModal(task.id));
-                    actionButtonsDiv.appendChild(viewBtn);
-
-                    const editBtn = document.createElement('button');
-                    editBtn.className = 'action-btn edit-btn';
-                    editBtn.dataset.id = task.id;
-                    editBtn.textContent = 'Güncelle';
-                    editBtn.addEventListener('click', () => this.editTask(task.id));
-                    actionButtonsDiv.appendChild(editBtn);
-
-                    const deleteBtn = document.createElement('button');
-                    deleteBtn.className = 'action-btn delete-btn';
-                    deleteBtn.dataset.id = task.id;
-                    deleteBtn.textContent = 'Sil';
-                    deleteBtn.addEventListener('click', () => this.deleteTask(task.id));
-                    actionButtonsDiv.appendChild(deleteBtn);
-
-                    const completeBtn = document.createElement('button');
-                    completeBtn.className = 'action-btn complete-btn';
-                    completeBtn.dataset.id = task.id;
-                    completeBtn.dataset.ipRecordId = task.relatedIpRecordId;
-                    completeBtn.textContent = 'İşi Bitir';
-                    if (task.status === 'completed') {
-                        completeBtn.disabled = true;
-                    }
-                    // BURASI ÖNEMLİ: complete-btn için olay dinleyicisi
-                    completeBtn.addEventListener('click', (e) => {
-                        console.log('İşi Bitir butonuna tıklandı! (Yeni DOM yöntemi ile)'); // Konsola mesaj yazdır
-                        const taskId = e.currentTarget.dataset.id;
-                        const ipRecordId = e.currentTarget.dataset.ipRecordId;
-                        this.showCompleteTaskModal(taskId, ipRecordId);
-                    });
-                    actionButtonsDiv.appendChild(completeBtn);
-
-                    actionsCell.appendChild(actionButtonsDiv);
-                    row.appendChild(actionsCell);
-
+                    
+                    const isCompleted = task.status === 'completed';
+                    const completeButtonDisabled = isCompleted ? 'disabled' : '';
+                    
+                    row.innerHTML = `
+                        <td><span class="priority-${task.priority}">${priorityMap[task.priority] || 'Normal'}</span></td>
+                        <td>${task.title}</td>
+                        <td><a href="#" class="ip-record-link" data-ip-record-id="${relatedIpRecordId}">${relatedIpRecordTitle}</a></td> 
+                        <td>${task.dueDate ? new Date(task.dueDate).toLocaleDateString() : '-'}</td>
+                        <td><span class="status-badge status-${task.status}">${statusMap[task.status] || task.status}</span></td>
+                        <td>
+                            <button class="action-btn view-btn" data-id="${task.id}">Görüntüle</button>
+                            <button class="action-btn edit-btn" data-id="${task.id}">Güncelle</button>
+                            <button class="action-btn delete-btn" data-id="${task.id}">Sil</button>
+                            <button class="action-btn complete-btn" data-id="${task.id}" data-ip-record-id="${task.relatedIpRecordId}" ${completeButtonDisabled}>İşi Bitir</button> 
+                        </td>
+                    `;
+                    
                     tableBody.appendChild(row);
                 });
             }
             
-            editTask(taskId) { this.showEditTaskModal(taskId); } 
+            editTask(taskId) { this.showEditTaskModal(taskId); }
 
             async deleteTask(taskId) {
                 if (confirm('Bu görevi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.')) {
@@ -698,26 +693,6 @@
                         modalViewRelatedPartyGroup.style.display = 'block';
                     } else { modalViewRelatedPartyGroup.style.display = 'none'; }
                 } else { modalViewRelatedPartyGroup.style.display = 'none'; }
-                const modalViewRelatedTransactionGroup = document.getElementById('modalViewRelatedTransactionGroup');
-                const modalViewRelatedTransactionLabel = document.getElementById('modalViewRelatedTransactionLabel');
-                const modalViewRelatedTransactionValue = document.getElementById('modalViewRelatedTransactionValue');
-                if (task.details?.relatedTransactionId && task.relatedIpRecordId) {
-                    const ipRecord = ipRecords.find(r => r.id === task.relatedIpRecordId);
-                    if (ipRecord && ipRecord.transactions) {
-                        const transaction = ipRecord.transactions.find(tx => tx.transactionId === task.details.relatedTransactionId);
-                        if (transaction) {
-                            modalViewRelatedTransactionLabel.textContent = 'İlgili Üst İşlem';
-                            modalViewRelatedTransactionValue.textContent = transaction.description || transaction.type;
-                            modalViewRelatedTransactionGroup.style.display = 'block';
-                        } else {
-                            modalViewRelatedTransactionGroup.style.display = 'none';
-                        }
-                    } else {
-                        modalViewRelatedTransactionGroup.style.display = 'none';
-                    }
-                } else {
-                    modalViewRelatedTransactionGroup.style.display = 'none'; 
-                }
                 const modalViewTaskHistory = document.getElementById('modalViewTaskHistory');
                 modalViewTaskHistory.innerHTML = '';
                 if (!task.history || task.history.length === 0) {
@@ -743,13 +718,35 @@
             }
             
             showCompleteTaskModal(taskId, relatedIpRecordId) {
+                console.log('=== showCompleteTaskModal BAŞLADI ===');
+                console.log('Parameters:', { taskId, relatedIpRecordId });
+                
+                // Modal elementini kontrol et
+                const modal = document.getElementById('completeTaskModal');
+                console.log('Modal element:', modal);
+                
+                if (!modal) {
+                    console.error('HATA: completeTaskModal elementi bulunamadı!');
+                    return;
+                }
+                
+                // Form alanlarını doldur
                 document.getElementById('completeTaskId').value = taskId;
                 document.getElementById('completeTaskRelatedIpRecordId').value = relatedIpRecordId;
+                
+                // Dosya listesini temizle
                 this.uploadedCompletionFiles = [];
                 document.getElementById('completeTaskFileList').innerHTML = '';
-                // Hata ayıklama için buraya da bir console.log ekleyelim
-                console.log('showCompleteTaskModal fonksiyonu çağrıldı. Modalı göstermeye çalışılıyor.'); 
-                document.getElementById('completeTaskModal').classList.add('show'); // Modal'ı açan kısım
+                
+                // Modal'ı göster
+                console.log('Modal show class ekleniyor...');
+                modal.classList.add('show');
+                
+                // Başarıyla eklenip eklenmediğini kontrol et
+                console.log('Modal classList after adding show:', modal.classList);
+                console.log('Modal display style:', window.getComputedStyle(modal).display);
+                
+                console.log('=== showCompleteTaskModal BİTTİ ===');
             }
 
             // NEW & REFACTORED: Central function to complete a task
@@ -849,64 +846,5 @@
             }
         });
     </script>
-<div class="modal" id="taskDetailModal">
-<div class="modal-content">
-<span class="close-modal-btn">×</span>
-<h2>İş Detayı</h2>
-<div class="modal-body-content">
-<!-- İş detayları burada gösterilecek -->
-</div>
-</div>
-</div>
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    const completeButtons = document.querySelectorAll('.complete-btn');
-    const completeModal = document.getElementById('completeTaskModal');
-    if (completeModal) {
-        completeButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                completeModal.classList.add('show');
-            });
-        });
-
-        const closeModalBtn = completeModal.querySelector('.close-modal-btn');
-        if (closeModalBtn) {
-            closeModalBtn.addEventListener('click', () => {
-                completeModal.classList.remove('show');
-            });
-        }
-
-        window.addEventListener('click', (event) => {
-            if (event.target === completeModal) {
-                completeModal.classList.remove('show');
-            }
-        });
-    }
-
-    const detailModal = document.getElementById('taskDetailModal');
-    if (detailModal) {
-        const detailBtns = document.querySelectorAll('.view-btn');
-        detailBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                detailModal.classList.add('show');
-            });
-        });
-    }
-
-    const editModal = document.getElementById('editTaskModal');
-    if (editModal) {
-        const editBtns = document.querySelectorAll('.edit-btn');
-        editBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                editModal.classList.add('show');
-                const titleInput = document.getElementById('taskTitle');
-                const descInput = document.getElementById('taskDescription');
-                if (titleInput) titleInput.value = 'Örnek Başlık';
-                if (descInput) descInput.value = 'Örnek açıklama';
-            });
-        });
-    }
-});
-</script>
 </body>
 </html>
