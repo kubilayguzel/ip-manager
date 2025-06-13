@@ -719,7 +719,7 @@
                 this.selectedRelatedParty = person;
                 const display = document.getElementById('selectedRelatedPartyDisplay');
                 const taskType = document.getElementById('specificTaskType').value;
-                const label = { 'Devir': 'Devralan', 'Lisans': 'Lisans Alan', 'Rehin': 'Rehin Alan', 'Birleşme': 'Birleşilen Taraf', 'Veraset ile İntikal': 'Mirasçı', 'Rehin/Teminat': 'Rehin Alan Taraf' }[taskType] || 'İlgili Taraf';
+                const label = { 'Devir': 'Devralan Taraf', 'Lisans': 'Lisans Alan Taraf', 'Rehin': 'Rehin Alan Taraf', 'Birleşme': 'Birleşilen Taraf', 'Veraset ile İntikal': 'Mirasçı', 'Rehin/Teminat': 'Rehin Alan Taraf' }[taskType] || 'İlgili Taraf';
                 display.innerHTML = `<p><b>Seçilen ${label}:</b> ${this.selectedRelatedParty.name}</p>`;
                 display.style.display = 'block';
                 document.getElementById('personSearchResults').innerHTML = '';
@@ -900,33 +900,39 @@
                     taskData.description = `'${this.selectedIpRecord.title}' adlı varlık için ${specificTaskType} talebi.`;
                 }
 
+                // İş oluşturulmadan önce transaction'ı portföy kaydına ekle ve ID'sini al
+                const transactionTypeToRecord = specificTaskType; 
+                const transactionDescriptionToRecord = specificTaskType;
+                let parentTransactionIdForChildLink = null;
+                if (taskData.details && taskData.details.relatedTransactionId) {
+                    parentTransactionIdForChildLink = taskData.details.relatedTransactionId;
+                }
+
+                const transactionData = {
+                    type: transactionTypeToRecord, 
+                    description: transactionDescriptionToRecord, 
+                    parentId: parentTransactionIdForChildLink || null 
+                };
+                const addTxResult = await ipRecordsService.addTransactionToRecord(this.selectedIpRecord.id, transactionData);
+
+                if (!addTxResult.success) {
+                    console.error('Portföy kaydına işlem eklenirken hata:', addTxResult.error);
+                    alert('İş oluşturulurken bir hata oluştu: Portföy kaydına işlem eklenemedi. ' + addTxResult.error);
+                    return; // İşlem eklenemediyse görevi de oluşturma
+                }
+
+                // Transaction ID'sini iş objesine ekle
+                taskData.transactionIdForDeletion = addTxResult.transaction.transactionId; // Yeni alan
+
                 const result = await taskService.createTask(taskData);
                 if(result.success) {
-                    // Portföy kaydına parent transaction ekle
-                    const transactionTypeToRecord = specificTaskType; 
-                    const transactionDescriptionToRecord = specificTaskType; // Spesifik iş tipi görünen adı olarak ayarlandı
-                    
-                    let parentTransactionIdForChildLink = null;
-                    if (taskData.details && taskData.details.relatedTransactionId) {
-                        parentTransactionIdForChildLink = taskData.details.relatedTransactionId;
-                    }
-
-                    const transactionData = {
-                        type: transactionTypeToRecord, 
-                        description: transactionDescriptionToRecord, 
-                        parentId: parentTransactionIdForChildLink || null 
-                    };
-                    const addTxResult = await ipRecordsService.addTransactionToRecord(this.selectedIpRecord.id, transactionData);
-
-                    if (addTxResult.success) {
-                        alert('İş başarıyla oluşturuldu ve Portföy kaydına işlem eklendi!');
-                    } else {
-                        console.error('Portföy kaydına işlem eklenirken hata:', addTxResult.error);
-                        alert('İş oluşturuldu ancak portföy kaydına işlem eklenirken bir hata oluştu: ' + addTxResult.error);
-                    }
+                    alert('İş başarıyla oluşturuldu ve Portföy kaydına işlem eklendi!');
                     window.location.href = 'task-management.html';
                 } else {
-                    alert('Hata: ' + result.error);
+                    console.error('İş oluşturulurken hata:', result.error);
+                    // Eğer görev oluşturma başarısız olursa, eklenen transaction'ı geri al (isteğe bağlı)
+                    // await ipRecordsService.deleteTransaction(this.selectedIpRecord.id, addTxResult.transaction.transactionId);
+                    alert('İş oluşturulurken bir hata oluştu: ' + result.error);
                 }
             }
         }
