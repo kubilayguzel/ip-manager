@@ -243,73 +243,10 @@
 </div>
 </main>
 </div>
-<div class="modal" id="viewTaskDetailModal">
-<div class="modal-content-lg">
-<span class="close-modal-btn" id="closeViewTaskDetailModal">×</span>
-<h3 class="modal-title" id="modalViewTaskTitle">İş Detayı</h3>
-<div class="modal-body-content">
-<div class="modal-detail-grid">
-<div class="modal-detail-item full-width"><div class="modal-detail-label">İş Başlığı</div><div class="modal-detail-value" id="modalViewTaskTitleValue"></div></div>
-<div class="modal-detail-item full-width"><div class="modal-detail-label">Açıklama</div><div class="modal-detail-value long-text" id="modalViewTaskDescriptionValue"></div></div>
-<div class="modal-detail-item"><div class="modal-detail-label">İş Türü</div><div class="modal-detail-value" id="modalViewTaskTypeValue"></div></div>
-<div class="modal-detail-item"><div class="modal-detail-label">Öncelik</div><div class="modal-detail-value" id="modalViewTaskPriorityValue"></div></div>
-<div class="modal-detail-item"><div class="modal-detail-label">Atanan Kişi</div><div class="modal-detail-value" id="modalViewAssignedToValue"></div></div>
-<div class="modal-detail-item"><div class="modal-detail-label">Bitiş Tarihi</div><div class="modal-detail-value" id="modalViewTaskDueDateValue"></div></div>
-<div class="modal-detail-item full-width"><div class="modal-detail-label">İlgili Fikri Mülkiyet Kaydı</div><div class="modal-detail-value" id="modalViewRelatedIpRecordValue"></div></div>
-<div class="modal-detail-item full-width" id="modalViewRelatedPartyGroup" style="display:none;"><div class="modal-detail-label" id="modalViewRelatedPartyLabel"></div><div class="modal-detail-value" id="modalViewRelatedPartyValue"></div></div>
-<div class="modal-detail-item full-width" id="modalViewRelatedTransactionGroup" style="display:none;"><div class="modal-detail-label" id="modalViewRelatedTransactionLabel"></div><div class="modal-detail-value" id="modalViewRelatedTransactionValue"></div></div>
-<h4 class="modal-detail-section-title">İşlem Geçmişi</h4>
-<div class="modal-detail-item full-width task-history" id="modalViewTaskHistory"><p style="text-align: center; color: #666;">İşlem geçmişi bulunmuyor.</p></div>
-</div>
-</div>
-</div>
-</div>
-<div class="modal" id="editTaskModal">
-<div class="modal-content-lg">
-<span class="close-modal-btn" id="closeEditTaskModal">×</span>
-<h3 class="modal-title">İşi Düzenle</h3>
-<div class="modal-body-content">
-<form id="editTaskForm" onsubmit="return false;">
-<input id="editTaskId" type="hidden"/>
-<div class="modal-detail-grid">
-<div class="detail-item" style="grid-column: 1 / -1;"><label class="detail-label" for="modalEditTaskTitle">İş Başlığı</label><input class="form-input" id="modalEditTaskTitle" type="text"/></div>
-<div class="detail-item" style="grid-column: 1 / -1;"><label class="detail-label" for="modalEditTaskDescription">Açıklama</label><textarea class="form-textarea" id="modalEditTaskDescription" rows="4"></textarea></div>
-<div class="detail-item"><label class="detail-label" for="modalEditTaskPriority">Öncelik</label><select class="form-select" id="modalEditTaskPriority"></select></div>
-<div class="detail-item"><label class="detail-label" for="modalEditAssignedTo">Atanan Kişi</label><select class="form-select" id="modalEditAssignedTo"></select></div>
-<div class="detail-item" style="grid-column: 1 / -1;"><label class="detail-label" for="modalEditTaskDueDate">Bitiş Tarihi</label><input class="form-input" id="modalEditTaskDueDate" type="date"/></div>
-<h4 class="modal-detail-section-title">Dokümanlar</h4>
-<div class="detail-item" style="grid-column: 1 / -1;"><label class="detail-label">Mevcut Dokümanlar</label><ul class="document-list" id="modalEditTaskDocumentList"><li id="modalNoTaskDocumentsMessage">Henüz doküman yok.</li></ul><div class="file-upload-area-task-detail" id="modalTaskDetailFileUploadArea"><div>Yeni Dosyaları buraya sürükleyin veya tıklayın</div><input hidden="" id="modalTaskDetailFileInput" multiple="" type="file"/></div><div class="file-list-task-detail" id="modalTaskDetailUploadedFileList"></div></div>
-</div>
-</form>
-</div>
-<div class="modal-footer"><button class="btn btn-secondary" id="cancelEditTaskBtn" type="button">İptal</button><button class="btn btn-primary" id="saveTaskChangesBtn" type="button">Değişiklikleri Kaydet</button></div>
-</div>
-</div>
-<div class="modal" id="completeTaskModal">
-<div class="modal-content" style="max-width: 600px;">
-<span class="close-modal-btn" id="closeCompleteTaskModal">×</span>
-<h3 class="modal-title">İşi Tamamla</h3>
-<div class="modal-body-content">
-<p>Bu işi tamamlamak için bir yöntem seçin. Doküman yüklemek isterseniz, aşağıdaki alanı kullanabilirsiniz.</p>
-<input id="completeTaskId" type="hidden"/><input id="completeTaskRelatedIpRecordId" type="hidden"/>
-<div class="form-group"><label class="form-label" for="completeTaskDocumentInput">Tamamlama Dokümanı (Opsiyonel)</label><div class="file-upload-area-modal" id="completeTaskFileUploadArea"><div>Dosyayı buraya sürükleyin veya tıklayın</div><input hidden="" id="completeTaskDocumentInput" multiple="" type="file"/></div><div class="file-list-modal" id="completeTaskFileList"></div></div>
-</div>
-<div class="modal-footer">
-<button class="btn btn-secondary" id="cancelCompleteTaskBtn" type="button">İptal</button>
-<button class="btn btn-warning" id="clientApprovalBtn" type="button">Müvekkil Onayı</button>
-<button class="btn btn-info" id="manualCloseBtn" type="button">Manuel Kapat</button>
-<button class="btn btn-primary" id="submitCompleteTaskBtn" type="button">İşi Tamamla</button>
-</div>
-</div>
-</div>
-<div class="modal" id="ipRecordDetailModal">
-<div class="modal-content portfolio-detail">
-<div class="modal-header"><h3 class="modal-title" id="ipRecordModalTitle">Kayıt Detayları</h3><button class="close-modal-btn" id="closeIpRecordModalBtn">×</button></div>
-<div id="ipRecordModalBody"></div>
-<h4 class="modal-detail-section-title" style="margin-top: 30px;">Belge İşlem Geçmişi</h4>
-<div class="task-history" id="ipRecordTransactionHistory"><p style="text-align: center; color: #666;">Yükleniyor...</p></div>
-</div>
-</div>
+
+
+
+
 <script type="module">
         import { authService, taskService, ipRecordsService, personsService, auth, generateUUID } from './firebase-config.js';
 
@@ -834,10 +771,19 @@
         });
     </script>
 
+<div class="modal" id="completeTaskModal">
+<div class="modal-content">
+<span class="close-modal-btn">×</span>
+<h2>İşi Tamamla</h2>
+<p>Bu işi tamamlamak istediğinize emin misiniz?</p>
+<button class="btn btn-primary">Onayla</button>
+</div>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const completeButtons = document.querySelectorAll('.complete-btn');
-    const modal = document.querySelector('.modal');
+    const modal = document.getElementById('completeTaskModal');
 
     completeButtons.forEach(button => {
         button.addEventListener('click', () => {
@@ -845,7 +791,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    const closeModalBtn = document.querySelector('.close-modal-btn');
+    const closeModalBtn = modal.querySelector('.close-modal-btn');
     if (closeModalBtn) {
         closeModalBtn.addEventListener('click', () => {
             modal.classList.remove('show');
