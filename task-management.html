@@ -440,7 +440,7 @@
                     `;
                     // Olay dinleyicilerini ekle
                     row.querySelector('.view-btn').addEventListener('click', () => this.viewTaskDetailsModal(task.id));
-                    row.querySelector('.edit-btn').addEventListener('click', () => this.showEditTaskModal(task.id));
+                    row.querySelector('.edit-btn').addEventListener('click', () => this.editTask(task.id));
                     row.querySelector('.delete-btn').addEventListener('click', () => this.deleteTask(task.id));
 
                     tableBody.appendChild(row);
@@ -610,59 +610,48 @@
         
         // Akordiyon menü için JS kodu
         document.addEventListener('DOMContentLoaded', function() {
-    // --- Akordiyon Menü Tıklama Fonksiyonu ---
-    const accordions = document.querySelectorAll('.accordion-header');
-    accordions.forEach(accordion => {
-        accordion.addEventListener('click', function(event) {
-            // Akordiyonu aç/kapat
-            this.classList.toggle('active');
-            const content = this.nextElementSibling;
-            if (content.style.maxHeight) {
-                content.style.maxHeight = null;
-            } else {
-                content.style.maxHeight = content.scrollHeight + "px";
+            // --- Akordiyon Menü Tıklama Fonksiyonu ---
+            const accordions = document.querySelectorAll('.accordion-header');
+            accordions.forEach(accordion => {
+                accordion.addEventListener('click', function(event) {
+                    // Akordiyonu aç/kapat
+                    this.classList.toggle('active');
+                    const content = this.nextElementSibling;
+                    if (content.style.maxHeight) {
+                        content.style.maxHeight = null;
+                    } else {
+                        content.style.maxHeight = content.scrollHeight + "px";
+                    }
+                });
+            });
+
+            // --- Sayfa Yüklendiğinde Aktif Menüyü Ayarlama Fonksiyonu ---
+            function setActiveMenu() {
+                const currentPage = window.location.pathname.split("/").pop() || 'dashboard.html';
+                
+                // Önce tüm aktif işaretlerini temizle
+                document.querySelectorAll('.sidebar-nav-item.active, .accordion-content a.active').forEach(el => el.classList.remove('active'));
+                
+                // Mevcut sayfanın linkini bul ve aktif yap
+                const activeLink = document.querySelector(`.sidebar-nav a[href="${currentPage}"]`);
+                if (!activeLink) return;
+
+                activeLink.classList.add('active');
+                
+                // Eğer link bir akordiyon içindeyse, akordiyonu aç ve başlığını aktif et
+                const parentAccordionContent = activeLink.closest('.accordion-content');
+                if (parentAccordionContent) {
+                    const parentAccordionHeader = parentAccordionContent.previousElementSibling;
+                    if (parentAccordionHeader && parentAccordionHeader.classList.contains('accordion-header')) {
+                        parentAccordionHeader.classList.add('active');
+                        parentAccordionContent.style.maxHeight = parentAccordionContent.scrollHeight + "px";
+                    }
+                }
             }
+
+            // Sayfa ilk yüklendiğinde aktif menüyü ayarla
+            setActiveMenu();
         });
-    });
-
-    // --- Sayfa Yüklendiğinde Aktif Menüyü Ayarlama Fonksiyonu ---
-    function setActiveMenu() {
-        const currentPage = window.location.pathname.split("/").pop() || 'dashboard.html';
-        
-        // Önce tüm aktif işaretlerini temizle
-        document.querySelectorAll('.sidebar-nav-item.active, .accordion-content a.active').forEach(el => el.classList.remove('active'));
-        
-        // Mevcut sayfanın linkini bul ve aktif yap
-        const activeLink = document.querySelector(`.sidebar-nav a[href="${currentPage}"]`);
-        if (!activeLink) return;
-
-        activeLink.classList.add('active');
-        
-        // Eğer link bir akordiyon içindeyse, akordiyonu aç ve başlığını aktif et
-        const parentAccordionContent = activeLink.closest('.accordion-content');
-        if (parentAccordionContent) {
-            const parentAccordionHeader = parentAccordionContent.previousElementSibling;
-            if (parentAccordionHeader && parentAccordionHeader.classList.contains('accordion-header')) {
-                parentAccordionHeader.classList.add('active');
-                parentAccordionContent.style.maxHeight = parentAccordionContent.scrollHeight + "px";
-            }
-        }
-    }
-
-    // Sayfa ilk yüklendiğinde aktif menüyü ayarla
-    setActiveMenu();
-
-  showEditTaskModal(taskId) {
-    const task = this.allTasks.find(t => t.id === taskId);
-    if (!task) return alert('Görev bulunamadı');
-    this.activeEditTaskId = taskId;
-    document.getElementById('editTaskTitle').value = task.title || '';
-    document.getElementById('editTaskDescription').value = task.description || '';
-    document.getElementById('editTaskPriority').value = task.priority || 'medium';
-    document.getElementById('editTaskModal').classList.add('show');
-  }
-
-});
     </script>
 </body>
 </html>
