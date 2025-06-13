@@ -5,78 +5,106 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IP Manager - İşlerim</title>
     <style>
-        /* CSS styles are unchanged, they are correct */
+        /* CSS stilleri öncekiyle aynı, değişiklik yok */
     </style>
 </head>
 <body>
-    <aside class="sidebar">
-        </aside>
-
-    <div class="page-wrapper">
-        <header class="top-header">
-            </header>
-
-        <main class="main-container">
-            <section class="page-header">
-                <h1 class="page-title">Bana Atanan İşler</h1>
-                <p class="page-subtitle">Size atanmış olan tüm görevleri buradan takip edebilirsiniz.</p>
-            </section>
-    
-            <div class="tasks-container">
-                <div class="tasks-header">
-                    <div class="filter-group">
-                        <label class="filter-label" for="statusFilter">Duruma Göre Filtrele:</label>
-                        <select id="statusFilter" class="filter-select">
-                            <option value="all">Tümü</option>
-                            <option value="open">Açık</option>
-                            <option value="in_progress">Devam Ediyor</option>
-                            <option value="pending_review">Gözden Geçiriliyor</option>
-                            <option value="completed">Tamamlandı</option>
-                        </select>
-                    </div>
-                    <button id="assignSelectedBtn" class="btn-secondary" disabled>Seçilenleri Başka Kullanıcıya Ata</button>
-                </div>
-                <div class="table-container">
-                    <table class="task-table">
-                        <thead>
-                            <tr>
-                                <th><input type="checkbox" id="selectAllCheckbox" title="Tümünü Seç"></th>
-                                <th>Öncelik</th>
-                                <th>İş Başlığı</th>
-                                <th>İlgili Kayıt</th>
-                                <th>Bitiş Tarihi</th>
-                                <th>Durum</th>
-                                <th>İşlemler</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tasksTableBody"></tbody>
-                    </table>
-                     <div id="loadingIndicator" class="loading">Yükleniyor...</div>
-                     <div id="noTasksMessage" class="no-tasks">Size atanmış aktif bir iş bulunmamaktadır.</div>
-                </div>
-            </div>
-        </main>
-    </div>
-
     <script type="module">
         import { authService, taskService, ipRecordsService, personsService, auth, generateUUID } from './firebase-config.js';
 
         class MyTasksModule {
             constructor() {
-                // ... properties
+                this.currentUser = null;
+                this.tasks = [];
+                this.allIpRecords = [];
+                this.allPersons = [];
+                this.allUsers = [];
+                this.uploadedCompletionFiles = [];
+                this.uploadedEditFiles = [];
+                this.currentEditTask = null;
             }
 
             async init() {
-                // ... init logic
+                console.log("MyTasks: init() başladı.");
+                this.currentUser = authService.getCurrentUser();
+                if (!this.currentUser) {
+                    window.location.href = 'index.html';
+                    return;
+                }
+                
+                this.updateUserInfo();
+                this.setupEventListeners();
+                await this.loadInitialData();
+                console.log("MyTasks: init() tamamlandı.");
+            }
+
+            updateUserInfo() {
+                if (this.currentUser) {
+                    const userName = this.currentUser.displayName || this.currentUser.email.split('@')[0] || 'Kullanıcı';
+                    const userRole = this.currentUser.role === 'admin' ? 'Yönetici' : this.currentUser.role === 'superadmin' ? 'Süper Yönetici' : 'Kullanıcı';
+                    document.getElementById('userAvatar').textContent = userName.charAt(0).toUpperCase();
+                    document.getElementById('userName').textContent = userName;
+                    document.getElementById('userRole').textContent = userRole;
+                }
             }
             
-            // ... other methods ...
+            async loadInitialData() {
+                console.log("MyTasks: Veri yükleme başladı...");
+                document.getElementById('loadingIndicator').style.display = 'block';
+                document.getElementById('noTasksMessage').style.display = 'none';
+                document.getElementById('tasksTableBody').innerHTML = '';
+                try {
+                    const [tasksResult, ipRecordsResult, personsResult, usersResult] = await Promise.all([
+                        taskService.getTasksForUser(this.currentUser.uid),
+                        ipRecordsService.getRecords(),
+                        personsService.getPersons(),
+                        taskService.getAllUsers()
+                    ]);
+
+                    if (tasksResult.success) this.tasks = tasksResult.data; else throw new Error(tasksResult.error || 'Görevler yüklenemedi');
+                    if (ipRecordsResult.success) this.allIpRecords = ipRecordsResult.data; else throw new Error(ipRecordsResult.error || 'IP Kayıtları yüklenemedi');
+                    if (personsResult.success) this.allPersons = personsResult.data; else throw new Error(personsResult.error || 'Kişiler yüklenemedi');
+                    if (usersResult.success) this.allUsers = usersResult.data; else throw new Error(usersResult.error || 'Kullanıcılar yüklenemedi');
+                    
+                    this.renderTasks();
+                    console.log("MyTasks: Veri yükleme tamamlandı.");
+
+                } catch (error) {
+                    console.error('MyTasks: Başlangıç verileri yüklenirken hata:', error);
+                    alert('Veriler yüklenirken bir hata oluştu: ' + error.message);
+                } finally {
+                    document.getElementById('loadingIndicator').style.display = 'none';
+                }
+            }
+
+            setupEventListeners() {
+                document.getElementById('logoutBtn').addEventListener('click', () => authService.signOut().then(() => window.location.href = 'index.html'));
+                document.getElementById('statusFilter').addEventListener('change', (e) => this.renderTasks(e.target.value));
+                
+                // Diğer tüm modal ve buton listener'ları buraya...
+                // ...
+
+                // Assignment Listeners
+                document.getElementById('assignSelectedBtn').addEventListener('click', () => this.showAssignModal());
+                document.getElementById('selectAllCheckbox').addEventListener('click', (e) => this.handleSelectAll(e.target.checked));
+                
+                // Delegate listener for dynamic elements
+                document.getElementById('tasksTableBody').addEventListener('click', (e) => {
+                    if (e.target.classList.contains('task-checkbox')) {
+                        this.handleSelectionChange();
+                    }
+                });
+            }
 
             renderTasks(filter = 'all') {
+                console.log("MyTasks: renderTasks() çalıştı.");
                 const tableBody = document.getElementById('tasksTableBody');
                 const noTasksMessage = document.getElementById('noTasksMessage');
                 tableBody.innerHTML = '';
                 const filteredTasks = this.tasks.filter(task => filter === 'all' || task.status === filter);
+                
+                console.log(`MyTasks: ${filteredTasks.length} adet filtrelenmiş görev bulundu.`);
+
                 if (filteredTasks.length === 0) {
                     noTasksMessage.style.display = 'block';
                     return;
@@ -85,7 +113,8 @@
                 const priorityMap = { high: 'Yüksek', medium: 'Orta', low: 'Düşük' };
                 const statusMap = { open: 'Açık', in_progress: 'Devam Ediyor', completed: 'Tamamlandı', pending_review: 'Gözden Geçiriliyor' };
                 
-                filteredTasks.forEach(task => {
+                filteredTasks.forEach((task, index) => {
+                    console.log(`MyTasks: Görev #${index + 1} render ediliyor: ${task.title}`);
                     const row = document.createElement('tr');
                     const relatedIpRecordTitle = task.relatedIpRecordTitle || '-'; 
                     const relatedIpRecordId = task.relatedIpRecordId || '';
@@ -104,42 +133,64 @@
                         </td>
                     `;
                     
-                    // DÜZELTME: Olay dinleyicileri burada ekleniyor
                     row.querySelector('.view-btn').addEventListener('click', () => this.viewTaskDetailsModal(task.id));
                     row.querySelector('.edit-btn').addEventListener('click', () => this.editTask(task.id));
                     row.querySelector('.delete-btn').addEventListener('click', () => this.deleteTask(task.id));
                     row.querySelector('.complete-btn').addEventListener('click', () => this.showCompleteTaskModal(task.id, task.relatedIpRecordId));
                     const ipRecordLink = row.querySelector('.ip-record-link');
                     if (ipRecordLink && relatedIpRecordId) {
-                        ipRecordLink.addEventListener('click', (e) => { 
-                            e.preventDefault(); 
-                            this.showIpRecordDetailModal(relatedIpRecordId); 
-                        });
+                        ipRecordLink.addEventListener('click', (e) => { e.preventDefault(); this.showIpRecordDetailModal(relatedIpRecordId); });
                     }
-
                     tableBody.appendChild(row);
                 });
                 this.handleSelectionChange();
+                console.log("MyTasks: renderTasks() tamamlandı.");
             }
 
-            // ... other methods like assignment logic, etc.
+            // ... (diğer tüm metodlar değişmedi)
         }
 
-        // Initialization logic with DOMContentLoaded wrapper
-        document.addEventListener('DOMContentLoaded', function() {
-            // ... accordion and menu logic ...
-            
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log("MyTasks: DOMContentLoaded olayı tetiklendi.");
             let myTasksModuleInstance;
-            authService.auth.onAuthStateChanged((user) => {
+            authService.auth.onAuthStateChanged(async (user) => {
+                console.log("MyTasks: Auth state değişti. Kullanıcı:", user ? user.email : "yok");
                 if (user || authService.getCurrentUser()) {
                     if (!myTasksModuleInstance) {
+                        console.log("MyTasks: Modül ilk kez oluşturuluyor ve init çağrılıyor.");
                         myTasksModuleInstance = new MyTasksModule();
-                        myTasksModuleInstance.init();
+                        await myTasksModuleInstance.init();
                     }
                 } else {
                     window.location.href = 'index.html';
                 }
             });
+            // Akordiyon menü scripti
+            const accordions = document.querySelectorAll('.accordion-header');
+            accordions.forEach(accordion => { 
+                accordion.addEventListener('click', function() { 
+                    this.classList.toggle('active'); 
+                    const content = this.nextElementSibling; 
+                    if (content.style.maxHeight) { content.style.maxHeight = null; } 
+                    else { content.style.maxHeight = content.scrollHeight + "px"; } 
+                }); 
+            });
+            function setActiveMenu() { 
+                const currentPage = window.location.pathname.split("/").pop() || 'dashboard.html'; 
+                document.querySelectorAll('.sidebar-nav-item.active, .accordion-content a.active').forEach(el => el.classList.remove('active')); 
+                const activeLink = document.querySelector(`.sidebar-nav a[href="${currentPage}"]`); 
+                if (!activeLink) return; 
+                activeLink.classList.add('active'); 
+                const parentAccordionContent = activeLink.closest('.accordion-content'); 
+                if (parentAccordionContent) { 
+                    const parentAccordionHeader = parentAccordionContent.previousElementSibling; 
+                    if (parentAccordionHeader && parentAccordionHeader.classList.contains('accordion-header')) { 
+                        parentAccordionHeader.classList.add('active'); 
+                        parentAccordionContent.style.maxHeight = parentAccordionContent.scrollHeight + "px"; 
+                    } 
+                } 
+            }
+            setActiveMenu();
         });
     </script>
 </body>
