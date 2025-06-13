@@ -157,31 +157,7 @@
                     </div>
                 </div>
 
-                <div id="taskFormContainer" style="display: none;">
-                    <section class="page-header">
-                        <h1 id="formTitle" class="page-title">Yeni İş Oluştur</h1>
-                        <p class="page-subtitle">Aşağıdaki formu doldurarak yeni bir görev oluşturun.</p>
-                    </section>
-                    <div class="form-container">
-                        <form id="taskForm">
-                            <input type="hidden" id="taskId">
-                            <div class="form-grid">
-                                <div class="form-group full-width"><label for="taskTitle" class="form-label">İş Başlığı</label><input type="text" id="taskTitle" class="form-input" required></div>
-                                <div class="form-group full-width"><label for="taskDescription" class="form-label">Açıklama</label><textarea id="taskDescription" class="form-textarea" rows="4"></textarea></div>
-                                <div class="form-group"><label for="taskType" class="form-label">İş Türü</label><select id="taskType" class="form-select"><option value="general">Genel</option><option value="trademark_application">Marka Başvurusu</option><option value="patent_renewal">Patent Yenileme</option><option value="document_review">Belge İnceleme</option></select></div>
-                                <div class="form-group"><label for="taskPriority" class="form-label">Öncelik</label><select id="taskPriority" class="form-select"><option value="low">Düşük</option><option value="medium">Orta</option><option value="high">Yüksek</option></select></div>
-                                <div class="form-group"><label for="assignedTo" class="form-label">Atanacak Kişi</label><select id="assignedTo" class="form-select" required></select></div>
-                                <div class="form-group"><label for="taskDueDate" class="form-label">Bitiş Tarihi</label><input type="date" id="taskDueDate" class="form-input"></div>
-                                <div class="form-group full-width"><label for="relatedIpRecord" class="form-label">İlgili Fikri Mülkiyet Kaydı (Opsiyonel)</label><select id="relatedIpRecord" class="form-select"></select></div>
-                            </div>
-                            <div class="form-actions">
-                                <button type="button" id="cancelTaskFormBtn" class="btn-secondary">İptal</button>
-                                <button type="submit" class="btn-primary">Kaydet</button>
-                            </div>
-                        </form>
-                    </div>
                 </div>
-            </div>
         </main>
     </div>
 
@@ -210,10 +186,12 @@
                 await this.loadInitialData();
                 this.setupEventListeners();
 
-                const urlParams = new URLSearchParams(window.location.search);
-                if (urlParams.get('action') === 'create') {
-                    setTimeout(() => this.showTaskForm(), 100);
-                }
+                // task-management.html'den gelen action=create URL parametresi create-task.html'e yönlendirilmeli
+                // Bu kısım burada gereksiz hale geldiği için kaldırıldı.
+                // const urlParams = new URLSearchParams(window.location.search);
+                // if (urlParams.get('action') === 'create') {
+                //     setTimeout(() => this.showTaskForm(), 100);
+                // }
             }
 
             updateUserInfo() {
@@ -243,50 +221,55 @@
             }
             
             setupEventListeners() {
+                // Yeni İş Oluştur butonu create-task.html'e yönlendirilmeli
                 document.getElementById('createTaskBtn').addEventListener('click', () => {window.location.href = 'create-task.html';});
-                document.getElementById('cancelTaskFormBtn').addEventListener('click', () => this.showTaskList());
-                document.getElementById('taskForm').addEventListener('submit', (e) => this.handleFormSubmit(e));
+                
+                // Formla ilgili butonlar kaldırıldı veya taşındı
+                // document.getElementById('cancelTaskFormBtn').addEventListener('click', () => this.showTaskList());
+                // document.getElementById('taskForm').addEventListener('submit', (e) => this.handleFormSubmit(e));
+                
                 document.getElementById('userFilter').addEventListener('change', () => this.renderTasks());
                 document.getElementById('statusFilter').addEventListener('change', () => this.renderTasks());
                 document.getElementById('logoutBtn').addEventListener('click', () => authService.signOut());
             }
 
-            showTaskList() {
-                document.getElementById('taskListContainer').style.display = 'block';
-                document.getElementById('taskFormContainer').style.display = 'none';
-            }
+            // showTaskList ve showTaskForm metodları task-detail.html'e taşındığı için kaldırıldı.
+            // showTaskList() {
+            //     document.getElementById('taskListContainer').style.display = 'block';
+            //     document.getElementById('taskFormContainer').style.display = 'none';
+            // }
 
-            showTaskForm(taskId = null) {
-                document.getElementById('taskListContainer').style.display = 'none';
-                document.getElementById('taskFormContainer').style.display = 'block';
+            // showTaskForm(taskId = null) {
+            //     document.getElementById('taskListContainer').style.display = 'none';
+            //     document.getElementById('taskFormContainer').style.display = 'block';
                 
-                const form = document.getElementById('taskForm');
-                form.reset();
-                document.getElementById('taskId').value = '';
+            //     const form = document.getElementById('taskForm');
+            //     form.reset();
+            //     document.getElementById('taskId').value = '';
 
-                const assignedToSelect = document.getElementById('assignedTo');
-                assignedToSelect.innerHTML = '';
-                this.allUsers.forEach(u => assignedToSelect.innerHTML += `<option value="${u.id}">${u.displayName || u.email}</option>`);
+            //     const assignedToSelect = document.getElementById('assignedTo');
+            //     assignedToSelect.innerHTML = '';
+            //     this.allUsers.forEach(u => assignedToSelect.innerHTML += `<option value="${u.id}">${u.displayName || u.email}</option>`);
 
-                const ipRecordSelect = document.getElementById('relatedIpRecord');
-                ipRecordSelect.innerHTML = '<option value="">Yok</option>';
-                this.allIpRecords.forEach(r => ipRecordSelect.innerHTML += `<option value="${r.id}">${r.title}</option>`);
+            //     const ipRecordSelect = document.getElementById('relatedIpRecord');
+            //     ipRecordSelect.innerHTML = '<option value="">Yok</option>';
+            //     this.allIpRecords.forEach(r => ipRecordSelect.innerHTML += `<option value="${r.id}">${r.title}</option>`);
 
-                if (taskId) {
-                    const task = this.allTasks.find(t => t.id === taskId);
-                    document.getElementById('formTitle').textContent = 'İşi Düzenle';
-                    document.getElementById('taskId').value = task.id;
-                    document.getElementById('taskTitle').value = task.title;
-                    document.getElementById('taskDescription').value = task.description;
-                    document.getElementById('taskType').value = task.taskType;
-                    document.getElementById('taskPriority').value = task.priority;
-                    document.getElementById('assignedTo').value = task.assignedTo_uid;
-                    document.getElementById('taskDueDate').value = task.dueDate || '';
-                    document.getElementById('relatedIpRecord').value = task.relatedIpRecordId || '';
-                } else {
-                    document.getElementById('formTitle').textContent = 'Yeni İş Oluştur';
-                }
-            }
+            //     if (taskId) {
+            //         const task = this.allTasks.find(t => t.id === taskId);
+            //         document.getElementById('formTitle').textContent = 'İşi Düzenle';
+            //         document.getElementById('taskId').value = task.id;
+            //         document.getElementById('taskTitle').value = task.title;
+            //         document.getElementById('taskDescription').value = task.description;
+            //         document.getElementById('taskType').value = task.taskType;
+            //         document.getElementById('taskPriority').value = task.priority;
+            //         document.getElementById('assignedTo').value = task.assignedTo_uid;
+            //         document.getElementById('taskDueDate').value = task.dueDate || '';
+            //         document.getElementById('relatedIpRecord').value = task.relatedIpRecordId || '';
+            //     } else {
+            //         document.getElementById('formTitle').textContent = 'Yeni İş Oluştur';
+            //     }
+            // }
             
             renderTasks() {
                 const tableBody = document.getElementById('tasksTableBody');
@@ -309,7 +292,7 @@
                         <td>${task.relatedIpRecordTitle || '-'}</td>
                         <td>${task.status}</td>
                         <td>
-                            <button onclick="window.taskManagementModule.showTaskForm('${task.id}')">Düzenle</button>
+                            <button onclick="window.taskManagementModule.viewTaskDetails('${task.id}')">Düzenle</button>
                         </td>
                     `;
                     tableBody.appendChild(row);
@@ -331,41 +314,47 @@
                     <option value="completed">Tamamlandı</option>`;
             }
 
-            async handleFormSubmit(e) {
-                e.preventDefault();
-                const taskId = document.getElementById('taskId').value;
-                const assignedToUser = this.allUsers.find(u => u.id === document.getElementById('assignedTo').value);
-                const relatedIpRecord = this.allIpRecords.find(r => r.id === document.getElementById('relatedIpRecord').value);
+            // handleFormSubmit metodu task-detail.html'e taşındığı için kaldırıldı.
+            // async handleFormSubmit(e) {
+            //     e.preventDefault();
+            //     const taskId = document.getElementById('taskId').value;
+            //     const assignedToUser = this.allUsers.find(u => u.id === document.getElementById('assignedTo').value);
+            //     const relatedIpRecord = this.allIpRecords.find(r => r.id === document.getElementById('relatedIpRecord').value);
 
-                const taskData = {
-                    title: document.getElementById('taskTitle').value,
-                    description: document.getElementById('taskDescription').value,
-                    taskType: document.getElementById('taskType').value,
-                    priority: document.getElementById('taskPriority').value,
-                    assignedTo_uid: assignedToUser.id,
-                    assignedTo_email: assignedToUser.email,
-                    dueDate: document.getElementById('taskDueDate').value || null,
-                    relatedIpRecordId: relatedIpRecord ? relatedIpRecord.id : null,
-                    relatedIpRecordTitle: relatedIpRecord ? relatedIpRecord.title : null,
-                };
+            //     const taskData = {
+            //         title: document.getElementById('taskTitle').value,
+            //         description: document.getElementById('taskDescription').value,
+            //         taskType: document.getElementById('taskType').value,
+            //         priority: document.getElementById('taskPriority').value,
+            //         assignedTo_uid: assignedToUser.id,
+            //         assignedTo_email: assignedToUser.email,
+            //         dueDate: document.getElementById('taskDueDate').value || null,
+            //         relatedIpRecordId: relatedIpRecord ? relatedIpRecord.id : null,
+            //         relatedIpRecordTitle: relatedIpRecord ? relatedIpRecord.title : null,
+            //     };
                 
-                let result;
-                if (taskId) {
-                    result = await taskService.updateTask(taskId, taskData);
-                } else {
-                    taskData.status = 'open';
-                    taskData.createdBy_uid = this.currentUser.uid;
-                    taskData.createdBy_email = this.currentUser.email;
-                    result = await taskService.createTask(taskData);
-                }
+            //     let result;
+            //     if (taskId) {
+            //         result = await taskService.updateTask(taskId, taskData);
+            //     } else {
+            //         taskData.status = 'open';
+            //         taskData.createdBy_uid = this.currentUser.uid;
+            //         taskData.createdBy_email = this.currentUser.email;
+            //         result = await taskService.createTask(taskData);
+            //     }
 
-                if (result.success) {
-                    alert(`İş başarıyla ${taskId ? 'güncellendi' : 'oluşturuldu'}!`);
-                    this.showTaskList();
-                    await this.loadInitialData();
-                } else {
-                    alert('Hata: ' + result.error);
-                }
+            //     if (result.success) {
+            //         alert(`İş başarıyla ${taskId ? 'güncellendi' : 'oluşturuldu'}!`);
+            //         this.showTaskList();
+            //         await this.loadInitialData();
+            //     } else {
+            //         alert('Hata: ' + result.error);
+            //     }
+            // }
+
+            // Yeni İş Yönetimi sayfasındaki 'Düzenle' butonu için yönlendirme metodu
+            viewTaskDetails(taskId) {
+                window.location.href = `task-detail.html?taskId=${taskId}`;
             }
         }
 
