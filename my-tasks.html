@@ -14,18 +14,10 @@
 
         class MyTasksModule {
             constructor() {
-                this.currentUser = null;
-                this.tasks = [];
-                this.allIpRecords = [];
-                this.allPersons = [];
-                this.allUsers = [];
-                this.uploadedCompletionFiles = [];
-                this.uploadedEditFiles = [];
-                this.currentEditTask = null;
+                // ... özellikler ...
             }
 
             async init() {
-                console.log("MyTasks: init() başladı.");
                 this.currentUser = authService.getCurrentUser();
                 if (!this.currentUser) {
                     window.location.href = 'index.html';
@@ -35,7 +27,6 @@
                 this.updateUserInfo();
                 this.setupEventListeners();
                 await this.loadInitialData();
-                console.log("MyTasks: init() tamamlandı.");
             }
 
             updateUserInfo() {
@@ -49,115 +40,26 @@
             }
             
             async loadInitialData() {
-                console.log("MyTasks: Veri yükleme başladı...");
-                document.getElementById('loadingIndicator').style.display = 'block';
-                document.getElementById('noTasksMessage').style.display = 'none';
-                document.getElementById('tasksTableBody').innerHTML = '';
-                try {
-                    const [tasksResult, ipRecordsResult, personsResult, usersResult] = await Promise.all([
-                        taskService.getTasksForUser(this.currentUser.uid),
-                        ipRecordsService.getRecords(),
-                        personsService.getPersons(),
-                        taskService.getAllUsers()
-                    ]);
-
-                    if (tasksResult.success) this.tasks = tasksResult.data; else throw new Error(tasksResult.error || 'Görevler yüklenemedi');
-                    if (ipRecordsResult.success) this.allIpRecords = ipRecordsResult.data; else throw new Error(ipRecordsResult.error || 'IP Kayıtları yüklenemedi');
-                    if (personsResult.success) this.allPersons = personsResult.data; else throw new Error(personsResult.error || 'Kişiler yüklenemedi');
-                    if (usersResult.success) this.allUsers = usersResult.data; else throw new Error(usersResult.error || 'Kullanıcılar yüklenemedi');
-                    
-                    this.renderTasks();
-                    console.log("MyTasks: Veri yükleme tamamlandı.");
-
-                } catch (error) {
-                    console.error('MyTasks: Başlangıç verileri yüklenirken hata:', error);
-                    alert('Veriler yüklenirken bir hata oluştu: ' + error.message);
-                } finally {
-                    document.getElementById('loadingIndicator').style.display = 'none';
-                }
+                // ... veri yükleme ...
+                this.renderTasks();
             }
 
             setupEventListeners() {
-                document.getElementById('logoutBtn').addEventListener('click', () => authService.signOut().then(() => window.location.href = 'index.html'));
-                document.getElementById('statusFilter').addEventListener('change', (e) => this.renderTasks(e.target.value));
-                
-                // Diğer tüm modal ve buton listener'ları buraya...
-                // ...
-
-                // Assignment Listeners
-                document.getElementById('assignSelectedBtn').addEventListener('click', () => this.showAssignModal());
-                document.getElementById('selectAllCheckbox').addEventListener('click', (e) => this.handleSelectAll(e.target.checked));
-                
-                // Delegate listener for dynamic elements
-                document.getElementById('tasksTableBody').addEventListener('click', (e) => {
-                    if (e.target.classList.contains('task-checkbox')) {
-                        this.handleSelectionChange();
-                    }
-                });
+                // ... olay dinleyicileri ...
             }
 
             renderTasks(filter = 'all') {
-                console.log("MyTasks: renderTasks() çalıştı.");
-                const tableBody = document.getElementById('tasksTableBody');
-                const noTasksMessage = document.getElementById('noTasksMessage');
-                tableBody.innerHTML = '';
-                const filteredTasks = this.tasks.filter(task => filter === 'all' || task.status === filter);
-                
-                console.log(`MyTasks: ${filteredTasks.length} adet filtrelenmiş görev bulundu.`);
-
-                if (filteredTasks.length === 0) {
-                    noTasksMessage.style.display = 'block';
-                    return;
-                }
-                noTasksMessage.style.display = 'none'; 
-                const priorityMap = { high: 'Yüksek', medium: 'Orta', low: 'Düşük' };
-                const statusMap = { open: 'Açık', in_progress: 'Devam Ediyor', completed: 'Tamamlandı', pending_review: 'Gözden Geçiriliyor' };
-                
-                filteredTasks.forEach((task, index) => {
-                    console.log(`MyTasks: Görev #${index + 1} render ediliyor: ${task.title}`);
-                    const row = document.createElement('tr');
-                    const relatedIpRecordTitle = task.relatedIpRecordTitle || '-'; 
-                    const relatedIpRecordId = task.relatedIpRecordId || '';
-                    row.innerHTML = `
-                        <td><input type="checkbox" class="task-checkbox" data-id="${task.id}" ${task.status === 'completed' ? 'disabled' : ''}></td>
-                        <td><span class="priority-${task.priority}">${priorityMap[task.priority] || 'Normal'}</span></td>
-                        <td>${task.title}</td>
-                        <td><a href="#" class="ip-record-link" data-ip-record-id="${relatedIpRecordId}">${relatedIpRecordTitle}</a></td> 
-                        <td>${task.dueDate ? new Date(task.dueDate).toLocaleDateString() : '-'}</td>
-                        <td><span class="status-badge status-${task.status}">${statusMap[task.status] || task.status}</span></td>
-                        <td>
-                            <button class="action-btn view-btn" data-id="${task.id}">Görüntüle</button>
-                            <button class="action-btn edit-btn" data-id="${task.id}">Güncelle</button>
-                            <button class="action-btn delete-btn" data-id="${task.id}">Sil</button>
-                            <button class="action-btn complete-btn" data-id="${task.id}" data-ip-record-id="${task.relatedIpRecordId}" ${task.status === 'completed' ? 'disabled' : ''}>İşi Bitir</button> 
-                        </td>
-                    `;
-                    
-                    row.querySelector('.view-btn').addEventListener('click', () => this.viewTaskDetailsModal(task.id));
-                    row.querySelector('.edit-btn').addEventListener('click', () => this.editTask(task.id));
-                    row.querySelector('.delete-btn').addEventListener('click', () => this.deleteTask(task.id));
-                    row.querySelector('.complete-btn').addEventListener('click', () => this.showCompleteTaskModal(task.id, task.relatedIpRecordId));
-                    const ipRecordLink = row.querySelector('.ip-record-link');
-                    if (ipRecordLink && relatedIpRecordId) {
-                        ipRecordLink.addEventListener('click', (e) => { e.preventDefault(); this.showIpRecordDetailModal(relatedIpRecordId); });
-                    }
-                    tableBody.appendChild(row);
-                });
-                this.handleSelectionChange();
-                console.log("MyTasks: renderTasks() tamamlandı.");
+                // ... görevleri render etme ...
             }
 
-            // ... (diğer tüm metodlar değişmedi)
+            // ... diğer tüm metodlar ...
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            console.log("MyTasks: DOMContentLoaded olayı tetiklendi.");
             let myTasksModuleInstance;
             authService.auth.onAuthStateChanged(async (user) => {
-                console.log("MyTasks: Auth state değişti. Kullanıcı:", user ? user.email : "yok");
                 if (user || authService.getCurrentUser()) {
                     if (!myTasksModuleInstance) {
-                        console.log("MyTasks: Modül ilk kez oluşturuluyor ve init çağrılıyor.");
                         myTasksModuleInstance = new MyTasksModule();
                         await myTasksModuleInstance.init();
                     }
@@ -166,31 +68,6 @@
                 }
             });
             // Akordiyon menü scripti
-            const accordions = document.querySelectorAll('.accordion-header');
-            accordions.forEach(accordion => { 
-                accordion.addEventListener('click', function() { 
-                    this.classList.toggle('active'); 
-                    const content = this.nextElementSibling; 
-                    if (content.style.maxHeight) { content.style.maxHeight = null; } 
-                    else { content.style.maxHeight = content.scrollHeight + "px"; } 
-                }); 
-            });
-            function setActiveMenu() { 
-                const currentPage = window.location.pathname.split("/").pop() || 'dashboard.html'; 
-                document.querySelectorAll('.sidebar-nav-item.active, .accordion-content a.active').forEach(el => el.classList.remove('active')); 
-                const activeLink = document.querySelector(`.sidebar-nav a[href="${currentPage}"]`); 
-                if (!activeLink) return; 
-                activeLink.classList.add('active'); 
-                const parentAccordionContent = activeLink.closest('.accordion-content'); 
-                if (parentAccordionContent) { 
-                    const parentAccordionHeader = parentAccordionContent.previousElementSibling; 
-                    if (parentAccordionHeader && parentAccordionHeader.classList.contains('accordion-header')) { 
-                        parentAccordionHeader.classList.add('active'); 
-                        parentAccordionContent.style.maxHeight = parentAccordionContent.scrollHeight + "px"; 
-                    } 
-                } 
-            }
-            setActiveMenu();
         });
     </script>
 </body>
