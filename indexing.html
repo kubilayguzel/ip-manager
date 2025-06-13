@@ -226,8 +226,7 @@
                     <div class="form-section record-update-section" id="recordUpdateSection" style="display: none;">
                         <h2 class="section-title"><span class="section-icon">✏️</span>3. Kayıt Bilgilerini Güncelle (İsteğe Bağlı)</h2>
                         <div class="form-group"><label class="form-label" for="updateRecordStatus">Durum</label><select id="updateRecordStatus" class="form-select"><option value="">Değiştirmeyin</option></select></div>
-                        <div class="form-group"><label class="form-label" for="updateRecordNotes">Notlar</label><textarea id="updateRecordNotes" class="form-input" rows="3" placeholder="Kayda eklemek istediğiniz notları girin..."></textarea></div>
-                    </div>
+                        </div>
     
                     <div class="form-section transaction-history-indexing-section" id="indexingTransactionHistorySection" style="display: none;">
                         <h2 class="section-title"><span class="section-icon">📜</span>4. Kayıt Geçmişi</h2>
@@ -326,6 +325,20 @@
 
                 document.getElementById('resetIndexingFormBtn').addEventListener('click', () => this.resetForm());
                 document.getElementById('indexDocumentsBtn').addEventListener('click', () => this.handleSubmit());
+                
+                // Kayıt geçmişi akordiyonu için olay dinleyicisi ekle
+                document.getElementById('indexingTransactionHistory').addEventListener('click', (e) => {
+                    if (e.target.classList.contains('transaction-toggle-btn')) {
+                        const btn = e.target;
+                        const targetId = btn.dataset.targetId;
+                        const childContainer = document.getElementById(`children-of-${targetId}`);
+                        if (childContainer) {
+                            childContainer.classList.toggle('show');
+                            btn.classList.toggle('expanded');
+                            btn.textContent = childContainer.classList.contains('show') ? '−' : '+';
+                        }
+                    }
+                });
             }
 
             populateStatusOptions() {
@@ -618,7 +631,7 @@
                 const updates = {
                     files: filesToUpdate, // Güncellenmiş files dizisini ata
                     status: document.getElementById('updateRecordStatus').value || this.selectedRecord.status,
-                    notes: document.getElementById('updateRecordNotes').value.trim() || null
+                    notes: null // Notlar alanı kaldırıldığı için null olarak ayarlandı
                 };
 
                 try {
@@ -648,7 +661,7 @@
                 document.getElementById('indexingTransactionHistorySection').style.display = 'none';
                 document.getElementById('fileList').innerHTML = '';
                 document.getElementById('updateRecordStatus').value = '';
-                document.getElementById('updateRecordNotes').value = '';
+                // document.getElementById('updateRecordNotes').value = ''; // Notlar alanı kaldırıldı
                 document.getElementById('recordSelectError').style.display = 'none';
                 // Parent transaction select'i sıfırla
                 const parentTxSelect = document.getElementById('parentTransactionSelect');
