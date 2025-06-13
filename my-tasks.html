@@ -78,7 +78,13 @@
         .status-in_progress { background-color: #ffc107; color: #333; }
         .status-completed { background-color: #28a745; }
         .status-pending_review { background-color: #17a2b8; }
-        .action-btn { background: #6c757d; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; }
+        .action-btn { background: #6c757d; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; transition: all 0.3s ease; }
+        .action-btn.view-btn { background-color: #17a2b8; }
+        .action-btn.view-btn:hover { background-color: #138496; }
+        .action-btn.edit-btn { background-color: #ffc107; color: #212529; }
+        .action-btn.edit-btn:hover { background-color: #e0a800; }
+        .action-btn.delete-btn { background-color: #dc3545; }
+        .action-btn.delete-btn:hover { background-color: #c82333; }
         .no-tasks { text-align: center; padding: 50px; color: #666; }
         .loading { text-align: center; padding: 50px; }
     </style>
@@ -167,22 +173,77 @@
         </main>
     </div>
 
+    <div id="viewTaskDetailModal" class="modal">
+        <div class="modal-content-lg">
+            <span class="close-modal-btn" id="closeViewTaskDetailModal">&times;</span>
+            <h3 class="modal-title" id="modalViewTaskTitle">İş Detayı</h3>
+            <div class="modal-body-content">
+                <div class="modal-detail-grid">
+                    <div class="modal-detail-item full-width">
+                        <div class="modal-detail-label">İş Başlığı</div>
+                        <div class="modal-detail-value" id="modalViewTaskTitleValue"></div>
+                    </div>
+                    <div class="modal-detail-item full-width">
+                        <div class="modal-detail-label">Açıklama</div>
+                        <div class="modal-detail-value long-text" id="modalViewTaskDescriptionValue"></div>
+                    </div>
+                    <div class="modal-detail-item">
+                        <div class="modal-detail-label">İş Türü</div>
+                        <div class="modal-detail-value" id="modalViewTaskTypeValue"></div>
+                    </div>
+                    <div class="modal-detail-item">
+                        <div class="modal-detail-label">Öncelik</div>
+                        <div class="modal-detail-value" id="modalViewTaskPriorityValue"></div>
+                    </div>
+                    <div class="modal-detail-item">
+                        <div class="modal-detail-label">Atanan Kişi</div>
+                        <div class="modal-detail-value" id="modalViewAssignedToValue"></div>
+                    </div>
+                    <div class="modal-detail-item">
+                        <div class="modal-detail-label">Bitiş Tarihi</div>
+                        <div class="modal-detail-value" id="modalViewTaskDueDateValue"></div>
+                    </div>
+                    <div class="modal-detail-item full-width">
+                        <div class="modal-detail-label">İlgili Fikri Mülkiyet Kaydı</div>
+                        <div class="modal-detail-value" id="modalViewRelatedIpRecordValue"></div>
+                    </div>
+                    <div class="modal-detail-item full-width" id="modalViewRelatedPartyGroup" style="display:none;">
+                        <div class="modal-detail-label" id="modalViewRelatedPartyLabel"></div>
+                        <div class="modal-detail-value" id="modalViewRelatedPartyValue"></div>
+                    </div>
+                    <div class="modal-detail-item full-width" id="modalViewRelatedTransactionGroup" style="display:none;">
+                        <div class="modal-detail-label" id="modalViewRelatedTransactionLabel"></div>
+                        <div class="modal-detail-value" id="modalViewRelatedTransactionValue"></div>
+                    </div>
+
+                    <h4 class="modal-detail-section-title">İşlem Geçmişi</h4>
+                    <div class="modal-detail-item full-width task-history" id="modalViewTaskHistory">
+                        <p style="text-align: center; color: #666;">İşlem geçmişi yükleniyor...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
     <script type="module">
-        import { authService, taskService } from './firebase-config.js';
+        import { authService, taskService, ipRecordsService, personsService, auth } from './firebase-config.js';
 
         class MyTasksModule {
             constructor() {
                 this.currentUser = null;
                 this.tasks = [];
+                this.allIpRecords = []; // Görüntüle modalı için
+                this.allPersons = []; // Görüntüle modalı için
                 this.init();
             }
 
             init() {
-                authService.auth.onAuthStateChanged(user => {
+                authService.auth.onAuthStateChanged(async user => {
                     if (user) {
                         this.currentUser = authService.getCurrentUser();
                         this.updateUserInfo();
-                        this.loadTasks();
+                        await this.loadInitialData(); // IP Kayıtları ve Kişileri de yükle
                         this.setupEventListeners();
                     } else {
                         window.location.href = 'index.html';
@@ -201,22 +262,51 @@
                 }
             }
             
+            async loadInitialData() {
+                document.getElementById('loadingIndicator').style.display = 'block';
+                try {
+                    const [tasksResult, ipRecordsResult, personsResult] = await Promise.all([
+                        taskService.getTasksForUser(this.currentUser.uid),
+                        ipRecordsService.getRecords(),
+                        personsService.getPersons()
+                    ]);
+
+                    if (tasksResult.success) {
+                        this.tasks = tasksResult.data;
+                    } else {
+                        console.error('İşler yüklenirken hata:', tasksResult.error);
+                    }
+                    if (ipRecordsResult.success) {
+                        this.allIpRecords = ipRecordsResult.data;
+                    } else {
+                        console.error('IP Kayıtları yüklenirken hata:', ipRecordsResult.error);
+                    }
+                    if (personsResult.success) {
+                        this.allPersons = personsResult.data;
+                    } else {
+                        console.error('Kişiler yüklenirken hata:', personsResult.error);
+                    }
+                    this.renderTasks();
+
+                } catch (error) {
+                    console.error('Başlangıç verileri yüklenirken hata:', error);
+                    alert('Veriler yüklenirken bir hata oluştu: ' + error.message);
+                } finally {
+                    document.getElementById('loadingIndicator').style.display = 'none';
+                }
+            }
+
             setupEventListeners() {
                 document.getElementById('logoutBtn').addEventListener('click', () => authService.signOut().then(() => window.location.href = 'index.html'));
                 document.getElementById('statusFilter').addEventListener('change', (e) => this.renderTasks(e.target.value));
-            }
 
-            async loadTasks() {
-                document.getElementById('loadingIndicator').style.display = 'block';
-                const result = await taskService.getTasksForUser(this.currentUser.uid);
-                document.getElementById('loadingIndicator').style.display = 'none';
-
-                if(result.success) {
-                    this.tasks = result.data;
-                    this.renderTasks();
-                } else {
-                    alert('İşler yüklenirken hata: ' + result.error);
-                }
+                // Modal kapatma olay dinleyicileri
+                document.getElementById('closeViewTaskDetailModal').addEventListener('click', () => this.closeModal('viewTaskDetailModal'));
+                document.getElementById('viewTaskDetailModal').addEventListener('click', (e) => {
+                    if (e.target.id === 'viewTaskDetailModal') { // Modal dışına tıklayınca kapat
+                        this.closeModal('viewTaskDetailModal');
+                    }
+                });
             }
 
             renderTasks(filter = 'all') {
@@ -247,16 +337,153 @@
                         <td>${task.dueDate ? new Date(task.dueDate).toLocaleDateString() : '-'}</td>
                         <td><span class="status-badge status-${task.status}">${statusMap[task.status] || task.status}</span></td>
                         <td>
-                            <button class="action-btn" onclick="window.myTasksModule.viewTask('${task.id}')">Detaylar</button>
+                            <button class="action-btn view-btn" data-id="${task.id}">Görüntüle</button>
+                            <button class="action-btn edit-btn" data-id="${task.id}">Güncelle</button>
+                            <button class="action-btn delete-btn" data-id="${task.id}">Sil</button>
                         </td>
                     `;
+                    // Olay dinleyicilerini ekle
+                    row.querySelector('.view-btn').addEventListener('click', () => this.viewTaskDetailsModal(task.id));
+                    row.querySelector('.edit-btn').addEventListener('click', () => this.editTask(task.id));
+                    row.querySelector('.delete-btn').addEventListener('click', () => this.deleteTask(task.id));
+                    
                     tableBody.appendChild(row);
                 });
             }
             
-            viewTask(taskId) {
-                // İş Detayları sayfasına yönlendir
+            editTask(taskId) {
+                // İş Detayları sayfasına yönlendir (düzenlenebilir modda)
                 window.location.href = `task-detail.html?taskId=${taskId}`;
+            }
+
+            async deleteTask(taskId) {
+                if (confirm('Bu görevi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.')) {
+                    try {
+                        const result = await taskService.deleteTask(taskId);
+                        if (result.success) {
+                            alert('Görev başarıyla silindi.');
+                            await this.loadInitialData(); // Listeyi yeniden yükle
+                        } else {
+                            throw new Error(result.error);
+                        }
+                    } catch (error) {
+                        console.error('Görev silinirken hata:', error);
+                        alert('Görev silinirken bir hata oluştu: ' + error.message);
+                    }
+                }
+            }
+
+            async viewTaskDetailsModal(taskId) {
+                const task = this.tasks.find(t => t.id === taskId);
+                if (!task) {
+                    alert('Görev bulunamadı.');
+                    return;
+                }
+                
+                // Modal içinde detayları doldurma fonksiyonu, task-detail.html'den kopyalandı
+                // Bu işlevselliği TaskDetailModule sınıfından çağıracağız.
+                // Ancak, MyTasksModule içinde doğrudan bir TaskDetailModule instance'ı olmadığı için,
+                // burada bu işlevselliği manuel olarak tekrarlayalım veya ayrı bir yardımcı fonksiyon oluşturalım.
+                
+                // IP Kayıtları ve Kişiler verilerini doğrudan burada da geçirmemiz gerekiyor.
+                this.populateModalTaskDetails(task, this.allIpRecords, this.allPersons);
+                document.getElementById('viewTaskDetailModal').classList.add('show');
+            }
+
+            populateModalTaskDetails(task, ipRecords, persons) {
+                const modal = document.getElementById('viewTaskDetailModal');
+                if (!modal) return;
+
+                document.getElementById('modalViewTaskTitle').textContent = `İş Detayı: ${task.title || '-'}`;
+
+                document.getElementById('modalViewTaskTitleValue').textContent = task.title || '-';
+                document.getElementById('modalViewTaskDescriptionValue').textContent = task.description || '-';
+                
+                const taskTypeParts = task.taskType ? task.taskType.split('_') : [];
+                const mainType = taskTypeParts[0] || '';
+                const specificType = taskTypeParts.slice(1).join(' ').replace(/\b\w/g, l => l.toUpperCase());
+                document.getElementById('modalViewTaskTypeValue').textContent = `${mainType.charAt(0).toUpperCase() + mainType.slice(1)} - ${specificType}` || '-';
+
+                const priorityMap = { high: 'Yüksek', medium: 'Orta', low: 'Düşük' };
+                document.getElementById('modalViewTaskPriorityValue').textContent = priorityMap[task.priority] || task.priority || '-';
+                
+                document.getElementById('modalViewAssignedToValue').textContent = task.assignedTo_email || '-';
+                document.getElementById('modalViewTaskDueDateValue').textContent = task.dueDate ? new Date(task.dueDate).toLocaleDateString('tr-TR') : '-';
+
+                let relatedIpRecordText = '-';
+                if (task.relatedIpRecordId) {
+                    const ipRecord = ipRecords.find(r => r.id === task.relatedIpRecordId);
+                    if (ipRecord) {
+                        relatedIpRecordText = `${ipRecord.title || ipRecord.applicationNumber || 'Kayıt'}`;
+                    } else {
+                        relatedIpRecordText = task.relatedIpRecordTitle || 'Kayıt Bulunamadı';
+                    }
+                }
+                document.getElementById('modalViewRelatedIpRecordValue').textContent = relatedIpRecordText;
+
+                const modalViewRelatedPartyGroup = document.getElementById('modalViewRelatedPartyGroup');
+                const modalViewRelatedPartyLabel = document.getElementById('modalViewRelatedPartyLabel');
+                const modalViewRelatedPartyValue = document.getElementById('modalViewRelatedPartyValue');
+                if (task.details?.relatedParty?.id) {
+                    const person = persons.find(p => p.id === task.details.relatedParty.id);
+                    if (person) {
+                        const taskType = task.taskType.split('_')[1];
+                        const labelMap = { 'devir': 'Devralan Taraf', 'lisans': 'Lisans Alan Taraf', 'rehin': 'Rehin Alan Taraf', 'birleşme': 'Birleşilen Taraf', 'veraset': 'Mirasçı', 'teminat': 'Rehin Alan Taraf' };
+                        modalViewRelatedPartyLabel.textContent = labelMap[taskType] || 'İlgili Taraf';
+                        modalViewRelatedPartyValue.textContent = person.name;
+                        modalViewRelatedPartyGroup.style.display = 'block';
+                    } else {
+                        modalViewRelatedPartyGroup.style.display = 'none';
+                    }
+                } else {
+                    modalViewRelatedPartyGroup.style.display = 'none';
+                }
+
+                const modalViewRelatedTransactionGroup = document.getElementById('modalViewRelatedTransactionGroup');
+                const modalViewRelatedTransactionLabel = document.getElementById('modalViewRelatedTransactionLabel');
+                const modalViewRelatedTransactionValue = document.getElementById('modalViewRelatedTransactionValue');
+                if (task.details?.relatedTransactionId && task.relatedIpRecordId) {
+                    const ipRecord = ipRecords.find(r => r.id === task.relatedIpRecordId);
+                    if (ipRecord && ipRecord.transactions) {
+                        const transaction = ipRecord.transactions.find(tx => tx.transactionId === task.details.relatedTransactionId);
+                        if (transaction) {
+                            modalViewRelatedTransactionLabel.textContent = 'İlgili Üst İşlem';
+                            modalViewRelatedTransactionValue.textContent = transaction.description || transaction.type;
+                            modalViewRelatedTransactionGroup.style.display = 'block';
+                        } else {
+                            modalViewRelatedTransactionGroup.style.display = 'none';
+                        }
+                    } else {
+                        modalViewRelatedTransactionGroup.style.display = 'none';
+                    }
+                } else {
+                    modalViewRelatedTransactionGroup.style.display = 'none';
+                }
+
+                const modalViewTaskHistory = document.getElementById('modalViewTaskHistory');
+                modalViewTaskHistory.innerHTML = '';
+                if (!task.history || task.history.length === 0) {
+                    modalViewTaskHistory.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">İşlem geçmişi bulunmuyor.</p>';
+                } else {
+                    const sortedHistory = [...task.history].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                    sortedHistory.forEach(entry => {
+                        const item = document.createElement('div');
+                        item.className = 'task-history-item';
+                        item.innerHTML = `
+                            <div class="task-history-item-content">
+                                <div class="task-history-info">
+                                    <div class="task-history-description">${entry.action}</div>
+                                    <div class="task-history-meta">${new Date(entry.timestamp).toLocaleString('tr-TR')} by ${entry.userEmail}</div>
+                                </div>
+                            </div>
+                        `;
+                        modalViewTaskHistory.appendChild(item);
+                    });
+                }
+            }
+
+            closeModal(modalId) {
+                document.getElementById(modalId).classList.remove('show');
             }
         }
 
