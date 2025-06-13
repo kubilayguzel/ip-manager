@@ -40,6 +40,8 @@
         .filter-group { display: flex; gap: 10px; align-items: center; flex-wrap:wrap; }
         .filter-label { font-weight: 500; }
         .filter-select { padding: 8px 12px; border-radius: 8px; border: 1px solid #ccc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .btn-secondary { background: #6c757d; color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; }
+        .btn-secondary:disabled { background: #c8cbcf; cursor: not-allowed; }
         .task-table { width: 100%; border-collapse: collapse; }
         .task-table th, .task-table td { padding: 15px; text-align: left; border-bottom: 1px solid #f0f0f0; }
         .task-table th:first-child, .task-table td:first-child { width: 40px; text-align: center; }
@@ -48,6 +50,7 @@
         .table-action-btn.view-btn { background-color: #17a2b8; }
         .table-action-btn.edit-btn { background-color: #ffc107; color: #212529; }
         .table-action-btn.delete-btn { background-color: #dc3545; }
+        .table-action-btn.complete-btn { background-color: #28a745; }
         .no-tasks-message { text-align: center; padding: 40px; color: #666; }
     </style>
 </head>
@@ -116,7 +119,7 @@
                     <table class="task-table">
                         <thead>
                             <tr>
-                                <th><input type="checkbox" id="selectAllCheckbox" disabled></th>
+                                <th><input type="checkbox" id="selectAllCheckbox" title="Tümünü Seç"></th>
                                 <th>İş Başlığı</th>
                                 <th>Öncelik</th>
                                 <th>Durum</th>
@@ -125,7 +128,7 @@
                             </tr>
                         </thead>
                         <tbody id="tasksTableBody">
-                            </tbody>
+                        </tbody>
                     </table>
                     <div id="noTasksMessage" class="no-tasks-message" style="display: none;">
                         <p>Size atanmış herhangi bir görev bulunamadı.</p>
@@ -136,10 +139,9 @@
     </div>
 
     <script type="module">
-        import { authService, taskService, ipRecordsService, personsService, auth, generateUUID } from './firebase-config.js';
+        import { authService, taskService, ipRecordsService, auth } from './firebase-config.js';
 
-        // Sayfa yüklendiğinde sol menüyü ve akordiyonları ayarlar
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', () => {
             const accordions = document.querySelectorAll('.accordion-header');
             accordions.forEach(header => {
                 header.addEventListener('click', function() {
@@ -169,54 +171,55 @@
                 }
             }
             setActiveMenu();
+
+            let myTasksModuleInstance;
+            auth.onAuthStateChanged(async (user) => {
+                if (user || authService.getCurrentUser()) {
+                    if (!myTasksModuleInstance) {
+                        myTasksModuleInstance = new MyTasksModule();
+                        await myTasksModuleInstance.init();
+                    }
+                } else {
+                    window.location.href = 'index.html';
+                }
+            });
         });
 
         class MyTasksModule {
             constructor() {
                 this.currentUser = null;
                 this.tasks = [];
-                this.currentTaskToComplete = { taskId: null, recordId: null };
-                this.allIpRecords = [];
-                this.allUsers = [];
             }
 
             async init() {
                 this.currentUser = authService.getCurrentUser();
-                if (!this.currentUser) {
-                    window.location.href = 'index.html';
-                    return;
-                }
+                if (!this.currentUser) return;
+
                 this.updateUserInfo();
-                this.setupEventListeners(); // <-- Artık güvenli
+                this.setupEventListeners();
                 await this.loadInitialData();
             }
 
             updateUserInfo() {
-                if (this.currentUser) {
-                    const userName = this.currentUser.displayName || this.currentUser.email.split('@')[0] || 'Kullanıcı';
-                    const userRole = this.currentUser.role === 'admin' ? 'Yönetici' : this.currentUser.role === 'superadmin' ? 'Süper Yönetici' : 'Kullanıcı';
-                    
-                    const avatarEl = document.getElementById('userAvatar');
-                    const nameEl = document.getElementById('userName');
-                    const roleEl = document.getElementById('userRole');
+                if (!this.currentUser) return;
+                const userName = this.currentUser.displayName || this.currentUser.email.split('@')[0] || 'Kullanıcı';
+                const userRole = this.currentUser.role === 'admin' ? 'Yönetici' : this.currentUser.role === 'superadmin' ? 'Süper Yönetici' : 'Kullanıcı';
+                
+                const avatarEl = document.getElementById('userAvatar');
+                if (avatarEl) avatarEl.textContent = userName.charAt(0).toUpperCase();
+                
+                const nameEl = document.getElementById('userName');
+                if (nameEl) nameEl.textContent = userName;
 
-                    if (avatarEl) avatarEl.textContent = userName.charAt(0).toUpperCase();
-                    if (nameEl) nameEl.textContent = userName;
-                    if (roleEl) roleEl.textContent = userRole;
-                }
+                const roleEl = document.getElementById('userRole');
+                if (roleEl) roleEl.textContent = userRole;
             }
             
             async loadInitialData() {
-                const [tasksResult, ipRecordsResult, usersResult] = await Promise.all([
-                    taskService.getTasksForUser(this.currentUser.uid),
-                    ipRecordsService.getRecords(),
-                    taskService.getAllUsers()
-                ]);
-                
-                if (tasksResult.success) this.tasks = tasksResult.data;
-                if (ipRecordsResult.success) this.allIpRecords = ipRecordsResult.data;
-                if (usersResult.success) this.allUsers = usersResult.data;
-
+                const tasksResult = await taskService.getTasksForUser(this.currentUser.uid);
+                if (tasksResult.success) {
+                    this.tasks = tasksResult.data;
+                }
                 this.renderTasks();
             }
 
@@ -286,8 +289,7 @@
                         <div class="action-buttons">
                             <button class="table-action-btn view-btn" data-id="${task.id}" title="Görüntüle">👁️</button>
                             <a href="task-detail.html?taskId=${task.id}&mode=edit" class="table-action-btn edit-btn" title="Düzenle">✏️</a>
-                            <button class="table-action-btn delete-btn" data-id="${task.id}" title="Sil">🗑️</button>
-                        </div>
+                            </div>
                     </td>
                 `;
                 return row;
@@ -329,19 +331,6 @@
                 this.handleSelectionChange();
             }
         }
-
-        // Modül başlatma
-        let myTasksModuleInstance;
-        auth.onAuthStateChanged(async (user) => {
-            if (user || authService.getCurrentUser()) {
-                if (!myTasksModuleInstance) {
-                    myTasksModuleInstance = new MyTasksModule();
-                    await myTasksModuleInstance.init();
-                }
-            } else {
-                window.location.href = 'index.html';
-            }
-        });
     </script>
 </body>
 </html>
