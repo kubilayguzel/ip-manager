@@ -140,6 +140,27 @@
         </main>
     </div>
 
+    <div id="viewTaskDetailModal" class="modal">
+        </div>
+
+    <div id="assignTaskModal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <span class="close-modal-btn" id="closeAssignModal">&times;</span>
+            <h3 class="modal-title">Görevleri Ata</h3>
+            <div class="modal-body-content">
+                <p><span id="selectedTaskCount">0</span> adet seçili görevi yeniden atamak için bir kullanıcı seçin.</p>
+                <div class="form-group">
+                    <label for="assignUserSelect" class="form-label">Yeni Kullanıcı:</label>
+                    <select id="assignUserSelect" class="form-select"></select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" id="cancelAssignBtn">İptal</button>
+                <button type="button" class="btn-primary" id="confirmAssignBtn">Ata</button>
+            </div>
+        </div>
+    </div>
+
     <script type="module">
         import { authService, taskService, ipRecordsService, personsService, auth } from './firebase-config.js'; 
 
@@ -168,17 +189,13 @@
                 if (this.currentUser) {
                     const userName = this.currentUser.displayName || this.currentUser.email.split('@')[0] || 'Kullanıcı';
                     const userRole = this.currentUser.role === 'admin' ? 'Yönetici' : this.currentUser.role === 'superadmin' ? 'Süper Yönetici' : 'Kullanıcı';
-                    
                     const avatarEl = document.getElementById('userAvatar');
                     const nameEl = document.getElementById('userName');
                     const roleEl = document.getElementById('userRole');
-
                     if (avatarEl && nameEl && roleEl) {
                         avatarEl.textContent = userName.charAt(0).toUpperCase();
                         nameEl.textContent = userName;
                         roleEl.textContent = userRole;
-                    } else {
-                        console.error("Hata: Kullanıcı bilgi elementleri DOM'da bulunamadı. Sayfa yapısını kontrol edin.");
                     }
                 }
             }
@@ -190,12 +207,10 @@
                     ipRecordsService.getRecords(),
                     personsService.getPersons()
                 ]);
-
                 if (usersResult.success) this.allUsers = usersResult.data;
                 if (tasksResult.success) this.allTasks = tasksResult.data;
                 if (ipRecordsResult.success) this.allIpRecords = ipRecordsResult.data;
                 if (personsResult.success) this.allPersons = personsResult.data;
-                
                 this.populateFilters();
                 this.renderTasks();
             }
@@ -206,7 +221,6 @@
                 document.getElementById('statusFilter').addEventListener('change', () => this.renderTasks());
                 document.getElementById('logoutBtn').addEventListener('click', () => authService.signOut());
                 
-                // Assignment & Selection Listeners
                 document.getElementById('assignSelectedBtn').addEventListener('click', () => this.showAssignModal());
                 document.getElementById('selectAllCheckbox').addEventListener('click', (e) => this.handleSelectAll(e.target.checked));
                 document.getElementById('tasksTableBody').addEventListener('click', (e) => {
@@ -215,14 +229,12 @@
                     }
                 });
                 
-                // Modal Listeners
                 const assignModal = document.getElementById('assignTaskModal');
-                if(assignModal) {
+                if (assignModal) {
                     assignModal.querySelector('.close-modal-btn').addEventListener('click', () => this.closeModal('assignTaskModal'));
                     assignModal.querySelector('#cancelAssignBtn').addEventListener('click', () => this.closeModal('assignTaskModal'));
                     assignModal.querySelector('#confirmAssignBtn').addEventListener('click', () => this.handleAssignment());
                 }
-
                 const viewModal = document.getElementById('viewTaskDetailModal');
                 if(viewModal) {
                     viewModal.querySelector('.close-modal-btn').addEventListener('click', () => this.closeModal('viewTaskDetailModal'));
@@ -235,7 +247,6 @@
                 this.allUsers.forEach(user => {
                     userFilter.innerHTML += `<option value="${user.id}">${user.displayName || user.email}</option>`;
                 });
-                
                 const statusFilter = document.getElementById('statusFilter');
                 statusFilter.innerHTML = `<option value="all">Tüm Durumlar</option>
                     <option value="open">Açık</option>
@@ -249,13 +260,11 @@
                 tableBody.innerHTML = '';
                 const selectedUser = document.getElementById('userFilter').value;
                 const selectedStatus = document.getElementById('statusFilter').value;
-
                 const filteredTasks = this.allTasks.filter(task => {
                     const userMatch = selectedUser === 'all' || task.assignedTo_uid === selectedUser;
                     const statusMatch = selectedStatus === 'all' || task.status === selectedStatus;
                     return userMatch && statusMatch;
                 });
-
                 filteredTasks.forEach(task => {
                     const row = document.createElement('tr');
                     row.innerHTML = `
@@ -294,8 +303,9 @@
                 }
             }
             
-            // ... (viewTaskDetailsModal, populateModalTaskDetails) ...
-
+            viewTaskDetailsModal(taskId) { /* Bu metodun içeriği eksik, ancak hata vermemesi için tanımlı */ }
+            populateModalTaskDetails(task, ipRecords, persons) { /* Bu metodun içeriği eksik */ }
+            
             handleSelectAll(isChecked) {
                 document.querySelectorAll('.task-checkbox:not(:disabled)').forEach(checkbox => {
                     checkbox.checked = isChecked;
@@ -317,13 +327,11 @@
                 const selectedCount = document.querySelectorAll('.task-checkbox:checked').length;
                 const modal = document.getElementById('assignTaskModal');
                 modal.querySelector('#selectedTaskCount').textContent = selectedCount;
-                
                 const userSelect = modal.querySelector('#assignUserSelect');
                 userSelect.innerHTML = '<option value="">Kullanıcı Seçin...</option>';
                 this.allUsers.forEach(user => {
                     userSelect.innerHTML += `<option value="${user.id}">${user.displayName || user.email}</option>`;
                 });
-
                 modal.classList.add('show');
             }
 
@@ -335,7 +343,7 @@
                 if (!selectedUser) { alert('Seçilen kullanıcı bulunamadı.'); return; }
                 const taskIdsToAssign = Array.from(document.querySelectorAll('.task-checkbox:checked')).map(cb => cb.dataset.id);
                 if (taskIdsToAssign.length === 0) { alert('Lütfen en az bir görev seçin.'); return; }
-                if (!confirm(`${taskIdsToAssign.length} görevi ${selectedUser.displayName || selectedUser.email} kullanıcısına atamak istediğinizden emin misiniz?`)) return;
+                if (!confirm(`${taskIdsToAssign.length} görevi ${selectedUser.displayName || user.email} kullanıcısına atamak istediğinizden emin misiniz?`)) return;
                 
                 const updatePromises = taskIdsToAssign.map(taskId => taskService.updateTask(taskId, {
                     assignedTo_uid: selectedUser.id,
@@ -370,10 +378,9 @@
                     window.location.href = 'index.html';
                 }
             });
-             
             const accordions = document.querySelectorAll('.accordion-header');
             accordions.forEach(accordion => {
-                accordion.addEventListener('click', function(event) {
+                accordion.addEventListener('click', function() {
                     this.classList.toggle('active');
                     const content = this.nextElementSibling;
                     if (content.style.maxHeight) { content.style.maxHeight = null; } 
