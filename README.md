@@ -8,7 +8,7 @@
 
 IP Manager, fikri mülkiyet haklarının (patent, marka, telif hakkı, tasarım) dijital ortamda yönetilmesi için geliştirilmiş **modern ve entegre** bir web uygulamasıdır.
 
-## 🚀 Yeni Özellikler (v2.0)
+## 🚀 Yeni Özellikler (v2.0) 
 
 ### ✨ **Portfolio Sayfası (YENİ!)**
 - 📊 **Gelişmiş Tablo Görünümü** - Tüm IP kayıtları düzenli tabloda
