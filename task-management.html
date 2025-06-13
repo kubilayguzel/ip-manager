@@ -651,6 +651,17 @@
 
     // Sayfa ilk yüklendiğinde aktif menüyü ayarla
     setActiveMenu();
+
+  showEditTaskModal(taskId) {
+    const task = this.allTasks.find(t => t.id === taskId);
+    if (!task) return alert('Görev bulunamadı');
+    this.activeEditTaskId = taskId;
+    document.getElementById('editTaskTitle').value = task.title || '';
+    document.getElementById('editTaskDescription').value = task.description || '';
+    document.getElementById('editTaskPriority').value = task.priority || 'medium';
+    document.getElementById('editTaskModal').classList.add('show');
+  }
+
 });
     </script>
 <div class="modal" id="editTaskModal">
@@ -717,6 +728,34 @@ TaskManagementModule.prototype.showEditTaskModal = function(taskId) {
   document.getElementById('editTaskPriority').value = task.priority || 'medium';
   document.getElementById('editTaskModal').classList.add('show');
 };
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const editModal = document.getElementById('editTaskModal');
+  const closeEditBtn = document.getElementById('closeEditTaskModal');
+  if (closeEditBtn) {
+    closeEditBtn.addEventListener('click', () => editModal.classList.remove('show'));
+  }
+
+  document.getElementById('editTaskForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const title = document.getElementById('editTaskTitle').value;
+    const description = document.getElementById('editTaskDescription').value;
+    const priority = document.getElementById('editTaskPriority').value;
+    if (window.taskManagementModule && window.taskManagementModule.activeEditTaskId) {
+      const taskId = window.taskManagementModule.activeEditTaskId;
+      const result = await taskService.updateTask(taskId, { title, description, priority });
+      if (result.success) {
+        alert('Görev güncellendi');
+        editModal.classList.remove('show');
+        window.taskManagementModule.loadInitialData();
+      } else {
+        alert('Hata: ' + result.error);
+      }
+    }
+  });
+});
 </script>
 </body>
 </html>
