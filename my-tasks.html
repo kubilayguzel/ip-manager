@@ -386,7 +386,24 @@
                 document.getElementById('manualCloseBtn').addEventListener('click', () => this.completeTask('manually_closed'));
                 document.getElementById('completeTaskDocumentInput').addEventListener('change', (e) => this.handleDocumentUploadForTaskCompletion(e.target.files));
                 document.getElementById('completeTaskFileUploadArea').addEventListener('click', () => document.getElementById('completeTaskDocumentInput').click());
-                
+                // Add drag and drop listeners for completeTaskFileUploadArea
+                document.getElementById('completeTaskFileUploadArea').addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    e.currentTarget.style.borderColor = '#1e3c72';
+                    e.currentTarget.style.background = '#f0f4f8';
+                });
+                document.getElementById('completeTaskFileUploadArea').addEventListener('dragleave', (e) => {
+                    e.preventDefault();
+                    e.currentTarget.style.borderColor = '#e1e8ed';
+                    e.currentTarget.style.background = 'transparent';
+                });
+                document.getElementById('completeTaskFileUploadArea').addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    e.currentTarget.style.borderColor = '#e1e8ed';
+                    e.currentTarget.style.background = 'transparent';
+                    this.handleDocumentUploadForTaskCompletion(e.dataTransfer.files);
+                });
+
                 document.getElementById('closeIpRecordModalBtn').addEventListener('click', () => this.closeModal('ipRecordDetailModal'));
             }
 
@@ -422,7 +439,12 @@
                     row.querySelector('.view-btn').addEventListener('click', () => this.viewTaskDetailsModal(task.id));
                     row.querySelector('.edit-btn').addEventListener('click', () => this.editTask(task.id));
                     row.querySelector('.delete-btn').addEventListener('click', () => this.deleteTask(task.id));
-                    row.querySelector('.complete-btn').addEventListener('click', () => this.showCompleteTaskModal(task.id, task.relatedIpRecordId));
+                    // Buraya complete-btn için event listener ekle
+                    row.querySelector('.complete-btn').addEventListener('click', (e) => {
+                        const taskId = e.currentTarget.dataset.id;
+                        const ipRecordId = e.currentTarget.dataset.ipRecordId;
+                        this.showCompleteTaskModal(taskId, ipRecordId);
+                    });
                     const ipRecordLink = row.querySelector('.ip-record-link');
                     if (ipRecordLink && relatedIpRecordId) {
                         ipRecordLink.addEventListener('click', (e) => { e.preventDefault(); this.showIpRecordDetailModal(relatedIpRecordId); });
