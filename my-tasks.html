@@ -87,6 +87,132 @@
         .action-btn.delete-btn:hover { background-color: #c82333; }
         .no-tasks { text-align: center; padding: 50px; color: #666; }
         .loading { text-align: center; padding: 50px; }
+
+        /* Modal Stilleri (task-detail.html'den kopyalandı) */
+        .modal {
+            display: none; /* Varsayılan olarak gizli */
+            position: fixed; /* Sabit konumda */
+            z-index: 1000; /* Diğer her şeyin üstünde */
+            left: 0;
+            top: 0;
+            width: 100%; /* Tam genişlik */
+            height: 100%; /* Tam yükseklik */
+            overflow: auto; /* İçerik taşarsa kaydırma çubuğu */
+            background-color: rgba(0,0,0,0.4); /* Yarı şeffaf arka plan */
+            align-items: center; /* Dikeyde ortala */
+            justify-content: center; /* Yatayda ortala */
+        }
+        .modal.show {
+            display: flex;
+        }
+        .modal-content-lg {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 30px;
+            border: 1px solid #888;
+            width: 90%; /* Genişletildi */
+            max-width: 900px; /* Maksimum genişlik */
+            border-radius: 20px;
+            box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19);
+            animation-name: animatetop;
+            animation-duration: 0.4s
+        }
+
+        /* Modal Açılış Animasyonu */
+        @keyframes animatetop {
+            from {top: -300px; opacity: 0}
+            to {top: 0; opacity: 1}
+        }
+
+        .close-modal-btn {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close-modal-btn:hover,
+        .close-modal-btn:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .modal-body-content {
+            padding: 10px 0;
+        }
+
+        /* Ortak detay gridi stilini modal için de kullan */
+        .modal-detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px 25px;
+        }
+        .modal-detail-item {
+            margin-bottom: 10px;
+        }
+        .modal-detail-label {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+        }
+        .modal-detail-value {
+            color: #555;
+            word-break: break-word;
+            font-size: 0.95em;
+        }
+        .modal-detail-value.long-text {
+            white-space: pre-wrap;
+            background-color: #f8f9fa;
+            padding: 8px;
+            border-radius: 6px;
+        }
+        .modal-detail-section-title {
+            grid-column: 1 / -1;
+            font-size: 1.1em;
+            color: #1e3c72;
+            margin-top: 20px;
+            margin-bottom: 15px;
+            padding-bottom: 5px;
+            border-bottom: 1px dashed #e1e8ed;
+        }
+        /* İşlem Geçmişi için özel stil, indexing.html'den türetildi */
+        .task-history { /* task-detail.html'deki ile aynı */
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e1e8ed;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .task-history-item { /* task-detail.html'deki ile aynı */
+            position: relative;
+            padding: 8px 0 8px 25px;
+            border-bottom: 1px dashed #eee;
+        }
+        .task-history-item:last-child { /* task-detail.html'deki ile aynı */
+            border-bottom: none;
+        }
+        .task-history-item-content { /* task-detail.html'deki ile aynı */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .task-history-info { /* task-detail.html'deki ile aynı */
+            flex-grow: 1;
+        }
+        .task-history-description { /* task-detail.html'deki ile aynı */
+            font-size: 0.9em;
+            color: #333;
+            font-weight: 600;
+        }
+        .task-history-meta { /* task-detail.html'deki ile aynı */
+            font-size: 0.8em;
+            color: #666;
+            white-space: nowrap;
+            margin-top: 4px;
+        }
     </style>
 </head>
 <body>
@@ -414,7 +540,7 @@
                 if (task.relatedIpRecordId) {
                     const ipRecord = ipRecords.find(r => r.id === task.relatedIpRecordId);
                     if (ipRecord) {
-                        relatedIpRecordText = `${ipRecord.title || ipRecord.applicationNumber || 'Kayıt'}`;
+                        relatedIpRecordText = `${ipRecord.title || ipRecord.applicationNumber || 'Kayıt'}`; // Modalda link olmasın
                     } else {
                         relatedIpRecordText = task.relatedIpRecordTitle || 'Kayıt Bulunamadı';
                     }
