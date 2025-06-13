@@ -340,7 +340,7 @@
 
                     <h4 class="modal-detail-section-title">İşlem Geçmişi</h4>
                     <div class="modal-detail-item full-width task-history" id="modalViewTaskHistory">
-                        <p style="text-align: center; color: #666;">İşlem geçmişi yükleniyor...</p>
+                        <p style="text-align: center; color: #666;">İşlem geçmişi bulunmuyor.</p>
                     </div>
                 </div>
             </div>
@@ -471,7 +471,7 @@
 
             editTask(taskId) {
                 // İş Detayları sayfasına yönlendir (düzenlenebilir modda)
-                window.location.href = `task-detail.html?taskId=${taskId}&mode=edit`; // mode=edit parametresi eklendi
+                window.location.href = `task-detail.html?taskId=${taskId}&mode=edit`;
             }
 
             async deleteTask(taskId) {
