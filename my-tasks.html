@@ -91,8 +91,22 @@
         .loading { text-align: center; padding: 50px; }
 
         /* Modal Stilleri */
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4); align-items: center; justify-content: center; }
-        .modal.show { display: flex; }
+        .modal { 
+            display: none; /* Varsayılan olarak gizli */
+            position: fixed; 
+            z-index: 1000; /* Diğer her şeyin üstünde olmalı */
+            left: 0; 
+            top: 0; 
+            width: 100%; 
+            height: 100%; 
+            overflow: auto; 
+            background-color: rgba(0,0,0,0.4); 
+            align-items: center; 
+            justify-content: center; 
+        }
+        .modal.show { 
+            display: flex; /* 'show' sınıfı eklendiğinde görünür olmalı */
+        }
         .modal-content-lg { background-color: #fefefe; margin: auto; padding: 30px; border: 1px solid #888; width: 90%; max-width: 900px; border-radius: 20px; box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19); animation-name: animatetop; animation-duration: 0.4s; max-height: 90vh; overflow-y: auto; }
         .modal-content { background-color: #fefefe; margin: auto; padding: 30px; border: 1px solid #888; width: 95%; max-width: 1200px; max-height: 90vh; overflow-y: auto; border-radius: 20px; box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19); animation-name: animatetop; animation-duration: 0.4s; }
         @keyframes animatetop { from {top: -300px; opacity: 0} to {top: 0; opacity: 1} }
@@ -297,7 +311,7 @@
 
     <div class="modal" id="ipRecordDetailModal">
         <div class="modal-content portfolio-detail">
-            <div class="modal-header"><h3 class="modal-title" id="ipRecordModalTitle">Kayıt Detayları</h3><button class="close-modal-btn" id="closeIpRecordModalBtn">&times;</button></div>
+            <div class="modal-header"><h3 class="modal-title" id="ipRecordModalTitle">Kayıt Detayları</h3><button class="close-modal-btn" id="closeIpRecordModalBtn">&times;</div>
             <div id="ipRecordModalBody"></div>
             <h4 class="modal-detail-section-title" style="margin-top: 30px;">Belge İşlem Geçmişi</h4>
             <div class="task-history" id="ipRecordTransactionHistory"><p style="text-align: center; color: #666;">Yükleniyor...</p></div>
@@ -439,13 +453,14 @@
                     row.querySelector('.view-btn').addEventListener('click', () => this.viewTaskDetailsModal(task.id));
                     row.querySelector('.edit-btn').addEventListener('click', () => this.editTask(task.id));
                     row.querySelector('.delete-btn').addEventListener('click', () => this.deleteTask(task.id));
-                    // complete-btn için event listener
-                    const completeBtn = row.querySelector('.complete-btn'); // complete-btn'i seç
-                    if (completeBtn) { // Eğer buton varsa
-                        completeBtn.addEventListener('click', (e) => { // Tıklama olayını dinle
+                    // complete-btn için olay dinleyicisi eklenmesi:
+                    const completeBtn = row.querySelector('.complete-btn'); // complete-btn'i seçiyoruz
+                    if (completeBtn) { // Eğer buton varsa (disabled değilse)
+                        completeBtn.addEventListener('click', (e) => { // Tıklama olayını dinliyoruz
+                            console.log('İşi Bitir butonuna tıklandı!'); // Konsola mesaj yazdır
                             const taskId = e.currentTarget.dataset.id;
                             const ipRecordId = e.currentTarget.dataset.ipRecordId;
-                            this.showCompleteTaskModal(taskId, ipRecordId); // Modalı açan fonksiyonu çağır
+                            this.showCompleteTaskModal(taskId, ipRecordId); // Modalı açan fonksiyonu çağırıyoruz
                         });
                     }
                     const ipRecordLink = row.querySelector('.ip-record-link');
