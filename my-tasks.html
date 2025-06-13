@@ -33,46 +33,56 @@
                 if (this.currentUser) {
                     const userName = this.currentUser.displayName || this.currentUser.email.split('@')[0] || 'Kullanıcı';
                     const userRole = this.currentUser.role === 'admin' ? 'Yönetici' : this.currentUser.role === 'superadmin' ? 'Süper Yönetici' : 'Kullanıcı';
-                    document.getElementById('userAvatar').textContent = userName.charAt(0).toUpperCase();
-                    document.getElementById('userName').textContent = userName;
-                    document.getElementById('userRole').textContent = userRole;
+                    
+                    const avatarEl = document.getElementById('userAvatar');
+                    const nameEl = document.getElementById('userName');
+                    const roleEl = document.getElementById('userRole');
+
+                    // DÜZELTME: Elementlerin var olup olmadığını kontrol et
+                    if (avatarEl && nameEl && roleEl) {
+                        avatarEl.textContent = userName.charAt(0).toUpperCase();
+                        nameEl.textContent = userName;
+                        roleEl.textContent = userRole;
+                    } else {
+                        console.error("Hata: Kullanıcı bilgi elementleri DOM'da bulunamadı.");
+                    }
                 }
             }
             
-            async loadInitialData() {
-                // ... veri yükleme ...
-                this.renderTasks();
-            }
-
-            setupEventListeners() {
-                // ... olay dinleyicileri ...
-            }
-
-            renderTasks(filter = 'all') {
-                const tableBody = document.getElementById('tasksTableBody');
-                tableBody.innerHTML = '';
-                const filteredTasks = this.tasks.filter(task => filter === 'all' || task.status === filter);
-                // ...
-                
-                filteredTasks.forEach(task => {
-                    const row = document.createElement('tr');
-                    // ... row.innerHTML içeriği ...
-                    
-                    row.querySelector('.view-btn').addEventListener('click', () => this.viewTaskDetailsModal(task.id));
-                    row.querySelector('.edit-btn').addEventListener('click', () => this.editTask(task.id));
-                    row.querySelector('.delete-btn').addEventListener('click', () => this.deleteTask(task.id));
-                    row.querySelector('.complete-btn').addEventListener('click', () => this.showCompleteTaskModal(task.id, task.relatedIpRecordId));
-                    // ...
-                    tableBody.appendChild(row);
-                });
-                this.handleSelectionChange();
-            }
-
-            // ... diğer tüm metodlar ...
+            // ... (diğer tüm metodlar aynı kalacak) ...
         }
 
         // DÜZELTİLMİŞ BAŞLATMA KODU
         document.addEventListener('DOMContentLoaded', () => {
+            // Önce sayfa içi UI elemanlarını ayarla
+            const accordions = document.querySelectorAll('.accordion-header');
+            accordions.forEach(accordion => { 
+                accordion.addEventListener('click', function() { 
+                    this.classList.toggle('active'); 
+                    const content = this.nextElementSibling; 
+                    if (content.style.maxHeight) { content.style.maxHeight = null; } 
+                    else { content.style.maxHeight = content.scrollHeight + "px"; } 
+                }); 
+            });
+
+            function setActiveMenu() { 
+                const currentPage = window.location.pathname.split("/").pop() || 'dashboard.html'; 
+                document.querySelectorAll('.sidebar-nav-item.active, .accordion-content a.active').forEach(el => el.classList.remove('active')); 
+                const activeLink = document.querySelector(`.sidebar-nav a[href="${currentPage}"]`); 
+                if (!activeLink) return; 
+                activeLink.classList.add('active'); 
+                const parentAccordionContent = activeLink.closest('.accordion-content'); 
+                if (parentAccordionContent) { 
+                    const parentAccordionHeader = parentAccordionContent.previousElementSibling; 
+                    if (parentAccordionHeader && parentAccordionHeader.classList.contains('accordion-header')) { 
+                        parentAccordionHeader.classList.add('active'); 
+                        parentAccordionContent.style.maxHeight = parentAccordionContent.scrollHeight + "px"; 
+                    } 
+                } 
+            }
+            setActiveMenu();
+
+            // DOM yüklendikten sonra auth durumunu dinle ve modülü başlat
             let myTasksModuleInstance;
             authService.auth.onAuthStateChanged(async (user) => {
                 if (user) {
@@ -84,7 +94,6 @@
                     window.location.href = 'index.html';
                 }
             });
-            // Akordiyon menü scripti
         });
     </script>
 </body>
