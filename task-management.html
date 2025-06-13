@@ -664,8 +664,9 @@
 
 });
     </script>
+
 <div class="modal" id="editTaskModal">
-<div class="modal-content-lg">
+<div class="modal-content">
 <span class="close-modal-btn" id="closeEditTaskModal">×</span>
 <h3 class="modal-title">İşi Güncelle</h3>
 <div class="modal-body-content">
@@ -693,42 +694,6 @@
 </div>
 </div>
 </div>
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-  const editModal = document.getElementById('editTaskModal');
-  const closeEditBtn = document.getElementById('closeEditTaskModal');
-  if (closeEditBtn) {
-    closeEditBtn.addEventListener('click', () => editModal.classList.remove('show'));
-  }
-  document.getElementById('editTaskForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const title = document.getElementById('editTaskTitle').value;
-    const description = document.getElementById('editTaskDescription').value;
-    const priority = document.getElementById('editTaskPriority').value;
-    if (window.taskManagementModule && window.taskManagementModule.activeEditTaskId) {
-      const taskId = window.taskManagementModule.activeEditTaskId;
-      const result = await taskService.updateTask(taskId, { title, description, priority });
-      if (result.success) {
-        alert('Görev güncellendi');
-        editModal.classList.remove('show');
-        window.taskManagementModule.loadInitialData();
-      } else {
-        alert('Hata: ' + result.error);
-      }
-    }
-  });
-});
-
-TaskManagementModule.prototype.showEditTaskModal = function(taskId) {
-  const task = this.allTasks.find(t => t.id === taskId);
-  if (!task) return alert('Görev bulunamadı');
-  this.activeEditTaskId = taskId;
-  document.getElementById('editTaskTitle').value = task.title || '';
-  document.getElementById('editTaskDescription').value = task.description || '';
-  document.getElementById('editTaskPriority').value = task.priority || 'medium';
-  document.getElementById('editTaskModal').classList.add('show');
-};
-</script>
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
@@ -738,23 +703,26 @@ document.addEventListener('DOMContentLoaded', () => {
     closeEditBtn.addEventListener('click', () => editModal.classList.remove('show'));
   }
 
-  document.getElementById('editTaskForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const title = document.getElementById('editTaskTitle').value;
-    const description = document.getElementById('editTaskDescription').value;
-    const priority = document.getElementById('editTaskPriority').value;
-    if (window.taskManagementModule && window.taskManagementModule.activeEditTaskId) {
-      const taskId = window.taskManagementModule.activeEditTaskId;
-      const result = await taskService.updateTask(taskId, { title, description, priority });
-      if (result.success) {
-        alert('Görev güncellendi');
-        editModal.classList.remove('show');
-        window.taskManagementModule.loadInitialData();
-      } else {
-        alert('Hata: ' + result.error);
+  const editForm = document.getElementById('editTaskForm');
+  if (editForm) {
+    editForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const title = document.getElementById('editTaskTitle').value;
+      const description = document.getElementById('editTaskDescription').value;
+      const priority = document.getElementById('editTaskPriority').value;
+      if (window.taskManagementModule && window.taskManagementModule.activeEditTaskId) {
+        const taskId = window.taskManagementModule.activeEditTaskId;
+        const result = await taskService.updateTask(taskId, { title, description, priority });
+        if (result.success) {
+          alert('Görev güncellendi');
+          editModal.classList.remove('show');
+          window.taskManagementModule.loadInitialData();
+        } else {
+          alert('Hata: ' + result.error);
+        }
       }
-    }
-  });
+    });
+  }
 });
 </script>
 </body>
