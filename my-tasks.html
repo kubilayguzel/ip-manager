@@ -40,8 +40,9 @@
         .filter-group { display: flex; gap: 10px; align-items: center; flex-wrap:wrap; }
         .filter-label { font-weight: 500; }
         .filter-select { padding: 8px 12px; border-radius: 8px; border: 1px solid #ccc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .btn-secondary { background: #6c757d; color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; }
-        .btn-secondary:disabled { background: #c8cbcf; cursor: not-allowed; }
+        .action-btn { background: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 0.9em; transition: all 0.3s ease; text-decoration: none; display: flex; align-items: center; gap: 8px; }
+        .action-btn:hover { background: #5a6268; transform: translateY(-1px); }
+        .action-btn:disabled { background: #c8cbcf; cursor: not-allowed; transform: none; }
         .task-table { width: 100%; border-collapse: collapse; }
         .task-table th, .task-table td { padding: 15px; text-align: left; border-bottom: 1px solid #f0f0f0; }
         .task-table th:first-child, .task-table td:first-child { width: 40px; text-align: center; }
@@ -50,7 +51,18 @@
         .table-action-btn.view-btn { background-color: #17a2b8; }
         .table-action-btn.edit-btn { background-color: #ffc107; color: #212529; }
         .table-action-btn.complete-btn { background-color: #28a745; }
+        .table-action-btn:disabled { background-color: #c8cbcf; cursor: not-allowed; }
         .no-tasks-message { text-align: center; padding: 40px; color: #666; }
+        .modal { display: none; position: fixed; z-index: 1002; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4); align-items: center; justify-content: center; }
+        .modal.show { display: flex; }
+        .modal-content { background-color: #fefefe; margin: auto; padding: 30px; border: 1px solid #888; width: 90%; max-width: 500px; border-radius: 20px; box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19); }
+        .close-modal-btn { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .modal-body-content { padding: 10px 0; }
+        .form-group { display: flex; flex-direction: column; margin-bottom: 15px; }
+        .form-label { display: block; margin-bottom: 8px; color: #333; font-weight: 500; }
+        .form-select { width: 100%; padding: 12px 15px; border: 2px solid #e1e8ed; border-radius: 10px; font-size: 1em; }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; padding-top: 15px; border-top: 1px solid #e1e8ed; }
+        .btn-primary { background: #1e3c72; color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -113,6 +125,9 @@
                             <option value="completed">Tamamlandı</option>
                         </select>
                     </div>
+                    <div class="filter-group">
+                        <button class="action-btn" id="assignSelectedBtn" disabled>Seçilenleri Başkasına Ata</button>
+                    </div>
                 </div>
                 <div class="table-container">
                     <table class="task-table">
@@ -126,8 +141,7 @@
                                 <th>İşlemler</th>
                             </tr>
                         </thead>
-                        <tbody id="tasksTableBody">
-                            </tbody>
+                        <tbody id="tasksTableBody"></tbody>
                     </table>
                     <div id="noTasksMessage" class="no-tasks-message" style="display: none;">
                         <p>Size atanmış herhangi bir görev bulunamadı.</p>
@@ -136,6 +150,25 @@
             </div>
         </main>
     </div>
+
+    <div id="assignTaskModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal-btn">&times;</span>
+            <h3 class="modal-title">Görevleri Başkasına Ata</h3>
+            <div class="modal-body-content">
+                <p><span id="selectedTaskCount">0</span> adet seçili görevi yeniden atamak için bir kullanıcı seçin.</p>
+                <div class="form-group">
+                    <label for="assignUserSelect" class="form-label">Yeni Kullanıcı:</label>
+                    <select id="assignUserSelect" class="form-select"></select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" id="cancelAssignBtn">İptal</button>
+                <button type="button" class="btn-primary" id="confirmAssignBtn">Ata</button>
+            </div>
+        </div>
+    </div>
+
 
     <script type="module">
         import { authService, taskService, ipRecordsService, auth } from './firebase-config.js';
@@ -188,6 +221,7 @@
             constructor() {
                 this.currentUser = null;
                 this.tasks = [];
+                this.allUsers = [];
             }
 
             async init() {
@@ -215,10 +249,14 @@
             }
             
             async loadInitialData() {
-                const tasksResult = await taskService.getTasksForUser(this.currentUser.uid);
-                if (tasksResult.success) {
-                    this.tasks = tasksResult.data;
-                }
+                const [tasksResult, usersResult] = await Promise.all([
+                    taskService.getTasksForUser(this.currentUser.uid),
+                    taskService.getAllUsers()
+                ]);
+                
+                if (tasksResult.success) this.tasks = tasksResult.data;
+                if (usersResult.success) this.allUsers = usersResult.data;
+
                 this.renderTasks();
             }
 
@@ -230,55 +268,67 @@
                 if (statusFilter) statusFilter.addEventListener('change', (e) => this.renderTasks(e.target.value));
                 
                 const selectAllCheckbox = document.getElementById('selectAllCheckbox');
-                if (selectAllCheckbox) {
-                    selectAllCheckbox.disabled = true; // "İşlerim" sayfasında toplu atama olmadığı için pasif
-                }
+                if (selectAllCheckbox) selectAllCheckbox.addEventListener('click', (e) => this.handleSelectAll(e.target.checked));
+
+                const assignSelectedBtn = document.getElementById('assignSelectedBtn');
+                if (assignSelectedBtn) assignSelectedBtn.addEventListener('click', () => this.showAssignModal());
                 
                 const tasksTableBody = document.getElementById('tasksTableBody');
                 if(tasksTableBody) {
                     tasksTableBody.addEventListener('click', (e) => {
                         const target = e.target;
-                        const button = target.closest('button, a'); // Hem buton hem de linkleri yakala
-                        if (!button) return;
-
-                        const action = button.dataset.action;
-                        const taskId = button.dataset.id;
-                        
-                        if (action === 'view') {
-                            this.viewTaskDetails(taskId);
-                        } else if (action === 'edit') {
-                            this.editTask(taskId);
-                        } else if (action === 'complete') {
-                            this.completeTask(taskId);
+                        if (target.classList.contains('task-checkbox')) {
+                            this.handleSelectionChange();
+                        } else {
+                            const button = target.closest('button, a');
+                            if (!button) return;
+                            
+                            const action = button.dataset.action;
+                            const taskId = button.dataset.id;
+                            
+                            if (action === 'complete') {
+                                this.completeTask(taskId);
+                            }
                         }
                     });
+                }
+                this.setupModalEventListeners();
+            }
+
+            setupModalEventListeners() {
+                const assignModal = document.getElementById('assignTaskModal');
+                if (assignModal) {
+                    const closeBtn = assignModal.querySelector('.close-modal-btn');
+                    if (closeBtn) closeBtn.addEventListener('click', () => this.closeModal('assignTaskModal'));
+                    
+                    const cancelBtn = assignModal.querySelector('#cancelAssignBtn');
+                    if (cancelBtn) cancelBtn.addEventListener('click', () => this.closeModal('assignTaskModal'));
+                    
+                    const confirmBtn = assignModal.querySelector('#confirmAssignBtn');
+                    if (confirmBtn) confirmBtn.addEventListener('click', () => this.handleAssignment());
                 }
             }
             
             renderTasks(filter = 'all') {
                 const tableBody = document.getElementById('tasksTableBody');
                 const noTasksMessage = document.getElementById('noTasksMessage');
-                if (!tableBody || !noTasksMessage) return;
+                const table = tableBody ? tableBody.closest('table') : null;
+
+                if (!tableBody || !noTasksMessage || !table) return;
 
                 tableBody.innerHTML = '';
                 const filteredTasks = this.tasks
                     .filter(task => filter === 'all' || task.status === filter)
                     .sort((a, b) => new Date(a.dueDate || '9999-12-31') - new Date(b.dueDate || '9999-12-31'));
-
                 
                 if (filteredTasks.length === 0) {
                     noTasksMessage.style.display = 'block';
-                    tableBody.parentElement.style.display = 'none'; // table-container'ı gizle
-                    return;
+                    table.style.display = 'none';
+                } else {
+                    noTasksMessage.style.display = 'none';
+                    table.style.display = '';
+                    filteredTasks.forEach(task => tableBody.appendChild(this.createTaskRow(task)));
                 }
-
-                noTasksMessage.style.display = 'none';
-                tableBody.parentElement.style.display = ''; // table-container'ı göster
-
-                filteredTasks.forEach(task => {
-                    const row = this.createTaskRow(task);
-                    tableBody.appendChild(row);
-                });
                 this.handleSelectionChange();
             }
 
@@ -286,11 +336,10 @@
                 const row = document.createElement('tr');
                 const priorityMap = { high: 'Yüksek', medium: 'Orta', low: 'Düşük' };
                 const statusMap = { open: 'Açık', in_progress: 'Devam Ediyor', pending_review: 'İncelemede', completed: 'Tamamlandı' };
-
                 const isCompleted = task.status === 'completed';
 
                 row.innerHTML = `
-                    <td><input type="checkbox" class="task-checkbox" data-id="${task.id}" disabled></td>
+                    <td><input type="checkbox" class="task-checkbox" data-id="${task.id}" ${isCompleted ? 'disabled' : ''}></td>
                     <td><a href="task-detail.html?taskId=${task.id}">${task.title || 'Başlık Yok'}</a></td>
                     <td>${priorityMap[task.priority] || task.priority}</td>
                     <td>${statusMap[task.status] || task.status}</td>
@@ -306,30 +355,16 @@
                 return row;
             }
 
-            editTask(taskId) {
-                 window.location.href = `task-detail.html?taskId=${taskId}&mode=edit`;
-            }
-            
-            viewTaskDetails(taskId) {
-                window.location.href = `task-detail.html?taskId=${taskId}`;
-            }
-
             async completeTask(taskId) {
                 const task = this.tasks.find(t => t.id === taskId);
-                if (!task) {
-                    alert('İş bulunamadı.');
-                    return;
-                }
-
-                if (confirm(`'${task.title}' başlıklı işi "Tamamlandı" olarak işaretlemek istediğinizden emin misiniz?`)) {
+                if (!task) { alert('İş bulunamadı.'); return; }
+                if (confirm(\`'\${task.title}' başlıklı işi "Tamamlandı" olarak işaretlemek istediğinizden emin misiniz?\`)) {
                     try {
                         const result = await taskService.updateTask(taskId, { status: 'completed' });
                         if (result.success) {
                             alert('İş başarıyla tamamlandı olarak işaretlendi.');
-                            await this.loadInitialData(); // Listeyi yenile
-                        } else {
-                            throw new Error(result.error);
-                        }
+                            await this.loadInitialData();
+                        } else { throw new Error(result.error); }
                     } catch (error) {
                         alert('İş güncellenirken bir hata oluştu: ' + error.message);
                     }
@@ -337,11 +372,68 @@
             }
             
             handleSelectionChange() {
-                // "İşlerim" sayfasında toplu işlem olmadığı için bu fonksiyon şimdilik boş bırakılabilir.
+                const assignBtn = document.getElementById('assignSelectedBtn');
+                const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+                if(!assignBtn || !selectAllCheckbox) return;
+
+                const selectedCount = document.querySelectorAll('.task-checkbox:checked').length;
+                assignBtn.disabled = selectedCount === 0;
+                
+                const allEnabledCheckboxes = document.querySelectorAll('.task-checkbox:not(:disabled)');
+                selectAllCheckbox.checked = allEnabledCheckboxes.length > 0 && selectedCount === allEnabledCheckboxes.length;
             }
 
             handleSelectAll(isChecked) {
-                // "İşlerim" sayfasında toplu işlem olmadığı için bu fonksiyon şimdilik boş bırakılabilir.
+                document.querySelectorAll('.task-checkbox:not(:disabled)').forEach(checkbox => checkbox.checked = isChecked);
+                this.handleSelectionChange();
+            }
+
+            showAssignModal() {
+                const modal = document.getElementById('assignTaskModal');
+                if (!modal) return;
+                
+                const selectedCount = document.querySelectorAll('.task-checkbox:checked').length;
+                const selectedTaskCountEl = modal.querySelector('#selectedTaskCount');
+                if (selectedTaskCountEl) selectedTaskCountEl.textContent = selectedCount;
+
+                const userSelect = modal.querySelector('#assignUserSelect');
+                if (userSelect) {
+                    userSelect.innerHTML = '<option value="">Kullanıcı Seçin...</option>';
+                    this.allUsers.filter(u => u.id !== this.currentUser.uid).forEach(user => {
+                        userSelect.innerHTML += \`<option value="\${user.id}">\${user.displayName || user.email}</option>\`;
+                    });
+                }
+                modal.classList.add('show');
+            }
+
+            async handleAssignment() {
+                const modal = document.getElementById('assignTaskModal');
+                if (!modal) return;
+
+                const selectedUserId = modal.querySelector('#assignUserSelect').value;
+                if (!selectedUserId) { alert('Lütfen bir kullanıcı seçin.'); return; }
+
+                const selectedUser = this.allUsers.find(u => u.id === selectedUserId);
+                if (!selectedUser) { alert('Seçilen kullanıcı bulunamadı.'); return; }
+                
+                const taskIds = Array.from(document.querySelectorAll('.task-checkbox:checked')).map(cb => cb.dataset.id);
+
+                if (!confirm(\`\${taskIds.length} görevi \${selectedUser.displayName || selectedUser.email} kullanıcısına atamak istediğinizden emin misiniz?\`)) return;
+                
+                const promises = taskIds.map(id => taskService.updateTask(id, { assignedTo_uid: selectedUser.id, assignedTo_email: selectedUser.email }));
+                try {
+                    await Promise.all(promises);
+                    alert('Görevler başarıyla atandı!');
+                    this.closeModal('assignTaskModal');
+                    await this.loadInitialData();
+                } catch (error) {
+                    alert('Görevler atanırken bir hata oluştu: ' + error.message);
+                }
+            }
+
+            closeModal(modalId) {
+                const modal = document.getElementById(modalId);
+                if (modal) modal.classList.remove('show');
             }
         }
     </script>
