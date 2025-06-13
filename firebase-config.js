@@ -410,6 +410,11 @@ export const taskService = {
                 userEmail: user.email,
                 action: `İş güncellendi. Değişen alanlar: ${Object.keys(updates).join(', ')}`
             };
+            // Eğer güncelleme bir durum değişikliğini içeriyorsa, action mesajını özelleştir
+            if (updates.status) {
+                updateAction.action = `İş durumu "${updates.status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}" olarak güncellendi.`;
+            }
+
             await updateDoc(taskRef, {
                 ...updates,
                 updatedAt: new Date().toISOString(),
@@ -445,6 +450,27 @@ export const taskService = {
         } catch (error) {
             console.error("Error fetching all tasks:", error);
             return { success: false, error: error.message, data: [] };
+        }
+    },
+
+    // YENİ METOT: Belirli bir işi ID'sine göre getir
+    async getTaskById(taskId) {
+        if (!isFirebaseAvailable) {
+            // LocalStorage modunda bu işlevi taklit edelim (sadece demo amaçlı)
+            const allTasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+            const task = allTasks.find(t => t.id === taskId);
+            return { success: !!task, data: task };
+        }
+        try {
+            const taskDoc = await getDoc(doc(db, 'tasks', taskId));
+            if (taskDoc.exists()) {
+                return { success: true, data: { id: taskDoc.id, ...taskDoc.data() } };
+            } else {
+                return { success: false, error: "Task not found" };
+            }
+        } catch (error) {
+            console.error("Error fetching task by ID:", error);
+            return { success: false, error: error.message };
         }
     },
 
@@ -511,7 +537,7 @@ export async function createDemoData() {
                     name: 'logo_ornek.jpg',
                     type: 'image/jpeg',
                     size: 1024,
-                    content: 'data:image/jpeg;base64,iVBORw0KGgoAAAANSUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='
+                    content: 'data:image/jpeg;base64,iVBORw0KGgoAAAANSUjEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='
                 },
             }
         ];
