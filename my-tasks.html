@@ -439,12 +439,15 @@
                     row.querySelector('.view-btn').addEventListener('click', () => this.viewTaskDetailsModal(task.id));
                     row.querySelector('.edit-btn').addEventListener('click', () => this.editTask(task.id));
                     row.querySelector('.delete-btn').addEventListener('click', () => this.deleteTask(task.id));
-                    // Buraya complete-btn için event listener ekle
-                    row.querySelector('.complete-btn').addEventListener('click', (e) => {
-                        const taskId = e.currentTarget.dataset.id;
-                        const ipRecordId = e.currentTarget.dataset.ipRecordId;
-                        this.showCompleteTaskModal(taskId, ipRecordId);
-                    });
+                    // complete-btn için event listener
+                    const completeBtn = row.querySelector('.complete-btn'); // complete-btn'i seç
+                    if (completeBtn) { // Eğer buton varsa
+                        completeBtn.addEventListener('click', (e) => { // Tıklama olayını dinle
+                            const taskId = e.currentTarget.dataset.id;
+                            const ipRecordId = e.currentTarget.dataset.ipRecordId;
+                            this.showCompleteTaskModal(taskId, ipRecordId); // Modalı açan fonksiyonu çağır
+                        });
+                    }
                     const ipRecordLink = row.querySelector('.ip-record-link');
                     if (ipRecordLink && relatedIpRecordId) {
                         ipRecordLink.addEventListener('click', (e) => { e.preventDefault(); this.showIpRecordDetailModal(relatedIpRecordId); });
