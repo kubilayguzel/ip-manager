@@ -90,7 +90,7 @@
         .no-tasks { text-align: center; padding: 50px; color: #666; }
         .loading { text-align: center; padding: 50px; }
 
-        /* Modal Stilleri (task-detail.html ve portfolio.html'den kopyalandı) */
+        /* Modal Stilleri (task-detail.html'den ve portfolio.html'den kopyalandı) */
         .modal {
             display: none; /* Varsayılan olarak gizli */
             position: fixed; /* Sabit konumda */
@@ -119,7 +119,7 @@
             animation-name: animatetop;
             animation-duration: 0.4s;
         }
-        .modal-content { /* portfolio.html için */
+        .modal-content { /* portfolio.html ve completeTaskModal için */
             background-color: #fefefe;
             margin: auto;
             padding: 30px;
@@ -495,7 +495,7 @@
                 this.tasks = [];
                 this.allIpRecords = [];
                 this.allPersons = [];
-                this.uploadedCompletionFiles = [];
+                this.uploadedCompletionFiles = []; // Yeni eklendi: İş tamamlama için yüklenen dosyalar
                 this.init();
             }
 
@@ -621,13 +621,13 @@
                             <button class="action-btn view-btn" data-id="${task.id}">Görüntüle</button>
                             <button class="action-btn edit-btn" data-id="${task.id}">Güncelle</button>
                             <button class="action-btn delete-btn" data-id="${task.id}">Sil</button>
-                            <button class="action-btn complete-btn" data-id="${task.id}" data-ip-record-id="${task.relatedIpRecordId}" ${task.status === 'completed' ? 'disabled' : ''}>Bitti</button> </td>
+                            <button class="action-btn complete-btn" data-id="${task.id}" data-ip-record-id="${task.relatedIpRecordId}" ${task.status === 'completed' ? 'disabled' : ''}>İşi Bitir</button> </td>
                     `;
                     // Olay dinleyicilerini ekle
                     row.querySelector('.view-btn').addEventListener('click', () => this.viewTaskDetailsModal(task.id));
                     row.querySelector('.edit-btn').addEventListener('click', () => this.editTask(task.id));
                     row.querySelector('.delete-btn').addEventListener('click', () => this.deleteTask(task.id));
-                    row.querySelector('.complete-btn').addEventListener('click', () => this.showCompleteTaskModal(task.id, task.relatedIpRecordId)); // Yeni buton
+                    row.querySelector('.complete-btn').addEventListener('click', () => this.showCompleteTaskModal(task.id, task.relatedIpRecordId));
                     
                     // IP Kayıt linki için olay dinleyicisi
                     row.querySelector('.ip-record-link').addEventListener('click', (e) => {
@@ -1055,15 +1055,15 @@
                         let documentLinkHtml = '';
                         if (tx.documentId && recordFiles) {
                             const relatedFile = recordFiles.find(file => file.id === tx.documentId);
-                            if (relatedFile) documentLinkHtml = ` | <a href="${relatedFile.content}" download="${relatedFile.name}" class="task-history-document-link">📄 Belge</a>`;
+                            if (relatedFile) documentLinkHtml = ` | <a href="${relatedFile.content}" download="${relatedFile.name}" class="transaction-document-link">📄 Belge</a>`;
                         }
                         html += `
-                            <div class="task-history-item" data-id="${tx.transactionId}">
+                            <div class="transaction-node" data-id="${tx.transactionId}">
                                 ${hasChildren ? `<button class="transaction-toggle-btn" data-target-id="${tx.transactionId}">${children.length > 0 ? '+' : ''}</button>` : ''}
-                                <div class="task-history-item-content">
-                                    <div class="task-history-info">
-                                        <div class="task-history-description">${tx.description || tx.type}</div> 
-                                        <div class="task-history-meta">${new Date(tx.timestamp).toLocaleDateString('tr-TR')} by ${tx.userEmail}${documentLinkHtml}</div>
+                                <div class="transaction-node-content">
+                                    <div class="transaction-info">
+                                        <div class="transaction-description">${tx.description || tx.type}</div> 
+                                        <div class="transaction-meta">${new Date(tx.timestamp).toLocaleDateString('tr-TR')} by ${tx.userEmail}${documentLinkHtml}</div>
                                     </div>
                                     </div>
                             </div>
