@@ -50,22 +50,14 @@
 
             renderTasks(filter = 'all') {
                 const tableBody = document.getElementById('tasksTableBody');
-                const noTasksMessage = document.getElementById('noTasksMessage');
                 tableBody.innerHTML = '';
                 const filteredTasks = this.tasks.filter(task => filter === 'all' || task.status === filter);
-                if (filteredTasks.length === 0) {
-                    noTasksMessage.style.display = 'block';
-                    return;
-                }
-                noTasksMessage.style.display = 'none'; 
-                const priorityMap = { high: 'Yüksek', medium: 'Orta', low: 'Düşük' };
-                const statusMap = { open: 'Açık', in_progress: 'Devam Ediyor', completed: 'Tamamlandı', pending_review: 'Gözden Geçiriliyor' };
+                // ...
                 
                 filteredTasks.forEach(task => {
                     const row = document.createElement('tr');
                     // ... row.innerHTML içeriği ...
                     
-                    // Buton olay dinleyicileri burada ekleniyor
                     row.querySelector('.view-btn').addEventListener('click', () => this.viewTaskDetailsModal(task.id));
                     row.querySelector('.edit-btn').addEventListener('click', () => this.editTask(task.id));
                     row.querySelector('.delete-btn').addEventListener('click', () => this.deleteTask(task.id));
@@ -83,7 +75,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             let myTasksModuleInstance;
             authService.auth.onAuthStateChanged(async (user) => {
-                if (user || authService.getCurrentUser()) {
+                if (user) {
                     if (!myTasksModuleInstance) {
                         myTasksModuleInstance = new MyTasksModule();
                         await myTasksModuleInstance.init();
