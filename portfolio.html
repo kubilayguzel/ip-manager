@@ -588,8 +588,13 @@
                     const statusNames = { application: 'Başvuru', pending: 'Beklemede', approved: 'Onaylandı', rejected: 'Reddedildi', expired: 'Süresi Doldu', published: 'Yayınlandı', partial_refusal: 'Kısmi Ret', refused: 'Ret', opposition_received: 'İtiraz Geldi', opposition_filed: 'İtiraz Edildi', registered: 'Tescilli', not_renewed: 'Yenilenmedi', invalid_void: 'Geçersiz' };
 
                     const formatDate = (dateString) => dateString ? new Date(dateString).toLocaleDateString('tr-TR') : '-';
-                    const renderField = (label, value) => value || value === 0 ? `<div class="detail-item"><div class="detail-label">${label}</div><div class="detail-value">${value}</div></div>` : '';
-                    const renderLongTextField = (label, value) => value ? `<div class="detail-item" style="grid-column: 1 / -1;"><div class="detail-label">${label}</div><div class="detail-value long-text">${value}</div></div>` : '';
+                    const renderField = (label, value, isLongText = false) => { // isLongText parametresi eklendi
+                        if (value === null || value === undefined || value === '') return '';
+                        if (isLongText) {
+                            return `<div class="detail-item full-width"><div class="detail-label">${label}</div><div class="detail-value long-text">${value}</div></div>`;
+                        }
+                        return `<div class="detail-item"><div class="detail-label">${label}</div><div class="detail-value">${value}</div></div>`;
+                    };
 
                     let modalContentHtml = `<div class="detail-grid">`;
                     
@@ -611,7 +616,7 @@
                         modalContentHtml += renderField('Patent Sınıfı', record.patentClass);
                         modalContentHtml += renderField('Öncelik Tarihi', formatDate(record.priority));
                         modalContentHtml += renderField('Son Geçerlilik Tarihi', formatDate(record.expiryDate));
-                        modalContentHtml += renderLongTextField('Patent İstekleri (Claims)', record.claims);
+                        modalContentHtml += renderField('Patent İstekleri (Claims)', record.claims, true); // true ile long-text olmasını sağla
                     }
                     if (record.type === 'trademark') {
                         modalContentHtml += `<h4 class="detail-section-title">Marka Detayları</h4>`;
@@ -797,8 +802,10 @@
                 noRecords.style.display = 'none';
                 try {
                     const result = await ipRecordsService.getRecords();
+                    console.log('API call result:', result); // Hata ayıklama için ekledik
                     if (result.success) {
                         this.records = result.data;
+                        console.log('Records loaded:', this.records); // Hata ayıklama için ekledik
                         this.applyFilters();
                     } else {
                         throw new Error(result.error);
@@ -847,13 +854,6 @@
                 const ownersString = (record.owners || []).map(o => o.name).join(' ').toLowerCase();
                 return (record.title.toLowerCase().includes(search) || (record.applicationNumber && record.applicationNumber.toLowerCase().includes(search)) || (record.description && record.description.toLowerCase().includes(search)) || ownersString.includes(search));
             }
-            
-            // handleSort, viewRecord, editRecord, deleteRecord metotları artık arrow function olarak tanımlandığı için bind() gereksizdir.
-            // Sadece metodun içeriği kalacaktır.
-            // Örnek:
-            // handleSort = (event) => { ... }
-            // viewRecord = (recordId) => { ... }
-            // vb.
             
             sortRecords() {
                 this.filteredRecords.sort((a, b) => {
@@ -946,7 +946,7 @@
                     'Tanınmışlık Tespiti', '3.Kişi Görüşü', 'Yayına İtirazı Geri Çekme',
                     'Madrid Başvurusu Ücret Ödeme', 'Muvaffakat Sunumu', 'Kullanım İspatı Sunma',
                     'İtiraza Ek Belge', 'Eşya Sınırlandırma',
-                    'Kabul Kararı', 'Ret Kararı', 'İş Tamamlama', // 'İş Tamamlama' eklendi
+                    'Kabul Kararı', 'Ret Kararı', 'İş Tamamlama',
                     'Eksiklik Bildirimi'
                 ];
 
@@ -1066,6 +1066,15 @@
                 document.getElementById('portfolioTable').style.display = 'none';
                 document.getElementById('pagination').style.display = 'none';
                 document.getElementById('noRecords').style.display = 'block';
+            }
+            
+            // Helper function for formatting file size (copied from my-tasks.html)
+            formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
             }
         }
 
