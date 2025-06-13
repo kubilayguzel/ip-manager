@@ -49,7 +49,6 @@
         .table-action-btn { background: #6c757d; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; transition: all 0.3s ease; text-decoration: none; }
         .table-action-btn.view-btn { background-color: #17a2b8; }
         .table-action-btn.edit-btn { background-color: #ffc107; color: #212529; }
-        .table-action-btn.delete-btn { background-color: #dc3545; }
         .table-action-btn.complete-btn { background-color: #28a745; }
         .no-tasks-message { text-align: center; padding: 40px; color: #666; }
     </style>
@@ -128,7 +127,7 @@
                             </tr>
                         </thead>
                         <tbody id="tasksTableBody">
-                        </tbody>
+                            </tbody>
                     </table>
                     <div id="noTasksMessage" class="no-tasks-message" style="display: none;">
                         <p>Size atanmış herhangi bir görev bulunamadı.</p>
@@ -231,20 +230,26 @@
                 if (statusFilter) statusFilter.addEventListener('change', (e) => this.renderTasks(e.target.value));
                 
                 const selectAllCheckbox = document.getElementById('selectAllCheckbox');
-                if (selectAllCheckbox) selectAllCheckbox.addEventListener('click', (e) => this.handleSelectAll(e.target.checked));
+                if (selectAllCheckbox) {
+                    selectAllCheckbox.disabled = true; // "İşlerim" sayfasında toplu atama olmadığı için pasif
+                }
                 
                 const tasksTableBody = document.getElementById('tasksTableBody');
                 if(tasksTableBody) {
                     tasksTableBody.addEventListener('click', (e) => {
                         const target = e.target;
-                        if (target.classList.contains('task-checkbox')) {
-                            this.handleSelectionChange();
-                        } else if (target.closest('.view-btn')) {
-                            this.viewTaskDetails(target.closest('.view-btn').dataset.id);
-                        } else if (target.closest('.edit-btn')) {
-                            this.editTask(target.closest('.edit-btn').dataset.id);
-                        } else if (target.closest('.delete-btn')) {
-                            this.deleteTask(target.closest('.delete-btn').dataset.id);
+                        const button = target.closest('button, a'); // Hem buton hem de linkleri yakala
+                        if (!button) return;
+
+                        const action = button.dataset.action;
+                        const taskId = button.dataset.id;
+                        
+                        if (action === 'view') {
+                            this.viewTaskDetails(taskId);
+                        } else if (action === 'edit') {
+                            this.editTask(taskId);
+                        } else if (action === 'complete') {
+                            this.completeTask(taskId);
                         }
                     });
                 }
@@ -256,16 +261,19 @@
                 if (!tableBody || !noTasksMessage) return;
 
                 tableBody.innerHTML = '';
-                const filteredTasks = this.tasks.filter(task => filter === 'all' || task.status === filter);
+                const filteredTasks = this.tasks
+                    .filter(task => filter === 'all' || task.status === filter)
+                    .sort((a, b) => new Date(a.dueDate || '9999-12-31') - new Date(b.dueDate || '9999-12-31'));
+
                 
                 if (filteredTasks.length === 0) {
                     noTasksMessage.style.display = 'block';
-                    tableBody.style.display = 'none';
+                    tableBody.parentElement.style.display = 'none'; // table-container'ı gizle
                     return;
                 }
 
                 noTasksMessage.style.display = 'none';
-                tableBody.style.display = '';
+                tableBody.parentElement.style.display = ''; // table-container'ı göster
 
                 filteredTasks.forEach(task => {
                     const row = this.createTaskRow(task);
@@ -279,17 +287,20 @@
                 const priorityMap = { high: 'Yüksek', medium: 'Orta', low: 'Düşük' };
                 const statusMap = { open: 'Açık', in_progress: 'Devam Ediyor', pending_review: 'İncelemede', completed: 'Tamamlandı' };
 
+                const isCompleted = task.status === 'completed';
+
                 row.innerHTML = `
-                    <td><input type="checkbox" class="task-checkbox" data-id="${task.id}" ${task.status === 'completed' ? 'disabled' : ''}></td>
+                    <td><input type="checkbox" class="task-checkbox" data-id="${task.id}" disabled></td>
                     <td><a href="task-detail.html?taskId=${task.id}">${task.title || 'Başlık Yok'}</a></td>
                     <td>${priorityMap[task.priority] || task.priority}</td>
                     <td>${statusMap[task.status] || task.status}</td>
                     <td>${task.dueDate ? new Date(task.dueDate).toLocaleDateString('tr-TR') : '-'}</td>
                     <td>
                         <div class="action-buttons">
-                            <button class="table-action-btn view-btn" data-id="${task.id}" title="Görüntüle">👁️</button>
-                            <a href="task-detail.html?taskId=${task.id}&mode=edit" class="table-action-btn edit-btn" title="Düzenle">✏️</a>
-                            </div>
+                            <a href="task-detail.html?taskId=${task.id}" class="table-action-btn view-btn" data-action="view" data-id="${task.id}" title="Görüntüle">👁️</a>
+                            <a href="task-detail.html?taskId=${task.id}&mode=edit" class="table-action-btn edit-btn" data-action="edit" data-id="${task.id}" title="Düzenle">✏️</a>
+                            <button class="table-action-btn complete-btn" data-action="complete" data-id="${task.id}" title="İşi Tamamla" ${isCompleted ? 'disabled' : ''}>✔️</button>
+                        </div>
                     </td>
                 `;
                 return row;
@@ -303,32 +314,34 @@
                 window.location.href = `task-detail.html?taskId=${taskId}`;
             }
 
-            async deleteTask(taskId) { 
-                if (confirm("Bu işi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.")) {
-                    const result = await taskService.deleteTask(taskId);
-                    if(result.success) {
-                        alert("İş başarıyla silindi.");
-                        await this.loadInitialData();
-                    } else {
-                        alert("Hata: " + result.error);
+            async completeTask(taskId) {
+                const task = this.tasks.find(t => t.id === taskId);
+                if (!task) {
+                    alert('İş bulunamadı.');
+                    return;
+                }
+
+                if (confirm(`'${task.title}' başlıklı işi "Tamamlandı" olarak işaretlemek istediğinizden emin misiniz?`)) {
+                    try {
+                        const result = await taskService.updateTask(taskId, { status: 'completed' });
+                        if (result.success) {
+                            alert('İş başarıyla tamamlandı olarak işaretlendi.');
+                            await this.loadInitialData(); // Listeyi yenile
+                        } else {
+                            throw new Error(result.error);
+                        }
+                    } catch (error) {
+                        alert('İş güncellenirken bir hata oluştu: ' + error.message);
                     }
                 }
             }
             
             handleSelectionChange() {
-                const selectAllCheckbox = document.getElementById('selectAllCheckbox');
-                if(!selectAllCheckbox) return;
-
-                const allCheckboxes = document.querySelectorAll('.task-checkbox:not(:disabled)');
-                const selectedCount = document.querySelectorAll('.task-checkbox:checked').length;
-                selectAllCheckbox.checked = allCheckboxes.length > 0 && selectedCount === allCheckboxes.length;
+                // "İşlerim" sayfasında toplu işlem olmadığı için bu fonksiyon şimdilik boş bırakılabilir.
             }
 
             handleSelectAll(isChecked) {
-                document.querySelectorAll('.task-checkbox:not(:disabled)').forEach(checkbox => {
-                    checkbox.checked = isChecked;
-                });
-                this.handleSelectionChange();
+                // "İşlerim" sayfasında toplu işlem olmadığı için bu fonksiyon şimdilik boş bırakılabilir.
             }
         }
     </script>
