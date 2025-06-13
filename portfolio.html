@@ -646,8 +646,18 @@
                     
                     modalContentHtml += `<h4 class="detail-section-title">Açıklama</h4>`;
                     modalContentHtml += renderLongTextField('Açıklama', record.description);
+
+                    // Portföy detay modalında dokümanları görüntüleme (Yeni eklendi)
+                    if (record.files && record.files.length > 0) {
+                        modalContentHtml += `<h4 class="detail-section-title">Yüklenen Dokümanlar</h4>`;
+                        modalContentHtml += `<div class="detail-item full-width"><ul>`;
+                        record.files.forEach(file => {
+                            modalContentHtml += `<li><a href="${file.content}" download="${file.name}">📄 ${file.name} (${this.formatFileSize(file.size)}) - ${file.documentDesignation || 'Belge'}</a></li>`;
+                        });
+                        modalContentHtml += `</ul></div>`;
+                    }
                     
-                    modalContentHtml += `</div>`;
+                    modalContentHtml += `</div>`; // .detail-grid kapanışı
                     document.getElementById('modalBody').innerHTML = modalContentHtml;
 
                     this.renderTransactionHistory(record.id, record.transactions, record.files);
@@ -752,7 +762,11 @@
                 document.getElementById('refreshBtn').addEventListener('click', () => this.loadRecords());
                 document.getElementById('exportBtn').addEventListener('click', () => this.exportData());
                 document.getElementById('closeModalBtn').addEventListener('click', () => this.closeModal('detailModal'));
-                document.getElementById('detailModal').addEventListener('click', (e) => { if (e.target.id === 'detailModal') this.closeModal('detailModal'); });
+                document.getElementById('detailModal').addEventListener('click', (e) => {
+                    if (e.target.id === 'detailModal') {
+                        this.closeModal('detailModal');
+                    }
+                });
                 document.getElementById('prevBtn').addEventListener('click', () => { if (this.currentPage > 1) { this.currentPage--; this.renderTable(); } });
                 document.getElementById('nextBtn').addEventListener('click', () => { const totalPages = Math.ceil(this.filteredRecords.length / this.recordsPerPage); if (this.currentPage < totalPages) { this.currentPage++; this.renderTable(); } });
                 
@@ -921,13 +935,10 @@
                     return;
                 }
 
-                const allTransactions = transactions.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)); // Tarihe göre sırala
+                const allTransactions = transactions.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
                 
-                // YENİ FİLTRELEME: Sadece belirli transaction tiplerini göster
                 const displayableTransactionTypes = [
-                    "Document Indexed",
-                    "Document Sub-Indexed",
-                    // create-task.html'den gelen iş tipleri (portfolio.html'deki ile aynı liste)
+                    "Document Indexed", "Document Sub-Indexed",
                     'Başvuru', 'İtiraza Karşı Görüş (YIDD)', 'Yenileme', 'Eksiklik Giderme', 'Yayına İtiraz',
                     'Karara İtiraz', 'Yayıma İtirazın Yeniden İncelenmesi', 'İtiraza Karşı Görüş (Markalar)',
                     'Devir', 'Lisans', 'Birleşme', 'Veraset ile İntikal', 'Tescil Belgesi Sureti',
@@ -935,13 +946,13 @@
                     'Tanınmışlık Tespiti', '3.Kişi Görüşü', 'Yayına İtirazı Geri Çekme',
                     'Madrid Başvurusu Ücret Ödeme', 'Muvaffakat Sunumu', 'Kullanım İspatı Sunma',
                     'İtiraza Ek Belge', 'Eşya Sınırlandırma',
-                    // İndeksleme Tipleri (Belge İndeksleme modülüne özel)
-                    'Kabul Kararı', 'Ret Kararı', 'Eksiklik Bildirimi' 
+                    'Kabul Kararı', 'Ret Kararı', 'İş Tamamlama', // 'İş Tamamlama' eklendi
+                    'Eksiklik Bildirimi'
                 ];
 
                 const relevantTransactions = allTransactions.filter(tx => 
-                    displayableTransactionTypes.includes(tx.type) // transaction'ın 'type' özelliğini kontrol et
-                ).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)); // Tekrar sıralama
+                    displayableTransactionTypes.includes(tx.type) || displayableTransactionTypes.includes(tx.description)
+                ).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
 
                 if (relevantTransactions.length === 0) {
@@ -953,7 +964,7 @@
                 const childrenMap = new Map();
                 
                 relevantTransactions.forEach(tx => {
-                    if (tx.parentId && transactionsMap.has(tx.parentId)) { // Sadece parent'ı da listede olanları child yap
+                    if (tx.parentId && transactionsMap.has(tx.parentId)) {
                         if (!childrenMap.has(tx.parentId)) childrenMap.set(tx.parentId, []);
                         childrenMap.get(tx.parentId).push(tx);
                     }
@@ -971,7 +982,7 @@
                         }
                         html += `
                             <div class="transaction-node" data-id="${tx.transactionId}">
-                                ${hasChildren ? `<button class="transaction-toggle-btn" data-target-id="${tx.transactionId}">+</button>` : ''}
+                                ${hasChildren ? `<button class="transaction-toggle-btn" data-target-id="${tx.transactionId}">${children.length > 0 ? '+' : ''}</button>` : ''}
                                 <div class="transaction-node-content">
                                     <div class="transaction-info">
                                         <div class="transaction-description">${tx.description || tx.type}</div> 
@@ -991,74 +1002,21 @@
                 const rootTransactions = relevantTransactions.filter(tx => !tx.parentId || !transactionsMap.has(tx.parentId));
                 historyContainer.innerHTML = buildTreeHtml(rootTransactions);
 
+                // Akordiyon düğmelerine olay dinleyici ekle
+                historyContainer.querySelectorAll('.transaction-toggle-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const targetId = btn.dataset.targetId;
+                        const childContainer = document.getElementById(`children-of-${targetId}`);
+                        if (childContainer) {
+                            childContainer.classList.toggle('show');
+                            btn.classList.toggle('expanded');
+                            btn.textContent = childContainer.classList.contains('show') ? '−' : '+';
+                        }
+                    });
+                });
+
                 if (rootTransactions.length === 0) {
                     historyContainer.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Gösterilebilir işlem bulunmuyor.</p>';
-                }
-            }
-            
-            // Yeni eklenen veya düzenlenen metotlar (modal işlemleri, transaction düzenleme/silme)
-            openEditTransactionModal(recordId, transactionId) {
-                const record = this.records.find(r => r.id === recordId);
-                const transaction = record.transactions.find(tx => tx.transactionId === transactionId);
-
-                if (record && transaction) {
-                    document.getElementById('editTransactionRecordId').value = recordId;
-                    document.getElementById('editTransactionId').value = transactionId;
-                    document.getElementById('editTransactionDescription').value = transaction.description || transaction.type;
-                    document.getElementById('editTransactionModal').classList.add('show');
-                }
-            }
-
-            hideEditTransactionModal() {
-                document.getElementById('editTransactionModal').classList.remove('show');
-            }
-
-            async saveTransactionChanges() {
-                const recordId = document.getElementById('editTransactionRecordId').value;
-                const transactionId = document.getElementById('editTransactionId').value;
-                const newDescription = document.getElementById('editTransactionDescription').value;
-
-                try {
-                    const result = await ipRecordsService.updateTransaction(recordId, transactionId, { description: newDescription });
-                    if (result.success) {
-                        alert('İşlem başarıyla güncellendi!');
-                        this.hideEditTransactionModal();
-                        // Güncellenmiş veriyi almak için kayıtları yeniden yükle
-                        await this.loadRecords(); 
-                        // Detay modalı açıksa, transaction geçmişini de güncelle
-                        if (document.getElementById('detailModal').classList.contains('show')) {
-                            const record = this.records.find(r => r.id === recordId);
-                            this.renderTransactionHistory(record.id, record.transactions, record.files);
-                        }
-                    } else {
-                        alert('İşlem güncellenirken hata: ' + result.error);
-                    }
-                } catch (error) {
-                    console.error('İşlem güncelleme hatası:', error);
-                    alert('İşlem güncellenirken beklenmeyen bir hata oluştu.');
-                }
-            }
-
-            async deleteTransaction(recordId, transactionId) {
-                if (confirm('Bu işlemi silmek istediğinizden emin misiniz? Altındaki tüm bağlı işlemler de silinecektir.')) {
-                    try {
-                        const result = await ipRecordsService.deleteTransaction(recordId, transactionId);
-                        if (result.success) {
-                            alert('İşlem ve altındaki tüm bağlı işlemler başarıyla silindi.');
-                            // Güncellenmiş veriyi almak için kayıtları yeniden yükle
-                            await this.loadRecords();
-                            // Detay modalı açıksa, transaction geçmişini de güncelle
-                            if (document.getElementById('detailModal').classList.contains('show')) {
-                                const record = this.records.find(r => r.id === recordId);
-                                this.renderTransactionHistory(record.id, record.transactions, record.files);
-                            }
-                        } else {
-                            alert('İşlem silinirken hata: ' + result.error);
-                        }
-                    } catch (error) {
-                        console.error('İşlem silme hatası:', error);
-                        alert('İşlem silinirken beklenmeyen bir hata oluştu.');
-                    }
                 }
             }
 
