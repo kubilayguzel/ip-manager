@@ -57,7 +57,7 @@
         @keyframes animatetop { from {top: -300px; opacity: 0} to {top: 0; opacity: 1} }
         .close-modal-btn { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
         .modal-body-content { padding: 10px 0; }
-        .form-group { display: flex; flex-direction: column; }
+        .form-group { display: flex; flex-direction: column; margin-bottom: 15px; }
         .form-label { display: block; margin-bottom: 8px; color: #333; font-weight: 500; }
         .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; padding-top: 15px; border-top: 1px solid #e1e8ed; }
         .modal-detail-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px 25px; }
@@ -66,13 +66,35 @@
         .modal-detail-value { color: #555; word-break: break-word; font-size: 0.95em; }
         .modal-detail-value.long-text { white-space: pre-wrap; background-color: #f8f9fa; padding: 8px; border-radius: 6px; }
         .modal-detail-section-title { grid-column: 1 / -1; font-size: 1.1em; color: #1e3c72; margin-top: 20px; margin-bottom: 15px; padding-bottom: 5px; border-bottom: 1px dashed #e1e8ed; }
-        .task-history { margin-top: 20px; padding-top: 20px; border-top: 1px solid #e1e8ed; max-height: 400px; overflow-y: auto; }
-        .task-history-item { padding: 8px 0 8px 25px; border-bottom: 1px dashed #eee; }
      </style>
 </head>
 <body>
     <aside class="sidebar">
-        </aside>
+        <div class="sidebar-header"><a href="dashboard.html" class="sidebar-logo">🔥 IP Manager</a></div>
+        <nav class="sidebar-nav">
+            <div class="nav-category-title">Ana Menü</div>
+            <a href="dashboard.html" class="sidebar-nav-item"><span class="nav-icon">📊</span><span>Dashboard</span></a>
+            <a href="portfolio.html" class="sidebar-nav-item"><span class="nav-icon">📋</span><span>Portföy</span></a>
+            <div class="nav-category-title">Veri Girişi</div>
+            <a href="data-entry.html" class="sidebar-nav-item"><span class="nav-icon">➕</span><span>Yeni Kayıt</span></a>
+            <a href="excel-upload.html" class="sidebar-nav-item"><span class="nav-icon">📄</span><span>Excel ile Yükle</span></a>
+            <div class="nav-category-title">Yönetim</div>
+            <div class="accordion">
+                <div class="accordion-header"><span class="nav-icon">⚙️</span><span>Yönetim</span></div>
+                <div class="accordion-content">
+                    <a href="create-task.html" class="new-task-link">Yeni İş Oluştur</a>
+                    <a href="task-management.html">İş Yönetimi</a>
+                    <a href="my-tasks.html">İşlerim</a>
+                    <a href="persons.html">Kişiler Yönetimi</a>
+                    <a href="user-management.html">Kullanıcı Yönetimi</a>
+                </div>
+            </div>
+            <div class="nav-category-title">Araçlar</div>
+            <a href="indexing.html" class="sidebar-nav-item"><span class="nav-icon">📁</span><span>Belge İndeksleme</span></a>
+            <a href="#" class="sidebar-nav-item" style="opacity: 0.5; cursor: not-allowed;"><span class="nav-icon">📈</span><span>Raporlar</span></a>
+            <a href="#" class="sidebar-nav-item" style="opacity: 0.5; cursor: not-allowed;"><span class="nav-icon">🔧</span><span>Ayarlar</span></a>
+        </nav>
+    </aside>
 
     <div class="page-wrapper">
         <header class="top-header">
@@ -87,13 +109,51 @@
         </header>
 
         <main class="main-container">
-            </main>
+            <div id="viewContainer">
+                <div id="taskListContainer">
+                    <section class="page-header">
+                        <h1 class="page-title">İş Akış Yönetimi</h1>
+                        <p class="page-subtitle">Tüm işleri görüntüleyin, yeni işler oluşturun ve atamaları yönetin.</p>
+                    </section>
+            
+                    <div class="tasks-container">
+                        <div class="tasks-header">
+                            <div class="filter-group">
+                                <label class="filter-label" for="userFilter">Kullanıcı:</label>
+                                <select id="userFilter" class="filter-select"></select>
+                                <label class="filter-label" for="statusFilter">Durum:</label>
+                                <select id="statusFilter" class="filter-select"></select>
+                            </div>
+                            <div>
+                                <button id="assignSelectedBtn" class="btn-secondary" style="margin-right: 10px;" disabled>Seçilenleri Ata</button>
+                                <button id="createTaskBtn" class="btn-primary">➕ Yeni İş Oluştur</button>
+                            </div>
+                        </div>
+                        <div class="table-container">
+                            <table class="task-table">
+                                <thead>
+                                    <tr>
+                                        <th><input type="checkbox" id="selectAllCheckbox" title="Tümünü Seç"></th>
+                                        <th>İş Başlığı</th>
+                                        <th>Atanan Kişi</th>
+                                        <th>İlgili Kayıt</th>
+                                        <th>Durum</th>
+                                        <th>İşlemler</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tasksTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
     </div>
 
     <div id="viewTaskDetailModal" class="modal">
         <div class="modal-content-lg">
-            <span class="close-modal-btn" id="closeViewTaskDetailModal">&times;</span>
-            <h3 class="modal-title" id="modalViewTaskTitle">İş Detayı</h3>
+            <span class="close-modal-btn">&times;</span>
+            <h3 class="modal-title">İş Detayı</h3>
             <div class="modal-body-content" id="viewTaskDetailBody">
                 </div>
         </div>
@@ -171,17 +231,19 @@
                 this.renderTasks();
             }
             
-            // DÜZELTME: Tüm event listener'lar eklendi
             setupEventListeners() {
                 document.getElementById('createTaskBtn').addEventListener('click', () => {window.location.href = 'create-task.html';});
                 document.getElementById('userFilter').addEventListener('change', () => this.renderTasks());
                 document.getElementById('statusFilter').addEventListener('change', () => this.renderTasks());
                 document.getElementById('logoutBtn').addEventListener('click', () => authService.signOut());
+                
                 document.getElementById('assignSelectedBtn').addEventListener('click', () => this.showAssignModal());
                 document.getElementById('selectAllCheckbox').addEventListener('click', (e) => this.handleSelectAll(e.target.checked));
                 
                 document.getElementById('tasksTableBody').addEventListener('click', (e) => {
-                    if (e.target.classList.contains('task-checkbox')) this.handleSelectionChange();
+                    if (e.target.classList.contains('task-checkbox')) {
+                        this.handleSelectionChange();
+                    }
                 });
                 
                 const assignModal = document.getElementById('assignTaskModal');
@@ -193,7 +255,6 @@
                 viewModal.querySelector('.close-modal-btn').addEventListener('click', () => this.closeModal('viewTaskDetailModal'));
             }
             
-            // DÜZELTME: Eksik fonksiyon eklendi
             populateFilters() {
                 const userFilter = document.getElementById('userFilter');
                 userFilter.innerHTML = '<option value="all">Tüm Kullanıcılar</option>';
@@ -253,15 +314,14 @@
                 }
             }
             
-            // DÜZELTME: Eksik fonksiyonlar eklendi
             viewTaskDetailsModal(taskId) { 
                 const task = this.allTasks.find(t => t.id === taskId);
                 if (!task) { alert('Görev bulunamadı.'); return; }
-                this.populateModalTaskDetails(task, this.allIpRecords, this.allPersons);
+                this.populateModalTaskDetails(task);
                 document.getElementById('viewTaskDetailModal').classList.add('show');
             }
 
-            populateModalTaskDetails(task, ipRecords, persons) {
+            populateModalTaskDetails(task) {
                 const modalBody = document.getElementById('viewTaskDetailBody');
                 if (!modalBody) return;
                 
@@ -269,6 +329,11 @@
                 const taskTypeParts = task.taskType ? task.taskType.split('_') : [];
                 const mainType = taskTypeParts[0] || '';
                 const specificType = taskTypeParts.slice(1).join(' ').replace(/\b\w/g, l => l.toUpperCase());
+                let ipRecordText = task.relatedIpRecordTitle || 'Kayıt Bulunamadı';
+                if (task.relatedIpRecordId) {
+                    const ipRecord = this.allIpRecords.find(r => r.id === task.relatedIpRecordId);
+                    if (ipRecord) ipRecordText = `${ipRecord.title || ipRecord.applicationNumber || 'Kayıt'}`;
+                }
 
                 modalBody.innerHTML = `
                     <div class="modal-detail-grid">
@@ -278,6 +343,7 @@
                         <div class="modal-detail-item"><div class="modal-detail-label">Öncelik</div><div class="modal-detail-value">${priorityMap[task.priority] || task.priority || '-'}</div></div>
                         <div class="modal-detail-item"><div class="modal-detail-label">Atanan Kişi</div><div class="modal-detail-value">${task.assignedTo_email || '-'}</div></div>
                         <div class="modal-detail-item"><div class="modal-detail-label">Bitiş Tarihi</div><div class="modal-detail-value">${task.dueDate ? new Date(task.dueDate).toLocaleDateString('tr-TR') : '-'}</div></div>
+                        <div class="modal-detail-item full-width"><div class="modal-detail-label">İlgili Fikri Mülkiyet Kaydı</div><div class="modal-detail-value">${ipRecordText}</div></div>
                     </div>
                 `;
             }
@@ -300,9 +366,7 @@
                 modal.querySelector('#selectedTaskCount').textContent = selectedCount;
                 const userSelect = modal.querySelector('#assignUserSelect');
                 userSelect.innerHTML = '<option value="">Kullanıcı Seçin...</option>';
-                this.allUsers.forEach(user => {
-                    userSelect.innerHTML += `<option value="${user.id}">${user.displayName || user.email}</option>`;
-                });
+                this.allUsers.forEach(user => userSelect.innerHTML += `<option value="${user.id}">${user.displayName || user.email}</option>`);
                 modal.classList.add('show');
             }
 
