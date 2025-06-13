@@ -495,7 +495,7 @@
                 this.tasks = [];
                 this.allIpRecords = [];
                 this.allPersons = [];
-                this.uploadedCompletionFiles = []; // Yeni eklendi: İş tamamlama için yüklenen dosyalar
+                this.uploadedCompletionFiles = [];
                 this.init();
             }
 
@@ -524,6 +524,7 @@
             }
             
             async loadInitialData() {
+                console.log("DEBUG: loadInitialData başlatıldı."); // Hata ayıklama logu
                 document.getElementById('loadingIndicator').style.display = 'block';
                 try {
                     const [tasksResult, ipRecordsResult, personsResult] = await Promise.all([
@@ -534,18 +535,24 @@
 
                     if (tasksResult.success) {
                         this.tasks = tasksResult.data;
+                        console.log("DEBUG: Görevler yüklendi:", this.tasks); // Hata ayıklama logu
                     } else {
                         console.error('İşler yüklenirken hata:', tasksResult.error);
+                        alert('Görevler yüklenirken bir hata oluştu: ' + tasksResult.error); // Kullanıcıya bildirim
                     }
                     if (ipRecordsResult.success) {
                         this.allIpRecords = ipRecordsResult.data;
+                        console.log("DEBUG: IP Kayıtları yüklendi:", this.allIpRecords); // Hata ayıklama logu
                     } else {
                         console.error('IP Kayıtları yüklenirken hata:', ipRecordsResult.error);
+                        alert('IP Kayıtları yüklenirken hata: ' + ipRecordsResult.error); // Kullanıcıya bildirim
                     }
                     if (personsResult.success) {
                         this.allPersons = personsResult.data;
+                        console.log("DEBUG: Kişiler yüklendi:", this.allPersons); // Hata ayıklama logu
                     } else {
                         console.error('Kişiler yüklenirken hata:', personsResult.error);
+                        alert('Kişiler yüklenirken bir hata oluştu: ' + personsResult.error); // Kullanıcıya bildirim
                     }
                     this.renderTasks();
 
@@ -554,6 +561,7 @@
                     alert('Veriler yüklenirken bir hata oluştu: ' + error.message);
                 } finally {
                     document.getElementById('loadingIndicator').style.display = 'none';
+                    console.log("DEBUG: loadInitialData tamamlandı. Yükleniyor göstergesi kapatıldı."); // Hata ayıklama logu
                 }
             }
 
@@ -561,7 +569,6 @@
                 document.getElementById('logoutBtn').addEventListener('click', () => authService.signOut().then(() => window.location.href = 'index.html'));
                 document.getElementById('statusFilter').addEventListener('change', (e) => this.renderTasks(e.target.value));
 
-                // İş Detayı Modalı kapatma
                 document.getElementById('closeViewTaskDetailModal').addEventListener('click', () => this.closeModal('viewTaskDetailModal'));
                 document.getElementById('viewTaskDetailModal').addEventListener('click', (e) => {
                     if (e.target.id === 'viewTaskDetailModal') {
@@ -569,20 +576,17 @@
                     }
                 });
 
-                // İş Tamamlama Modalı olay dinleyicileri
                 document.getElementById('closeCompleteTaskModal').addEventListener('click', () => this.closeModal('completeTaskModal'));
                 document.getElementById('cancelCompleteTaskBtn').addEventListener('click', () => this.closeModal('completeTaskModal'));
                 document.getElementById('submitCompleteTaskBtn').addEventListener('click', () => this.handleCompleteTaskSubmit());
                 document.getElementById('completeTaskDocumentInput').addEventListener('change', (e) => this.handleDocumentUploadForTaskCompletion(e.target.files));
                 document.getElementById('completeTaskFileUploadArea').addEventListener('click', () => document.getElementById('completeTaskDocumentInput').click());
                 
-                // Drag & Drop için
                 const completeTaskFileUploadArea = document.getElementById('completeTaskFileUploadArea');
                 completeTaskFileUploadArea.addEventListener('dragover', (e) => { e.preventDefault(); completeTaskFileUploadArea.style.borderColor = '#1e3c72'; completeTaskFileUploadArea.style.background = '#f0f4f8'; });
                 completeTaskFileUploadArea.addEventListener('dragleave', (e) => { e.preventDefault(); completeTaskFileUploadArea.style.borderColor = '#e1e8ed'; completeTaskFileUploadArea.style.background = 'transparent'; });
                 completeTaskFileUploadArea.addEventListener('drop', (e) => { e.preventDefault(); completeTaskFileUploadArea.style.borderColor = '#e1e8ed'; completeTaskFileUploadArea.style.background = 'transparent'; this.handleDocumentUploadForTaskCompletion(e.dataTransfer.files); });
 
-                // Portföy Detay Modalı olay dinleyicileri (yeni)
                 document.getElementById('closeIpRecordModalBtn').addEventListener('click', () => this.closeModal('ipRecordDetailModal'));
                 document.getElementById('ipRecordDetailModal').addEventListener('click', (e) => {
                     if (e.target.id === 'ipRecordDetailModal') {
@@ -592,6 +596,7 @@
             }
 
             renderTasks(filter = 'all') {
+                console.log("DEBUG: renderTasks başlatıldı. Filtre:", filter); // Hata ayıklama logu
                 const tableBody = document.getElementById('tasksTableBody');
                 const noTasksMessage = document.getElementById('noTasksMessage');
                 tableBody.innerHTML = '';
@@ -600,47 +605,65 @@
                     if (filter === 'all') return true;
                     return task.status === filter;
                 });
+                console.log("DEBUG: Filtrelenmiş görevler:", filteredTasks); // Hata ayıklama logu
                 
                 if (filteredTasks.length === 0) {
                     noTasksMessage.style.display = 'block';
+                    console.log("DEBUG: Görev yok, 'noTasksMessage' gösteriliyor."); // Hata ayıklama logu
                     return;
                 }
                 noTasksMessage.style.display = 'none';
+                console.log("DEBUG: Görevler render ediliyor..."); // Hata ayıklama logu
 
                 const priorityMap = { high: 'Yüksek', medium: 'Orta', low: 'Düşük' };
                 const statusMap = { open: 'Açık', in_progress: 'Devam Ediyor', completed: 'Tamamlandı', pending_review: 'Gözden Geçiriliyor' };
 
-                filteredTasks.forEach(task => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td><span class="priority-${task.priority}">${priorityMap[task.priority] || 'Normal'}</span></td>
-                        <td>${task.title}</td>
-                        <td><a href="#" class="ip-record-link" data-ip-record-id="${task.relatedIpRecordId}" data-task-id="${task.id}">${task.relatedIpRecordTitle || '-'}</a></td> <td>${task.dueDate ? new Date(task.dueDate).toLocaleDateString() : '-'}</td>
-                        <td><span class="status-badge status-${task.status}">${statusMap[task.status] || task.status}</span></td>
-                        <td>
-                            <button class="action-btn view-btn" data-id="${task.id}">Görüntüle</button>
-                            <button class="action-btn edit-btn" data-id="${task.id}">Güncelle</button>
-                            <button class="action-btn delete-btn" data-id="${task.id}">Sil</button>
-                            <button class="action-btn complete-btn" data-id="${task.id}" data-ip-record-id="${task.relatedIpRecordId}" ${task.status === 'completed' ? 'disabled' : ''}>İşi Bitir</button> </td>
-                    `;
-                    // Olay dinleyicilerini ekle
-                    row.querySelector('.view-btn').addEventListener('click', () => this.viewTaskDetailsModal(task.id));
-                    row.querySelector('.edit-btn').addEventListener('click', () => this.editTask(task.id));
-                    row.querySelector('.delete-btn').addEventListener('click', () => this.deleteTask(task.id));
-                    row.querySelector('.complete-btn').addEventListener('click', () => this.showCompleteTaskModal(task.id, task.relatedIpRecordId));
-                    
-                    // IP Kayıt linki için olay dinleyicisi
-                    row.querySelector('.ip-record-link').addEventListener('click', (e) => {
-                        e.preventDefault(); // Varsayılan sayfa geçişini engelle
-                        this.showIpRecordDetailModal(e.currentTarget.dataset.ipRecordId); // Yeni fonksiyon
-                    });
+                try {
+                    filteredTasks.forEach(task => {
+                        console.log("DEBUG: Current task for rendering:", task); // Her görevi logla
+                        const row = document.createElement('tr');
+                        
+                        const relatedIpRecordTitle = task.relatedIpRecordTitle || '-'; 
 
-                    tableBody.appendChild(row);
-                });
+                        row.innerHTML = `
+                            <td><span class="priority-${task.priority}">${priorityMap[task.priority] || 'Normal'}</span></td>
+                            <td>${task.title}</td>
+                            <td><a href="#" class="ip-record-link" data-ip-record-id="${task.relatedIpRecordId}" data-task-id="${task.id}">${relatedIpRecordTitle}</a></td> 
+                            <td>${task.dueDate ? new Date(task.dueDate).toLocaleDateString() : '-'}</td>
+                            <td><span class="status-badge status-${task.status}">${statusMap[task.status] || task.status}</span></td>
+                            <td>
+                                <button class="action-btn view-btn" data-id="${task.id}">Görüntüle</button>
+                                <button class="action-btn edit-btn" data-id="${task.id}">Güncelle</button>
+                                <button class="action-btn delete-btn" data-id="${task.id}">Sil</button>
+                                <button class="action-btn complete-btn" data-id="${task.id}" data-ip-record-id="${task.relatedIpRecordId}" ${task.status === 'completed' ? 'disabled' : ''}>İşi Bitir</button> 
+                            </td>
+                        `;
+                        // Olay dinleyicilerini ekle
+                        row.querySelector('.view-btn').addEventListener('click', () => this.viewTaskDetailsModal(task.id));
+                        row.querySelector('.edit-btn').addEventListener('click', () => this.editTask(task.id));
+                        row.querySelector('.delete-btn').addEventListener('click', () => this.deleteTask(task.id));
+                        row.querySelector('.complete-btn').addEventListener('click', () => this.showCompleteTaskModal(task.id, task.relatedIpRecordId));
+                        
+                        const ipRecordLink = row.querySelector('.ip-record-link');
+                        if (ipRecordLink) {
+                            ipRecordLink.addEventListener('click', (e) => {
+                                e.preventDefault();
+                                this.showIpRecordDetailModal(e.currentTarget.dataset.ipRecordId);
+                            });
+                        }
+
+
+                        tableBody.appendChild(row);
+                    });
+                    console.log("DEBUG: renderTasks tamamlandı. Tabloya görevler eklendi."); // Hata ayıklama logu
+                } catch (error) {
+                    console.error("HATA: renderTasks sırasında bir hata oluştu:", error); // Hata ayıklama logu
+                    tableBody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: red;">Görevler yüklenirken bir hata oluştu. Lütfen konsolu kontrol edin.</td></tr>`;
+                    noTasksMessage.style.display = 'none'; // Bu durumda boş mesajı gösterme
+                }
             }
             
             editTask(taskId) {
-                // İş Detayları sayfasına yönlendir (düzenlenebilir modda)
                 window.location.href = `task-detail.html?taskId=${taskId}&mode=edit`;
             }
 
@@ -766,15 +789,14 @@
 
             closeModal(modalId) {
                 document.getElementById(modalId).classList.remove('show');
-                this.uploadedCompletionFiles = []; // Modalı kapatırken yüklenen dosyaları temizle
-                document.getElementById('completeTaskFileList').innerHTML = ''; // Dosya listesini temizle
+                this.uploadedCompletionFiles = [];
+                document.getElementById('completeTaskFileList').innerHTML = '';
             }
 
-            // --- Yeni İş Tamamlama ve Doküman Yükleme Metodları ---
             showCompleteTaskModal(taskId, relatedIpRecordId) {
                 document.getElementById('completeTaskId').value = taskId;
                 document.getElementById('completeTaskRelatedIpRecordId').value = relatedIpRecordId;
-                this.uploadedCompletionFiles = []; // Her açılışta dosyaları sıfırla
+                this.uploadedCompletionFiles = [];
                 document.getElementById('completeTaskFileList').innerHTML = '';
                 document.getElementById('completeTaskModal').classList.add('show');
             }
@@ -798,9 +820,11 @@
                             type: file.type,
                             content: dataUrl,
                             uploadedAt: new Date().toISOString(),
-                            documentDesignation: 'İş Tamamlama Dokümanı', // Varsayılan atama
+                            documentDesignation: 'İş Tamamlama Dokümanı',
                             subDesignation: null,
-                            parentTransactionId: null // Bu bir ana doküman olmalı, task tamamlama özelinde
+                            parentTransactionId: null,
+                            indexingType: 'İş Tamamlama',
+                            indexingName: `İş Tamamlama Dokümanı: ${file.name}`
                         });
                         this.renderDocumentListForTaskCompletion();
                     }).catch(error => {
@@ -839,29 +863,25 @@
 
                 if (confirm('Bu işi "Tamamlandı" olarak işaretlemek ve seçili dokümanları yüklemek istediğinizden emin misiniz?')) {
                     try {
-                        // 1. İşin durumunu güncelle
                         const taskUpdateResult = await taskService.updateTask(taskId, { status: 'completed' });
                         if (!taskUpdateResult.success) {
                             throw new Error(taskUpdateResult.error || 'İş durumu güncellenemedi.');
                         }
 
-                        // 2. Eğer doküman varsa, portföy kaydına ekle
                         if (this.uploadedCompletionFiles.length > 0 && relatedIpRecordId) {
                             const filesToUpload = this.uploadedCompletionFiles.map(file => ({
-                                id: file.id, // Dokümanın kendi ID'si
+                                id: file.id,
                                 name: file.name,
                                 type: file.type,
                                 content: file.content,
                                 uploadedAt: file.uploadedAt,
-                                documentDesignation: 'İş Tamamlama Dokümanı', // Varsayılan atama
+                                documentDesignation: 'İş Tamamlama Dokümanı',
                                 subDesignation: null,
-                                parentTransactionId: null, // Bu bir ana doküman olmalı, task tamamlama özelinde
-                                indexingType: 'İş Tamamlama', // İş tamamlama dokümanı olarak işaretle
+                                parentTransactionId: null,
+                                indexingType: 'İş Tamamlama',
                                 indexingName: `İş Tamamlama Dokümanı: ${file.name}`
                             }));
 
-                            // ipRecordsService.updateRecord'a ikinci parametre olarak sadece eklenecek dosyaları göndermeliyiz,
-                            // var olanları almak için mevcut kaydı çekip birleştirmeliyiz.
                             const currentIpRecord = this.allIpRecords.find(r => r.id === relatedIpRecordId);
                             const updatedIpRecordFiles = (currentIpRecord?.files || []).concat(filesToUpload);
 
@@ -870,7 +890,6 @@
                             });
 
                             if (!ipRecordUpdateResult.success) {
-                                // Doküman yüklenirken hata oluşursa, iş durumu güncellense bile kullanıcıya bildir
                                 alert('İş durumu güncellendi ancak dokümanlar yüklenirken bir hata oluştu: ' + (ipRecordUpdateResult.error || 'Bilinmeyen hata.'));
                             } else {
                                 alert('İş başarıyla tamamlandı ve dokümanlar yüklendi!');
@@ -880,7 +899,7 @@
                         }
 
                         this.closeModal('completeTaskModal');
-                        await this.loadInitialData(); // Listeyi yeniden yükle
+                        await this.loadInitialData();
                     } catch (error) {
                         console.error('İş tamamlama hatası:', error);
                         alert('İş tamamlanırken bir hata oluştu: ' + error.message);
@@ -905,7 +924,6 @@
                 return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
             }
 
-            // --- Portföy Detayı Modalı İçin Fonksiyonlar (MyTasksModule içinde, PortfolioModule'den bağımsız) ---
             async showIpRecordDetailModal(recordId) {
                 const record = this.allIpRecords.find(r => r.id === recordId);
                 if (!record) {
@@ -988,7 +1006,6 @@
                 modalContentHtml += `<h4 class="modal-detail-section-title">Açıklama</h4>`;
                 modalContentHtml += renderField('Açıklama', record.description, true);
 
-                // Portföy detay modalında dokümanları görüntüleme
                 if (record.files && record.files.length > 0) {
                     modalContentHtml += `<h4 class="modal-detail-section-title">Yüklenen Dokümanlar</h4>`;
                     modalContentHtml += `<div class="modal-detail-item full-width"><ul>`;
@@ -998,11 +1015,10 @@
                     modalContentHtml += `</ul></div>`;
                 }
                 
-                modalContentHtml += `</div>`; // .modal-detail-grid kapanışı
+                modalContentHtml += `</div>`;
                 
                 document.getElementById('ipRecordModalBody').innerHTML = modalContentHtml;
 
-                // Transaction geçmişi (sadece görüntüleme, düzenleme/silme butonları yok)
                 this.renderIpRecordTransactionHistory(record.id, record.transactions, record.files);
                 
                 modal.classList.add('show');
@@ -1080,341 +1096,6 @@
                 const rootTransactions = relevantTransactions.filter(tx => !tx.parentId || !transactionsMap.has(tx.parentId));
                 historyContainer.innerHTML = buildTreeHtml(rootTransactions);
 
-                // Akordiyon düğmelerine olay dinleyici ekle
-                historyContainer.querySelectorAll('.transaction-toggle-btn').forEach(btn => {
-                    btn.addEventListener('click', () => {
-                        const targetId = btn.dataset.targetId;
-                        const childContainer = document.getElementById(`children-of-${targetId}`);
-                        if (childContainer) {
-                            childContainer.classList.toggle('show');
-                            btn.classList.toggle('expanded');
-                            btn.textContent = childContainer.classList.contains('show') ? '−' : '+';
-                        }
-                    });
-                });
-
-                if (rootTransactions.length === 0) {
-                    historyContainer.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Gösterilebilir işlem bulunmuyor.</p>';
-                }
-            }
-
-            closeModal(modalId) {
-                document.getElementById(modalId).classList.remove('show');
-                this.uploadedCompletionFiles = []; // Modalı kapatırken yüklenen dosyaları temizle
-                document.getElementById('completeTaskFileList').innerHTML = ''; // Dosya listesini temizle
-            }
-
-            // --- Yeni İş Tamamlama ve Doküman Yükleme Metodları ---
-            showCompleteTaskModal(taskId, relatedIpRecordId) {
-                document.getElementById('completeTaskId').value = taskId;
-                document.getElementById('completeTaskRelatedIpRecordId').value = relatedIpRecordId;
-                this.uploadedCompletionFiles = []; // Her açılışta dosyaları sıfırla
-                document.getElementById('completeTaskFileList').innerHTML = '';
-                document.getElementById('completeTaskModal').classList.add('show');
-            }
-
-            handleDocumentUploadForTaskCompletion(files) {
-                for (const file of files) {
-                    if (file.size > 10 * 1024 * 1024) { // 10MB limit
-                        alert(`"${file.name}" dosyası 10MB'tan büyük ve yüklenemedi.`);
-                        continue;
-                    }
-                    if (this.uploadedCompletionFiles.some(f => f.name === file.name && f.size === file.size)) {
-                        alert(`"${file.name}" dosyası zaten eklenmiş.`);
-                        continue;
-                    }
-
-                    this.readFileAsDataURL(file).then(dataUrl => {
-                        this.uploadedCompletionFiles.push({
-                            id: generateUUID(),
-                            name: file.name,
-                            size: file.size,
-                            type: file.type,
-                            content: dataUrl,
-                            uploadedAt: new Date().toISOString(),
-                            documentDesignation: 'İş Tamamlama Dokümanı', // Varsayılan atama
-                            subDesignation: null,
-                            parentTransactionId: null // Bu bir ana doküman olmalı, task tamamlama özelinde
-                        });
-                        this.renderDocumentListForTaskCompletion();
-                    }).catch(error => {
-                        console.error("Dosya okuma hatası:", error);
-                        alert(`"${file.name}" dosyası okunamadı.`);
-                    });
-                }
-            }
-
-            renderDocumentListForTaskCompletion() {
-                const fileList = document.getElementById('completeTaskFileList');
-                fileList.innerHTML = '';
-                this.uploadedCompletionFiles.forEach(file => {
-                    const fileItem = document.createElement('div');
-                    fileItem.className = 'file-item-modal';
-                    fileItem.innerHTML = `
-                        <span>${file.name} (${this.formatFileSize(file.size)})</span>
-                        <button type="button" class="remove-file-modal" data-id="${file.id}">&times;</button>
-                    `;
-                    fileItem.querySelector('.remove-file-modal').addEventListener('click', () => {
-                        this.uploadedCompletionFiles = this.uploadedCompletionFiles.filter(f => f.id !== file.id);
-                        this.renderDocumentListForTaskCompletion();
-                    });
-                    fileList.appendChild(fileItem);
-                });
-            }
-
-            async handleCompleteTaskSubmit() {
-                const taskId = document.getElementById('completeTaskId').value;
-                const relatedIpRecordId = document.getElementById('completeTaskRelatedIpRecordId').value;
-
-                if (!taskId) {
-                    alert('İş ID\'si bulunamadı.');
-                    return;
-                }
-
-                if (confirm('Bu işi "Tamamlandı" olarak işaretlemek ve seçili dokümanları yüklemek istediğinizden emin misiniz?')) {
-                    try {
-                        // 1. İşin durumunu güncelle
-                        const taskUpdateResult = await taskService.updateTask(taskId, { status: 'completed' });
-                        if (!taskUpdateResult.success) {
-                            throw new Error(taskUpdateResult.error || 'İş durumu güncellenemedi.');
-                        }
-
-                        // 2. Eğer doküman varsa, portföy kaydına ekle
-                        if (this.uploadedCompletionFiles.length > 0 && relatedIpRecordId) {
-                            const filesToUpload = this.uploadedCompletionFiles.map(file => ({
-                                id: file.id, // Dokümanın kendi ID'si
-                                name: file.name,
-                                type: file.type,
-                                content: file.content,
-                                uploadedAt: file.uploadedAt,
-                                documentDesignation: 'İş Tamamlama Dokümanı', // Varsayılan atama
-                                subDesignation: null,
-                                parentTransactionId: null, // Bu bir ana doküman olmalı, task tamamlama özelinde
-                                indexingType: 'İş Tamamlama', // İş tamamlama dokümanı olarak işaretle
-                                indexingName: `İş Tamamlama Dokümanı: ${file.name}`
-                            }));
-
-                            // ipRecordsService.updateRecord'a ikinci parametre olarak sadece eklenecek dosyaları göndermeliyiz,
-                            // var olanları almak için mevcut kaydı çekip birleştirmeliyiz.
-                            const currentIpRecord = this.allIpRecords.find(r => r.id === relatedIpRecordId);
-                            const updatedIpRecordFiles = (currentIpRecord?.files || []).concat(filesToUpload);
-
-                            const ipRecordUpdateResult = await ipRecordsService.updateRecord(relatedIpRecordId, {
-                                files: updatedIpRecordFiles 
-                            });
-
-                            if (!ipRecordUpdateResult.success) {
-                                // Doküman yüklenirken hata oluşursa, iş durumu güncellense bile kullanıcıya bildir
-                                alert('İş durumu güncellendi ancak dokümanlar yüklenirken bir hata oluştu: ' + (ipRecordUpdateResult.error || 'Bilinmeyen hata.'));
-                            } else {
-                                alert('İş başarıyla tamamlandı ve dokümanlar yüklendi!');
-                            }
-                        } else {
-                            alert('İş başarıyla tamamlandı!');
-                        }
-
-                        this.closeModal('completeTaskModal');
-                        await this.loadInitialData(); // Listeyi yeniden yükle
-                    } catch (error) {
-                        console.error('İş tamamlama hatası:', error);
-                        alert('İş tamamlanırken bir hata oluştu: ' + error.message);
-                    }
-                }
-            }
-
-            readFileAsDataURL(file) {
-                return new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onload = () => resolve(reader.result);
-                    reader.onerror = reject;
-                    reader.readAsDataURL(file);
-                });
-            }
-
-            formatFileSize(bytes) {
-                if (bytes === 0) return '0 Bytes';
-                const k = 1024;
-                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-                const i = Math.floor(Math.log(bytes) / Math.log(k));
-                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-            }
-
-            // --- Portföy Detayı Modalı İçin Fonksiyonlar (MyTasksModule içinde, PortfolioModule'den bağımsız) ---
-            async showIpRecordDetailModal(recordId) {
-                const record = this.allIpRecords.find(r => r.id === recordId);
-                if (!record) {
-                    alert('Portföy kaydı bulunamadı.');
-                    return;
-                }
-
-                const modal = document.getElementById('ipRecordDetailModal');
-                if (!modal) {
-                    console.error('IP Record Detail Modal element not found!');
-                    return;
-                }
-
-                const typeNames = { patent: 'Patent', trademark: 'Marka', copyright: 'Telif Hakkı', design: 'Tasarım' };
-                const statusNames = { application: 'Başvuru', pending: 'Beklemede', approved: 'Onaylandı', rejected: 'Reddedildi', expired: 'Süresi Doldu', published: 'Yayınlandı', partial_refusal: 'Kısmi Ret', refused: 'Ret', opposition_received: 'İtiraz Geldi', opposition_filed: 'İtiraz Edildi', registered: 'Tescilli', not_renewed: 'Yenilenmedi', invalid_void: 'Geçersiz' };
-
-                const formatDate = (dateString) => dateString ? new Date(dateString).toLocaleDateString('tr-TR') : '-';
-                const renderField = (label, value, isLongText = false) => {
-                    if (value === null || value === undefined || value === '') return '';
-                    if (isLongText) {
-                        return `<div class="modal-detail-item full-width"><div class="modal-detail-label">${label}</div><div class="modal-detail-value long-text">${value}</div></div>`;
-                    }
-                    return `<div class="modal-detail-item"><div class="modal-detail-label">${label}</div><div class="modal-detail-value">${value}</div></div>`;
-                };
-
-                document.getElementById('ipRecordModalTitle').textContent = `Detay: ${record.title}`;
-                let modalContentHtml = `<div class="modal-detail-grid portfolio-detail">`;
-                
-                modalContentHtml += `<h4 class="modal-detail-section-title">Genel Bilgiler</h4>`;
-                modalContentHtml += renderField('Tür', `<span class="ip-type ${record.type}">${typeNames[record.type] || 'Bilinmiyor'}</span>`);
-                modalContentHtml += renderField('Başlık', record.title);
-                modalContentHtml += renderField('Durum', `<span class="status-badge ${record.status}">${statusNames[record.status] || record.status}</span>`);
-                modalContentHtml += renderField('Başvuru Numarası', record.applicationNumber);
-                modalContentHtml += renderField('Tescil Numarası', record.registrationNumber);
-                modalContentHtml += renderField('Başvuru Tarihi', formatDate(record.applicationDate));
-                modalContentHtml += renderField('Tescil Tarihi', formatDate(record.registrationDate));
-                modalContentHtml += renderField('Hak Sahipleri', (record.owners || []).map(o => o.name).join(', '));
-                if(this.currentUser && this.currentUser.role === 'superadmin') {
-                    modalContentHtml += renderField('Oluşturan Kullanıcı', record.userEmail);
-                }
-
-                if (record.type === 'patent') {
-                    modalContentHtml += `<h4 class="modal-detail-section-title">Patent Detayları</h4>`;
-                    modalContentHtml += renderField('Patent Sınıfı', record.patentClass);
-                    modalContentHtml += renderField('Öncelik Tarihi', formatDate(record.priority));
-                    modalContentHtml += renderField('Son Geçerlilik Tarihi', formatDate(record.expiryDate));
-                    modalContentHtml += renderField('Patent İstekleri (Claims)', record.claims, true);
-                }
-                if (record.type === 'trademark') {
-                    modalContentHtml += `<h4 class="modal-detail-section-title">Marka Detayları</h4>`;
-                    if (record.trademarkImage && record.trademarkImage.content) {
-                        modalContentHtml += `
-                            <div class="modal-detail-item full-width" style="text-align: center; padding: 15px; background-color: #f8f9fa; border-radius: 8px;">
-                                <div class="modal-detail-label">Marka Örneği</div>
-                                <img src="${record.trademarkImage.content}" style="max-width: 200px; max-height: 200px; border: 1px solid #e1e8ed; border-radius: 8px;" alt="Marka Örneği">
-                            </div>`;
-                    }
-                    modalContentHtml += renderField('Marka Türü', record.trademarkType);
-                    modalContentHtml += renderField('Nice Sınıfı', record.niceClass);
-                    modalContentHtml += renderField('Yenileme Tarihi', formatDate(record.renewalDate));
-                    modalContentHtml += renderField('Bülten Tarihi', formatDate(record.bulletinDate));
-                    modalContentHtml += renderField('Bülten Numarası', record.bulletinNumber);
-                    modalContentHtml += renderField('Mal ve Hizmetler', record.goodsServices, true);
-                }
-                if (record.type === 'copyright') {
-                    modalContentHtml += `<h4 class="modal-detail-section-title">Telif Hakkı Detayları</h4>`;
-                    modalContentHtml += renderField('Eser Türü', record.workType);
-                    modalContentHtml += renderField('Oluşturulma Tarihi', formatDate(record.creationDate));
-                    modalContentHtml += renderField('Yayın Tarihi', formatDate(record.publicationDate));
-                    modalContentHtml += renderField('Yayımcı/Yapımcı', record.publisher);
-                }
-                if (record.type === 'design') {
-                    modalContentHtml += `<h4 class="modal-detail-section-title">Tasarım Detayları</h4>`;
-                    modalContentHtml += renderField('Tasarım Türü', record.designType);
-                    modalContentHtml += renderField('Locarno Sınıfı', record.locarnoClass);
-                    modalContentHtml += renderField('Tasarım Tarihi', formatDate(record.designDate));
-                    modalContentHtml += renderField('Tasarım Özellikleri', record.designFeatures, true);
-                }
-                
-                modalContentHtml += `<h4 class="modal-detail-section-title">Açıklama</h4>`;
-                modalContentHtml += renderField('Açıklama', record.description, true);
-
-                // Portföy detay modalında dokümanları görüntüleme
-                if (record.files && record.files.length > 0) {
-                    modalContentHtml += `<h4 class="modal-detail-section-title">Yüklenen Dokümanlar</h4>`;
-                    modalContentHtml += `<div class="modal-detail-item full-width"><ul>`;
-                    record.files.forEach(file => {
-                        modalContentHtml += `<li><a href="${file.content}" download="${file.name}">📄 ${file.name} (${this.formatFileSize(file.size)}) - ${file.documentDesignation || 'Belge'}</a></li>`;
-                    });
-                    modalContentHtml += `</ul></div>`;
-                }
-                
-                modalContentHtml += `</div>`; // .modal-detail-grid kapanışı
-                
-                document.getElementById('ipRecordModalBody').innerHTML = modalContentHtml;
-
-                // Transaction geçmişi (sadece görüntüleme, düzenleme/silme butonları yok)
-                this.renderIpRecordTransactionHistory(record.id, record.transactions, record.files);
-                
-                modal.classList.add('show');
-            }
-
-            renderIpRecordTransactionHistory(recordId, transactions, recordFiles) {
-                const historyContainer = document.getElementById('ipRecordTransactionHistory');
-                historyContainer.innerHTML = '';
-
-                if (!transactions || transactions.length === 0) {
-                    historyContainer.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Belge işlem geçmişi bulunmuyor.</p>';
-                    return;
-                }
-
-                const allTransactions = transactions.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-                
-                const displayableTransactionTypes = [
-                    "Document Indexed", "Document Sub-Indexed",
-                    'Başvuru', 'İtiraza Karşı Görüş (YIDD)', 'Yenileme', 'Eksiklik Giderme', 'Yayına İtiraz',
-                    'Karara İtiraz', 'Yayıma İtirazın Yeniden İncelenmesi', 'İtiraza Karşı Görüş (Markalar)',
-                    'Devir', 'Lisans', 'Birleşme', 'Veraset ile İntikal', 'Tescil Belgesi Sureti',
-                    'Sicil Sureti', 'Menşe Memleket Belgesi', 'Rehin/Teminat', 'Bölünme', 'Vazgeçme',
-                    'Tanınmışlık Tespiti', '3.Kişi Görüşü', 'Yayına İtirazı Geri Çekme',
-                    'Madrid Başvurusu Ücret Ödeme', 'Muvaffakat Sunumu', 'Kullanım İspatı Sunma',
-                    'İtiraza Ek Belge', 'Eşya Sınırlandırma',
-                    'Kabul Kararı', 'Ret Kararı', 'İş Tamamlama',
-                    'Eksiklik Bildirimi'
-                ];
-
-                const relevantTransactions = allTransactions.filter(tx => 
-                    displayableTransactionTypes.includes(tx.type) || displayableTransactionTypes.includes(tx.description)
-                ).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-
-
-                if (relevantTransactions.length === 0) {
-                    historyContainer.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Gösterilebilir işlem bulunmuyor.</p>';
-                    return;
-                }
-
-                const transactionsMap = new Map(relevantTransactions.map(tx => [tx.transactionId, tx]));
-                const childrenMap = new Map();
-                
-                relevantTransactions.forEach(tx => {
-                    if (tx.parentId && transactionsMap.has(tx.parentId)) {
-                        if (!childrenMap.has(tx.parentId)) childrenMap.set(tx.parentId, []);
-                        childrenMap.get(tx.parentId).push(tx);
-                    }
-                });
-
-                const buildTreeHtml = (transactionsToBuild) => {
-                    let html = '';
-                    transactionsToBuild.forEach(tx => {
-                        const children = childrenMap.get(tx.transactionId) || [];
-                        const hasChildren = children.length > 0;
-                        let documentLinkHtml = '';
-                        if (tx.documentId && recordFiles) {
-                            const relatedFile = recordFiles.find(file => file.id === tx.documentId);
-                            if (relatedFile) documentLinkHtml = ` | <a href="${relatedFile.content}" download="${relatedFile.name}" class="task-history-document-link">📄 Belge</a>`;
-                        }
-                        html += `
-                            <div class="task-history-item" data-id="${tx.transactionId}">
-                                ${hasChildren ? `<button class="transaction-toggle-btn" data-target-id="${tx.transactionId}">${children.length > 0 ? '+' : ''}</button>` : ''}
-                                <div class="task-history-item-content">
-                                    <div class="task-history-info">
-                                        <div class="task-history-description">${tx.description || tx.type}</div> 
-                                        <div class="task-history-meta">${new Date(tx.timestamp).toLocaleDateString('tr-TR')} by ${tx.userEmail}${documentLinkHtml}</div>
-                                    </div>
-                                </div>
-                            </div>
-                            ${hasChildren ? `<div class="child-transactions" id="children-of-${tx.transactionId}">${buildTreeHtml(children)}</div>` : ''}`;
-                    });
-                    return html;
-                };
-
-                const rootTransactions = relevantTransactions.filter(tx => !tx.parentId || !transactionsMap.has(tx.parentId));
-                historyContainer.innerHTML = buildTreeHtml(rootTransactions);
-
-                // Akordiyon düğmelerine olay dinleyici ekle
                 historyContainer.querySelectorAll('.transaction-toggle-btn').forEach(btn => {
                     btn.addEventListener('click', () => {
                         const targetId = btn.dataset.targetId;
@@ -1449,27 +1130,27 @@
                     const registrationDate = record.registrationDate ? new Date(record.registrationDate).toLocaleDateString('tr-TR') : '';
                     return [
                         record.type || '',
-                        `"${record.title}"` || '', // Başlık içinde virgül olabileceği için tırnak içine al
+                        `"${record.title}"` || '',
                         record.applicationNumber || '',
                         record.status || '',
                         applicationDate,
                         registrationDate,
                         `"${owners}"` || '',
-                        `"${record.description || ''}"` // Açıklama içinde virgül olabileceği için tırnak içine al
+                        `"${record.description || ''}"`
                     ];
                 });
 
-                let csvContent = "data:text/csv;charset=utf-8,\uFEFF" // UTF-8 BOM ekleme
-                csvContent += headers.join(';') + '\r\n'; // Başlıkları noktalı virgülle ayır
+                let csvContent = "data:text/csv;charset=utf-8,\uFEFF"
+                csvContent += headers.join(';') + '\r\n';
                 data.forEach(row => {
-                    csvContent += row.join(';') + '\r\n'; // Satırları noktalı virgülle ayır
+                    csvContent += row.join(';') + '\r\n';
                 });
 
                 const encodedUri = encodeURI(csvContent);
                 const link = document.createElement("a");
                 link.setAttribute("href", encodedUri);
                 link.setAttribute("download", "fikri_mulkiyet_portfoyu.csv");
-                document.body.appendChild(link); // Required for Firefox
+                document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
             }
@@ -1486,11 +1167,9 @@
 
         // YENİ AKORDİYON MENÜ İÇİN JAVASCRIPT (my-tasks.html içinde çalışmaya devam edecek)
         document.addEventListener('DOMContentLoaded', function() {
-            // --- Akordiyon Menü Tıklama Fonksiyonu ---
             const accordions = document.querySelectorAll('.accordion-header');
             accordions.forEach(accordion => {
                 accordion.addEventListener('click', function(event) {
-                    // Akordiyonu aç/kapat
                     this.classList.toggle('active');
                     const content = this.nextElementSibling;
                     if (content.style.maxHeight) {
@@ -1501,20 +1180,16 @@
                 });
             });
 
-            // --- Sayfa Yüklendiğinde Aktif Menüyü Ayarlama Fonksiyonu ---
             function setActiveMenu() {
                 const currentPage = window.location.pathname.split("/").pop() || 'dashboard.html';
                 
-                // Önce tüm aktif işaretlerini temizle
                 document.querySelectorAll('.sidebar-nav-item.active, .accordion-content a.active').forEach(el => el.classList.remove('active'));
                 
-                // Mevcut sayfanın linkini bul ve aktif yap
                 const activeLink = document.querySelector(`.sidebar-nav a[href="${currentPage}"]`);
                 if (!activeLink) return;
 
                 activeLink.classList.add('active');
                 
-                // Eğer link bir akordiyon içindeyse, akordiyonu aç ve başlığını aktif et
                 const parentAccordionContent = activeLink.closest('.accordion-content');
                 if (parentAccordionContent) {
                     const parentAccordionHeader = parentAccordionContent.previousElementSibling;
@@ -1525,7 +1200,6 @@
                 }
             }
 
-            // Sayfa ilk yüklendiğinde aktif menüyü ayarla
             setActiveMenu();
         });
     </script>
