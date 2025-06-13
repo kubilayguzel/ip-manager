@@ -471,7 +471,7 @@
 
             editTask(taskId) {
                 // İş Detayları sayfasına yönlendir (düzenlenebilir modda)
-                window.location.href = `task-detail.html?taskId=${taskId}`;
+                window.location.href = `task-detail.html?taskId=${taskId}&mode=edit`; // mode=edit parametresi eklendi
             }
 
             async deleteTask(taskId) {
