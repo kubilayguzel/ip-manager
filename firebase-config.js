@@ -486,9 +486,11 @@ export const taskService = {
     // Görev silme ve ilişkili transaction'ı silme
     async deleteTask(taskId) {
         if (!isFirebaseAvailable) {
+            // LocalStorage modunda bu işlevi taklit edelim
             let tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
             const taskToDelete = tasks.find(t => t.id === taskId);
-            if (taskToDelete && taskToDelete.relatedIpRecordId && taskToDelete.transactionIdForDeletion) {
+            if (taskToDelete && taskToDelete.relatedIpRecordId && taskToDelete.transactionIdForDeletion) { // transactionIdForDeletion alanı kontrol edildi
+                // Portföy kaydından transaction'ı sil
                 await ipRecordsService.deleteTransaction(taskToDelete.relatedIpRecordId, taskToDelete.transactionIdForDeletion);
             }
             tasks = tasks.filter(task => task.id !== taskId);
@@ -496,13 +498,17 @@ export const taskService = {
             return { success: true };
         }
         try {
+            // Firestore'dan görevi al, ilişkili transaction ID'sini bul
             const taskDoc = await getDoc(doc(db, 'tasks', taskId));
             if (taskDoc.exists()) {
                 const taskData = taskDoc.data();
+                // Eğer görevin ilişkili bir IP kaydı ve silinecek bir transaction ID'si varsa, önce onu sil
                 if (taskData.relatedIpRecordId && taskData.transactionIdForDeletion) {
                     await ipRecordsService.deleteTransaction(taskData.relatedIpRecordId, taskData.transactionIdForDeletion);
                 }
             }
+            
+            // Sonra görevi sil
             await deleteDoc(doc(db, 'tasks', taskId));
             return { success: true };
         } catch (error) {
@@ -574,7 +580,7 @@ export async function createDemoData() {
                     name: 'logo_ornek.jpg',
                     type: 'image/jpeg',
                     size: 1024,
-                    content: 'data:image/jpeg;base64,iVBORw0KGgoAAAANSUlFTkSuQmCC'
+                    content: 'data:image/jpeg;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='
                 },
             }
         ];
