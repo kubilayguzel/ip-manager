@@ -90,7 +90,7 @@
         .no-tasks { text-align: center; padding: 50px; color: #666; }
         .loading { text-align: center; padding: 50px; }
 
-        /* Modal Stilleri (task-detail.html'den kopyalandı) */
+        /* Modal Stilleri (task-detail.html ve portfolio.html'den kopyalandı) */
         .modal {
             display: none; /* Varsayılan olarak gizli */
             position: fixed; /* Sabit konumda */
@@ -107,18 +107,33 @@
         .modal.show {
             display: flex;
         }
-        .modal-content-lg {
+        .modal-content-lg { /* task-detail.html için */
             background-color: #fefefe;
             margin: auto;
             padding: 30px;
             border: 1px solid #888;
-            width: 90%; /* Genişletildi */
-            max-width: 900px; /* Maksimum genişlik */
+            width: 90%;
+            max-width: 900px;
             border-radius: 20px;
             box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19);
             animation-name: animatetop;
-            animation-duration: 0.4s
+            animation-duration: 0.4s;
         }
+        .modal-content { /* portfolio.html için */
+            background-color: #fefefe;
+            margin: auto;
+            padding: 30px;
+            border: 1px solid #888;
+            width: 95%; 
+            max-width: 1200px; /* portfolio detay modalı daha geniş olabilir */
+            max-height: 90vh; /* scrollable olması için */
+            overflow-y: auto;
+            border-radius: 20px;
+            box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19);
+            animation-name: animatetop;
+            animation-duration: 0.4s;
+        }
+
 
         /* Modal Açılış Animasyonu */
         @keyframes animatetop {
@@ -833,7 +848,7 @@
                         // 2. Eğer doküman varsa, portföy kaydına ekle
                         if (this.uploadedCompletionFiles.length > 0 && relatedIpRecordId) {
                             const filesToUpload = this.uploadedCompletionFiles.map(file => ({
-                                id: file.id,
+                                id: file.id, // Dokümanın kendi ID'si
                                 name: file.name,
                                 type: file.type,
                                 content: file.content,
@@ -968,7 +983,7 @@
                 modalContentHtml += `<h4 class="modal-detail-section-title">Açıklama</h4>`;
                 modalContentHtml += renderField('Açıklama', record.description, true);
 
-                // Dokümanlar bölümü
+                // Portföy detay modalında dokümanları görüntüleme
                 if (record.files && record.files.length > 0) {
                     modalContentHtml += `<h4 class="modal-detail-section-title">Yüklenen Dokümanlar</h4>`;
                     modalContentHtml += `<div class="modal-detail-item full-width"><ul>`;
@@ -1008,7 +1023,7 @@
                     'Tanınmışlık Tespiti', '3.Kişi Görüşü', 'Yayına İtirazı Geri Çekme',
                     'Madrid Başvurusu Ücret Ödeme', 'Muvaffakat Sunumu', 'Kullanım İspatı Sunma',
                     'İtiraza Ek Belge', 'Eşya Sınırlandırma',
-                    'Kabul Kararı', 'Ret Kararı', 'İş Tamamlama', // 'İş Tamamlama' eklendi
+                    'Kabul Kararı', 'Ret Kararı', 'İş Tamamlama',
                     'Eksiklik Bildirimi'
                 ];
 
@@ -1077,9 +1092,58 @@
                     historyContainer.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Gösterilebilir işlem bulunmuyor.</p>';
                 }
             }
+
+            closeModal(modalId) {
+                document.getElementById(modalId).classList.remove('show');
+            }
+
+            exportData() {
+                if (this.filteredRecords.length === 0) {
+                    alert('Dışa aktarılacak kayıt bulunamadı.');
+                    return;
+                }
+
+                const headers = ["Tür", "Başlık", "Başvuru Numarası", "Durum", "Başvuru Tarihi", "Tescil Tarihi", "Hak Sahipleri", "Açıklama"];
+                const data = this.filteredRecords.map(record => {
+                    const owners = (record.owners || []).map(o => o.name).join(', ');
+                    const applicationDate = record.applicationDate ? new Date(record.applicationDate).toLocaleDateString('tr-TR') : '';
+                    const registrationDate = record.registrationDate ? new Date(record.registrationDate).toLocaleDateString('tr-TR') : '';
+                    return [
+                        record.type || '',
+                        `"${record.title}"` || '', // Başlık içinde virgül olabileceği için tırnak içine al
+                        record.applicationNumber || '',
+                        record.status || '',
+                        applicationDate,
+                        registrationDate,
+                        `"${owners}"` || '',
+                        `"${record.description || ''}"` // Açıklama içinde virgül olabileceği için tırnak içine al
+                    ];
+                });
+
+                let csvContent = "data:text/csv;charset=utf-8,\uFEFF" // UTF-8 BOM ekleme
+                csvContent += headers.join(';') + '\r\n'; // Başlıkları noktalı virgülle ayır
+                data.forEach(row => {
+                    csvContent += row.join(';') + '\r\n'; // Satırları noktalı virgülle ayır
+                });
+
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", "fikri_mulkiyet_portfoyu.csv");
+                document.body.appendChild(link); // Required for Firefox
+                link.click();
+                document.body.removeChild(link);
+            }
+
+            showEmptyState() {
+                document.getElementById('portfolioTable').style.display = 'none';
+                document.getElementById('pagination').style.display = 'none';
+                document.getElementById('noRecords').style.display = 'block';
+            }
         }
 
-        window.myTasksModule = new MyTasksModule();
+        // Modülün global scope'ta tanımlanması
+        window.portfolio = new PortfolioModule();
 
         // YENİ AKORDİYON MENÜ İÇİN JAVASCRIPT
         document.addEventListener('DOMContentLoaded', function() {
