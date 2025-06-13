@@ -34,14 +34,30 @@
         .accordion-content a.new-task-link { color: #fff; background-color: rgba(78, 205, 196, 0.25); font-weight: 500; }
         
         /* === ÜST BAR (TOP HEADER) === */
-        .top-header { background: rgba(255, 255, 255, 0.95); padding: 15px 30px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05); display: flex; justify-content: flex-end; align-items: center; position: sticky; top: 0; z-index: 99; }
+        .top-header { background: rgba(255, 255, 255, 0.95); padding: 15px 30px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 99; } /* justify-content: flex-end; -> justify-content: space-between; olarak değiştirildi */
         .user-section { display: flex; align-items: center; gap: 15px; }
         .user-avatar { width: 40px; height: 40px; background: linear-gradient(45deg, #1e3c72, #2a5298); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; }
         .user-info { display: flex; flex-direction: column; text-align: right;}
         .user-name { font-weight: 600; }
         .user-role { font-size: 0.8em; color: #666; }
         .logout-btn { background: #ff6b6b; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: font-size: 0.9em; }
-        
+        /* Yeni geri dön butonu stili */
+        .back-to-list-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+            margin-left: 20px; /* Kullanıcı bölümünden ayırmak için */
+        }
+        .back-to-list-btn:hover {
+            background: #5a6268;
+            transform: translateY(-1px);
+        }
+
         /* === SAYFA GENELİ ELEMENTLER === */
         .page-header { background: rgba(255, 255, 255, 0.95); padding: 30px; border-radius: 20px; margin-bottom: 30px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); }
         .page-title { font-size: 2em; color: #1e3c72; margin-bottom: 10px; }
@@ -63,6 +79,12 @@
             transition: all 0.3s ease; 
             background: white;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        /* Salt okunur alanlar için stil */
+        .form-input[readonly], .form-select[readonly], .form-textarea[readonly] {
+            background-color: #f0f4f8;
+            cursor: default;
+            border-color: #d1d8df;
         }
         .form-input:focus, .form-select:focus, .form-textarea:focus { outline: none; border-color: #1e3c72; box-shadow: 0 0 0 3px rgba(30, 60, 114, 0.1); }
         .form-actions { display: flex; justify-content: flex-end; gap: 15px; margin-top: 30px; }
@@ -155,7 +177,7 @@
         /* Yeni eklenecek İş Detayları için stiller */
         .task-detail-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            grid-template-columns: repeat(auto-fit, minminmax(280px, 1fr)); /* minimum genişliği artırarak daha düzenli görünüm */
             gap: 20px;
         }
         .detail-item {
@@ -172,7 +194,7 @@
         }
         .detail-value {
             color: #555;
-            word-wrap: break-word; /* Uzun metinlerin taşmasını önler */
+            word-wrap: break-word;
             font-size: 1em;
         }
         .detail-value.long-text {
@@ -192,7 +214,7 @@
         }
         .detail-actions {
             display: flex;
-            justify-content: flex-start; /* Butonları sola yasla */
+            justify-content: flex-end; /* Butonları sağa yasla */
             gap: 15px;
             margin-top: 30px;
             padding-top: 20px;
@@ -202,7 +224,7 @@
             min-width: 120px;
         }
         .detail-status-update-container {
-            grid-column: 1 / -1; /* Tüm genişliği kaplasın */
+            grid-column: 1 / -1;
             background-color: #e9f5ff;
             border: 1px solid #bde0fe;
             padding: 20px;
@@ -220,9 +242,11 @@
             padding: 10px;
             border-radius: 8px;
             border: 1px solid #bde0fe;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Fontu eşleştir */
         }
         .detail-status-update-container button {
             margin-top: 15px;
+            padding: 10px 20px; /* Buton boyutunu eşleştir */
         }
 
         /* İşlem Geçmişi için özel stil, indexing.html'den türetildi */
@@ -270,6 +294,95 @@
         .task-history-document-link:hover {
             text-decoration: underline;
         }
+
+        /* Modal Stilleri (Detaylar modalı için) */
+        .modal {
+            display: none; /* Varsayılan olarak gizli */
+            position: fixed; /* Sabit konumda */
+            z-index: 1000; /* Diğer her şeyin üstünde */
+            left: 0;
+            top: 0;
+            width: 100%; /* Tam genişlik */
+            height: 100%; /* Tam yükseklik */
+            overflow: auto; /* İçerik taşarsa kaydırma çubuğu */
+            background-color: rgba(0,0,0,0.4); /* Yarı şeffaf arka plan */
+            align-items: center; /* Dikeyde ortala */
+            justify-content: center; /* Yatayda ortala */
+        }
+        .modal.show {
+            display: flex;
+        }
+        .modal-content-lg {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 30px;
+            border: 1px solid #888;
+            width: 90%; /* Genişletildi */
+            max-width: 900px; /* Maksimum genişlik */
+            border-radius: 20px;
+            box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19);
+            animation-name: animatetop;
+            animation-duration: 0.4s
+        }
+
+        /* Modal Açılış Animasyonu */
+        @keyframes animatetop {
+            from {top: -300px; opacity: 0}
+            to {top: 0; opacity: 1}
+        }
+
+        .close-modal-btn {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close-modal-btn:hover,
+        .close-modal-btn:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .modal-body-content {
+            padding: 10px 0;
+        }
+
+        /* Ortak detay gridi stilini modal için de kullan */
+        .modal-detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px 25px;
+        }
+        .modal-detail-item {
+            margin-bottom: 10px;
+        }
+        .modal-detail-label {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+        }
+        .modal-detail-value {
+            color: #555;
+            word-break: break-word;
+            font-size: 0.95em;
+        }
+        .modal-detail-value.long-text {
+            white-space: pre-wrap;
+            background-color: #f8f9fa;
+            padding: 8px;
+            border-radius: 6px;
+        }
+        .modal-detail-section-title {
+            grid-column: 1 / -1;
+            font-size: 1.1em;
+            color: #1e3c72;
+            margin-top: 20px;
+            margin-bottom: 15px;
+            padding-bottom: 5px;
+            border-bottom: 1px dashed #e1e8ed;
+        }
     </style>
 </head>
 <body>
@@ -304,7 +417,7 @@
 
     <div class="page-wrapper">
         <header class="top-header">
-            <div class="user-section">
+            <button class="back-to-list-btn" id="backToListBtn">← İşlerim Sayfasına Dön</button> <div class="user-section">
                 <div class="user-avatar" id="userAvatar">?</div>
                 <div class="user-info">
                     <div class="user-name" id="userName">Yükleniyor...</div>
@@ -384,14 +497,64 @@
                             </div>
                         </div>
 
-                        <div class="detail-actions">
-                            <button type="button" class="btn btn-secondary" id="backToTasksBtn">Geri Dön</button>
-                        </div>
-                    </form>
+                        </form>
                 </div>
             </div>
         </main>
     </div>
+
+    <div id="viewTaskDetailModal" class="modal">
+        <div class="modal-content-lg">
+            <span class="close-modal-btn" id="closeViewTaskDetailModal">&times;</span>
+            <h3 class="modal-title" id="modalViewTaskTitle">İş Detayı</h3>
+            <div class="modal-body-content">
+                <div class="modal-detail-grid">
+                    <div class="modal-detail-item full-width">
+                        <div class="modal-detail-label">İş Başlığı</div>
+                        <div class="modal-detail-value" id="modalViewTaskTitleValue"></div>
+                    </div>
+                    <div class="modal-detail-item full-width">
+                        <div class="modal-detail-label">Açıklama</div>
+                        <div class="modal-detail-value long-text" id="modalViewTaskDescriptionValue"></div>
+                    </div>
+                    <div class="modal-detail-item">
+                        <div class="modal-detail-label">İş Türü</div>
+                        <div class="modal-detail-value" id="modalViewTaskTypeValue"></div>
+                    </div>
+                    <div class="modal-detail-item">
+                        <div class="modal-detail-label">Öncelik</div>
+                        <div class="modal-detail-value" id="modalViewTaskPriorityValue"></div>
+                    </div>
+                    <div class="modal-detail-item">
+                        <div class="modal-detail-label">Atanan Kişi</div>
+                        <div class="modal-detail-value" id="modalViewAssignedToValue"></div>
+                    </div>
+                    <div class="modal-detail-item">
+                        <div class="modal-detail-label">Bitiş Tarihi</div>
+                        <div class="modal-detail-value" id="modalViewTaskDueDateValue"></div>
+                    </div>
+                    <div class="modal-detail-item full-width">
+                        <div class="modal-detail-label">İlgili Fikri Mülkiyet Kaydı</div>
+                        <div class="modal-detail-value" id="modalViewRelatedIpRecordValue"></div>
+                    </div>
+                    <div class="modal-detail-item full-width" id="modalViewRelatedPartyGroup" style="display:none;">
+                        <div class="modal-detail-label" id="modalViewRelatedPartyLabel"></div>
+                        <div class="modal-detail-value" id="modalViewRelatedPartyValue"></div>
+                    </div>
+                    <div class="modal-detail-item full-width" id="modalViewRelatedTransactionGroup" style="display:none;">
+                        <div class="modal-detail-label" id="modalViewRelatedTransactionLabel"></div>
+                        <div class="modal-detail-value" id="modalViewRelatedTransactionValue"></div>
+                    </div>
+
+                    <h4 class="modal-detail-section-title">İşlem Geçmişi</h4>
+                    <div class="modal-detail-item full-width task-history" id="modalViewTaskHistory">
+                        <p style="text-align: center; color: #666;">İşlem geçmişi yükleniyor...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 
     <script type="module">
         import { authService, taskService, ipRecordsService, personsService, auth } from './firebase-config.js';
@@ -486,8 +649,16 @@
 
             setupEventListeners() {
                 document.getElementById('logoutBtn').addEventListener('click', () => authService.signOut());
-                document.getElementById('backToTasksBtn').addEventListener('click', () => window.location.href = 'my-tasks.html');
+                document.getElementById('backToListBtn').addEventListener('click', () => window.location.href = 'my-tasks.html'); // Yeni buton için event listener
                 document.getElementById('updateStatusBtn').addEventListener('click', () => this.updateTaskStatus());
+                
+                // Modal kapatma olay dinleyicileri
+                document.getElementById('closeViewTaskDetailModal').addEventListener('click', () => this.closeModal('viewTaskDetailModal'));
+                document.getElementById('viewTaskDetailModal').addEventListener('click', (e) => {
+                    if (e.target.id === 'viewTaskDetailModal') { // Modal dışına tıklayınca kapat
+                        this.closeModal('viewTaskDetailModal');
+                    }
+                });
             }
 
             populateTaskDetails() {
@@ -566,13 +737,12 @@
             populateStatusDropdown() {
                 const statusSelect = document.getElementById('updateTaskStatus');
                 const currentStatus = this.currentTask.status;
-                const statuses = ['open', 'in_progress', 'pending_review', 'completed']; // Örnek durumlar
+                const statuses = ['open', 'in_progress', 'pending_review', 'completed'];
                 
                 statusSelect.innerHTML = '';
                 statuses.forEach(status => {
                     const option = document.createElement('option');
                     option.value = status;
-                    // Okunabilir hale getir
                     option.textContent = status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
                     if (status === currentStatus) {
                         option.selected = true;
@@ -593,9 +763,8 @@
                         const result = await taskService.updateTask(this.taskId, { status: newStatus });
                         if (result.success) {
                             this.showNotification('İş durumu başarıyla güncellendi!', 'success');
-                            this.currentTask.status = newStatus; // UI'ı güncelle
-                            this.renderTaskHistory(); // Geçmişi yeniden yükle
-                            // Seçili durumu güncelle
+                            this.currentTask.status = newStatus;
+                            this.renderTaskHistory();
                             document.getElementById('updateTaskStatus').value = newStatus;
                         } else {
                             throw new Error(result.error);
@@ -669,6 +838,114 @@
                     setTimeout(() => {
                         targetMessage.style.display = 'none';
                     }, 5000);
+                }
+            }
+
+            // MODAL GÖRÜNTÜLEME İŞLEVİ (my-tasks.html'den çağrılacak)
+            showViewTaskDetailModal(task, ipRecords, persons) {
+                const modal = document.getElementById('viewTaskDetailModal');
+                if (!modal) return; // Modal elementinin varlığını kontrol et
+
+                // Modal başlığını ayarla
+                document.getElementById('modalViewTaskTitle').textContent = `İş Detayı: ${task.title || '-'}`;
+
+                // Detayları doldur
+                document.getElementById('modalViewTaskTitleValue').textContent = task.title || '-';
+                document.getElementById('modalViewTaskDescriptionValue').textContent = task.description || '-';
+                
+                const taskTypeParts = task.taskType ? task.taskType.split('_') : [];
+                const mainType = taskTypeParts[0] || '';
+                const specificType = taskTypeParts.slice(1).join(' ').replace(/\b\w/g, l => l.toUpperCase());
+                document.getElementById('modalViewTaskTypeValue').textContent = `${mainType.charAt(0).toUpperCase() + mainType.slice(1)} - ${specificType}` || '-';
+
+                const priorityMap = { high: 'Yüksek', medium: 'Orta', low: 'Düşük' };
+                document.getElementById('modalViewTaskPriorityValue').textContent = priorityMap[task.priority] || task.priority || '-';
+                
+                document.getElementById('modalViewAssignedToValue').textContent = task.assignedTo_email || '-';
+                document.getElementById('modalViewTaskDueDateValue').textContent = task.dueDate ? new Date(task.dueDate).toLocaleDateString('tr-TR') : '-';
+
+                // İlgili IP Kaydı
+                let relatedIpRecordText = '-';
+                if (task.relatedIpRecordId) {
+                    const ipRecord = ipRecords.find(r => r.id === task.relatedIpRecordId);
+                    if (ipRecord) {
+                        relatedIpRecordText = `${ipRecord.title || ipRecord.applicationNumber || 'Kayıt'}`; // Modalda link olmasın
+                    } else {
+                        relatedIpRecordText = task.relatedIpRecordTitle || 'Kayıt Bulunamadı';
+                    }
+                }
+                document.getElementById('modalViewRelatedIpRecordValue').textContent = relatedIpRecordText;
+
+                // İlgili Taraf
+                const modalViewRelatedPartyGroup = document.getElementById('modalViewRelatedPartyGroup');
+                const modalViewRelatedPartyLabel = document.getElementById('modalViewRelatedPartyLabel');
+                const modalViewRelatedPartyValue = document.getElementById('modalViewRelatedPartyValue');
+                if (task.details?.relatedParty?.id) {
+                    const person = persons.find(p => p.id === task.details.relatedParty.id);
+                    if (person) {
+                        const taskType = task.taskType.split('_')[1];
+                        const labelMap = { 'devir': 'Devralan Taraf', 'lisans': 'Lisans Alan Taraf', 'rehin': 'Rehin Alan Taraf', 'birleşme': 'Birleşilen Taraf', 'veraset': 'Mirasçı', 'teminat': 'Rehin Alan Taraf' };
+                        modalViewRelatedPartyLabel.textContent = labelMap[taskType] || 'İlgili Taraf';
+                        modalViewRelatedPartyValue.textContent = person.name;
+                        modalViewRelatedPartyGroup.style.display = 'block';
+                    } else {
+                        modalViewRelatedPartyGroup.style.display = 'none';
+                    }
+                } else {
+                    modalViewRelatedPartyGroup.style.display = 'none';
+                }
+
+                // İlgili İşlem
+                const modalViewRelatedTransactionGroup = document.getElementById('modalViewRelatedTransactionGroup');
+                const modalViewRelatedTransactionLabel = document.getElementById('modalViewRelatedTransactionLabel');
+                const modalViewRelatedTransactionValue = document.getElementById('modalViewRelatedTransactionValue');
+                if (task.details?.relatedTransactionId && task.relatedIpRecordId) {
+                    const ipRecord = ipRecords.find(r => r.id === task.relatedIpRecordId);
+                    if (ipRecord && ipRecord.transactions) {
+                        const transaction = ipRecord.transactions.find(tx => tx.transactionId === task.details.relatedTransactionId);
+                        if (transaction) {
+                            modalViewRelatedTransactionLabel.textContent = 'İlgili Üst İşlem';
+                            modalViewRelatedTransactionValue.textContent = transaction.description || transaction.type;
+                            modalViewRelatedTransactionGroup.style.display = 'block';
+                        } else {
+                            modalViewRelatedTransactionGroup.style.display = 'none';
+                        }
+                    } else {
+                        modalViewRelatedTransactionGroup.style.display = 'none';
+                    }
+                } else {
+                    modalViewRelatedTransactionGroup.style.display = 'none';
+                }
+
+                // Modal içindeki işlem geçmişi (basitleştirilmiş)
+                const modalViewTaskHistory = document.getElementById('modalViewTaskHistory');
+                modalViewTaskHistory.innerHTML = '';
+                if (!task.history || task.history.length === 0) {
+                    modalViewTaskHistory.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">İşlem geçmişi bulunmuyor.</p>';
+                } else {
+                    const sortedHistory = [...task.history].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                    sortedHistory.forEach(entry => {
+                        const item = document.createElement('div');
+                        item.className = 'task-history-item'; // task-history-item stilini kullan
+                        item.innerHTML = `
+                            <div class="task-history-item-content">
+                                <div class="task-history-info">
+                                    <div class="task-history-description">${entry.action}</div>
+                                    <div class="task-history-meta">${new Date(entry.timestamp).toLocaleString('tr-TR')} by ${entry.userEmail}</div>
+                                </div>
+                            </div>
+                        `;
+                        modalViewTaskHistory.appendChild(item);
+                    });
+                }
+                
+                modal.classList.add('show');
+            }
+
+            closeModal(modalId) {
+                const modal = document.getElementById(modalId);
+                if (modal) {
+                    modal.classList.remove('show');
                 }
             }
         }
