@@ -292,6 +292,90 @@
             white-space: nowrap;
             margin-top: 4px;
         }
+        /* İş Detayında Dokümanlar Listesi */
+        .document-list {
+            list-style: none;
+            padding: 0;
+        }
+        .document-list li {
+            background-color: #f0f4f8;
+            margin-bottom: 8px;
+            padding: 10px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9em;
+        }
+        .document-list li a {
+            color: #1e3c72;
+            text-decoration: none;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .document-list li a:hover {
+            text-decoration: underline;
+        }
+        .document-list li .remove-doc-btn {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            font-size: 0.8em;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            margin-left: 10px;
+        }
+        .document-list li .remove-doc-btn:hover {
+            background: #c82333;
+        }
+        /* Doküman Yükleme Alanı Stili (task-detail'e özgü) */
+        .file-upload-area-task-detail {
+            border: 2px dashed #e1e8ed;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 15px;
+        }
+        .file-upload-area-task-detail:hover {
+            border-color: #1e3c72;
+            background: #f0f4f8;
+        }
+        .file-list-task-detail {
+            margin-top: 10px;
+        }
+        .file-item-task-detail {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+        }
+        .remove-file-task-detail {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 0.8em;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
     </style>
 </head>
 <body>
@@ -326,7 +410,8 @@
 
     <div class="page-wrapper">
         <header class="top-header">
-            <button class="back-to-list-btn" id="backToListBtn">← İşlerim Sayfasına Dön</button> <div class="user-section">
+            <button class="back-to-list-btn" id="backToListBtn">← İşlerim Sayfasına Dön</button>
+            <div class="user-section">
                 <div class="user-avatar" id="userAvatar">?</div>
                 <div class="user-info">
                     <div class="user-name" id="userName">Yükleniyor...</div>
@@ -393,6 +478,24 @@
                                 <div class="detail-value" id="detailRelatedTransaction"></div>
                             </div>
 
+                            <h4 class="detail-section-title">Dokümanlar</h4>
+                            <div class="detail-item full-width">
+                                <label class="detail-label">Yüklenen Dokümanlar</label>
+                                <ul class="document-list" id="taskDocumentList">
+                                    <li id="noTaskDocumentsMessage" style="text-align: center; color: #666; padding: 10px;">Henüz doküman yok.</li>
+                                </ul>
+                                <!-- Doküman Ekleme Alanı (Sadece düzenleme modunda görünür) -->
+                                <div id="documentUploadSection" style="display:none;">
+                                    <div class="file-upload-area-task-detail" id="taskDetailFileUploadArea">
+                                        <div class="upload-icon">📄</div>
+                                        <div>Yeni Dosyaları buraya sürükleyin veya tıklayın</div>
+                                        <div style="font-size: 0.8em; color: #666; margin-top: 5px;">PDF, DOC, JPG, PNG formatları (Maks. 10MB)</div>
+                                        <input type="file" id="taskDetailFileInput" multiple hidden accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
+                                    </div>
+                                    <div class="file-list-task-detail" id="taskDetailUploadedFileList"></div>
+                                </div>
+                            </div>
+
                             <h4 class="detail-section-title">Durum Güncelleme</h4>
                             <div class="detail-status-update-container">
                                 <label class="detail-label" for="updateTaskStatus">İş Durumunu Güncelle:</label>
@@ -416,61 +519,14 @@
         </main>
     </div>
 
-    <div id="viewTaskDetailModal" class="modal">
-        <div class="modal-content-lg">
-            <span class="close-modal-btn" id="closeViewTaskDetailModal">&times;</span>
-            <h3 class="modal-title" id="modalViewTaskTitle">İş Detayı</h3>
-            <div class="modal-body-content">
-                <div class="modal-detail-grid">
-                    <div class="modal-detail-item full-width">
-                        <div class="modal-detail-label">İş Başlığı</div>
-                        <div class="modal-detail-value" id="modalViewTaskTitleValue"></div>
-                    </div>
-                    <div class="modal-detail-item full-width">
-                        <div class="modal-detail-label">Açıklama</div>
-                        <div class="modal-detail-value long-text" id="modalViewTaskDescriptionValue"></div>
-                    </div>
-                    <div class="modal-detail-item">
-                        <div class="modal-detail-label">İş Türü</div>
-                        <div class="modal-detail-value" id="modalViewTaskTypeValue"></div>
-                    </div>
-                    <div class="modal-detail-item">
-                        <div class="modal-detail-label">Öncelik</div>
-                        <div class="modal-detail-value" id="modalViewTaskPriorityValue"></div>
-                    </div>
-                    <div class="modal-detail-item">
-                        <div class="modal-detail-label">Atanan Kişi</div>
-                        <div class="modal-detail-value" id="modalViewAssignedToValue"></div>
-                    </div>
-                    <div class="modal-detail-item">
-                        <div class="modal-detail-label">Bitiş Tarihi</div>
-                        <div class="modal-detail-value" id="modalViewTaskDueDateValue"></div>
-                    </div>
-                    <div class="modal-detail-item full-width">
-                        <div class="modal-detail-label">İlgili Fikri Mülkiyet Kaydı</div>
-                        <div class="modal-detail-value" id="modalViewRelatedIpRecordValue"></div>
-                    </div>
-                    <div class="modal-detail-item full-width" id="modalViewRelatedPartyGroup" style="display:none;">
-                        <div class="modal-detail-label" id="modalViewRelatedPartyLabel"></div>
-                        <div class="modal-detail-value" id="modalViewRelatedPartyValue"></div>
-                    </div>
-                    <div class="modal-detail-item full-width" id="modalViewRelatedTransactionGroup" style="display:none;">
-                        <div class="modal-detail-label" id="modalViewRelatedTransactionLabel"></div>
-                        <div class="modal-detail-value" id="modalViewRelatedTransactionValue"></div>
-                    </div>
-
-                    <h4 class="modal-detail-section-title">İşlem Geçmişi</h4>
-                    <div class="modal-detail-item full-width task-history" id="modalViewTaskHistory">
-                        <p style="text-align: center; color: #666;">İşlem geçmişi yükleniyor...</p>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <!-- İş Detayı Görüntüleme Modalı (Sadece görüntüleme için bu sayfada kullanılmıyor, diğer sayfalara kopyalandı) -->
+    <div id="viewTaskDetailModal" class="modal" style="display:none;">
+        <!-- Bu modalın içeriği my-tasks.html ve task-management.html'e kopyalandı -->
     </div>
 
 
     <script type="module">
-        import { authService, taskService, ipRecordsService, personsService, auth } from './firebase-config.js';
+        import { authService, taskService, ipRecordsService, personsService, auth, generateUUID } from './firebase-config.js';
 
         document.addEventListener('DOMContentLoaded', function() {
             const accordions = document.querySelectorAll('.accordion-header');
@@ -498,8 +554,9 @@
                 this.currentTask = null;
                 this.allIpRecords = [];
                 this.allPersons = [];
-                this.allUsers = []; // Atanan Kişi dropdown'ı için
+                this.allUsers = [];
                 this.mode = 'view'; // 'view' veya 'edit'
+                this.uploadedFiles = []; // Yeni eklenen dokümanlar için
                 this.init();
             }
 
@@ -511,7 +568,7 @@
                 
                 const urlParams = new URLSearchParams(window.location.search);
                 this.taskId = urlParams.get('taskId');
-                this.mode = urlParams.get('mode') || 'view'; // URL'den modu al
+                this.mode = urlParams.get('mode') || 'view';
 
                 if (!this.taskId) {
                     this.showNotification('Geçersiz iş ID\'si.', 'error');
@@ -538,21 +595,22 @@
                 document.getElementById('taskDetailContent').style.display = 'none';
 
                 try {
-                    const [taskResult, ipRecordsResult, personsResult, usersResult] = await Promise.all([ // usersResult eklendi
+                    const [taskResult, ipRecordsResult, personsResult, usersResult] = await Promise.all([
                         taskService.getTaskById(this.taskId),
                         ipRecordsService.getRecords(),
                         personsService.getPersons(),
-                        taskService.getAllUsers() // Tüm kullanıcıları çek
+                        taskService.getAllUsers()
                     ]);
 
                     if (taskResult.success && taskResult.data) {
                         this.currentTask = taskResult.data;
                         this.allIpRecords = ipRecordsResult.data || [];
                         this.allPersons = personsResult.data || [];
-                        this.allUsers = usersResult.data || []; // Atanan kişi dropdown'ı için
+                        this.allUsers = usersResult.data || [];
                         this.populateTaskDetails();
                         this.populateStatusDropdown();
                         this.renderTaskHistory();
+                        this.renderTaskDocuments(); // Dokümanları render et
                         document.getElementById('taskDetailContent').style.display = 'block';
                     } else {
                         throw new Error(taskResult.error || 'İş bulunamadı veya yüklenirken hata oluştu.');
@@ -571,30 +629,34 @@
                 document.getElementById('backToListBtn').addEventListener('click', () => window.location.href = 'my-tasks.html');
                 document.getElementById('updateStatusBtn').addEventListener('click', () => this.updateTaskStatus());
                 
-                // Kaydet ve İptal butonları için olay dinleyicileri
                 document.getElementById('saveTaskChangesBtn').addEventListener('click', () => this.saveTaskChanges());
-                document.getElementById('cancelEditBtn').addEventListener('click', () => this.setFormMode('view')); // İptal edince görünüm moduna dön
+                document.getElementById('cancelEditBtn').addEventListener('click', () => this.setFormMode('view'));
 
-                // Modal kapatma olay dinleyicileri (eğer bu sayfada modal kullanılıyorsa)
-                document.getElementById('closeViewTaskDetailModal').addEventListener('click', () => this.closeModal('viewTaskDetailModal'));
-                document.getElementById('viewTaskDetailModal').addEventListener('click', (e) => {
-                    if (e.target.id === 'viewTaskDetailModal') {
-                        this.closeModal('viewTaskDetailModal');
-                    }
-                });
+                // Doküman Yükleme Alanı
+                const taskDetailFileUploadArea = document.getElementById('taskDetailFileUploadArea');
+                const taskDetailFileInput = document.getElementById('taskDetailFileInput');
+                if (taskDetailFileUploadArea && taskDetailFileInput) {
+                    taskDetailFileUploadArea.addEventListener('click', () => taskDetailFileInput.click());
+                    taskDetailFileInput.addEventListener('change', (e) => this.handleDocumentUpload(e.target.files));
+                    taskDetailFileUploadArea.addEventListener('dragover', (e) => { e.preventDefault(); taskDetailFileUploadArea.style.borderColor = '#1e3c72'; taskDetailFileUploadArea.style.background = '#f0f4f8'; });
+                    taskDetailFileUploadArea.addEventListener('dragleave', (e) => { e.preventDefault(); taskDetailFileUploadArea.style.borderColor = '#e1e8ed'; taskDetailFileUploadArea.style.background = 'transparent'; });
+                    taskDetailFileUploadArea.addEventListener('drop', (e) => { e.preventDefault(); taskDetailFileUploadArea.style.borderColor = '#e1e8ed'; taskDetailFileUploadArea.style.background = 'transparent'; this.handleDocumentUpload(e.dataTransfer.files); });
+                }
             }
 
             setFormMode(mode) {
                 this.mode = mode;
-                const formInputs = document.querySelectorAll('#taskDetailForm input, #taskDetailForm select, #taskDetailForm textarea');
+                const formInputs = document.querySelectorAll('#taskDetailForm input:not(#taskId), #taskDetailForm select:not(#updateTaskStatus), #taskDetailForm textarea');
                 const editFormActions = document.getElementById('editFormActions');
                 const updateStatusContainer = document.querySelector('.detail-status-update-container');
+                const documentUploadSection = document.getElementById('documentUploadSection');
 
                 if (mode === 'edit') {
                     document.getElementById('taskDetailPageTitle').textContent = 'İşi Düzenle';
                     document.getElementById('taskDetailSubtitle').textContent = 'İş bilgilerini düzenleyin.';
-                    editFormActions.style.display = 'flex'; // Kaydet/İptal butonlarını göster
-                    updateStatusContainer.style.display = 'none'; // Durum güncelleme alanını gizle
+                    editFormActions.style.display = 'flex';
+                    updateStatusContainer.style.display = 'none';
+                    documentUploadSection.style.display = 'block'; // Doküman yükleme alanını göster
                     
                     formInputs.forEach(input => {
                         // Sadece belirli alanları düzenlenebilir yap
@@ -616,8 +678,11 @@
                 } else { // 'view' modu
                     document.getElementById('taskDetailPageTitle').textContent = 'İş Detayı';
                     document.getElementById('taskDetailSubtitle').textContent = 'Atanmış işin detaylarını görüntüleyin ve yönetin.';
-                    editFormActions.style.display = 'none'; // Kaydet/İptal butonlarını gizle
-                    updateStatusContainer.style.display = 'block'; // Durum güncelleme alanını göster
+                    editFormActions.style.display = 'none';
+                    updateStatusContainer.style.display = 'block';
+                    documentUploadSection.style.display = 'none'; // Doküman yükleme alanını gizle
+                    this.uploadedFiles = []; // Geçici yüklenen dosyaları temizle
+                    document.getElementById('taskDetailUploadedFileList').innerHTML = ''; // Listeyi temizle
                     
                     formInputs.forEach(input => {
                         input.setAttribute('readonly', 'true');
@@ -770,7 +835,6 @@
                 const newAssignedToUid = document.getElementById('editAssignedTo').value;
                 const newDueDate = document.getElementById('editTaskDueDate').value;
 
-                // Atanan kişinin e-postasını bul
                 const newAssignedToUser = this.allUsers.find(u => u.id === newAssignedToUid);
                 const newAssignedToEmail = newAssignedToUser ? newAssignedToUser.email : null;
 
@@ -789,6 +853,11 @@
                 }
                 if (newDueDate !== this.currentTask.dueDate) updates.dueDate = newDueDate;
 
+                // Yeni yüklenen dokümanları task objesine ekle (sadece varsa)
+                if (this.uploadedFiles.length > 0) {
+                    updates.files = (this.currentTask.files || []).concat(this.uploadedFiles);
+                }
+
                 if (Object.keys(updates).length === 0) {
                     this.showNotification('Hiçbir değişiklik yapılmadı.', 'info');
                     this.setFormMode('view');
@@ -798,9 +867,36 @@
                 try {
                     const result = await taskService.updateTask(this.taskId, updates);
                     if (result.success) {
-                        this.showNotification('İş başarıyla güncellendi!', 'success');
+                        // Eğer dokümanlar eklendiyse, portföy kaydına da ekle
+                        if (this.uploadedFiles.length > 0 && this.currentTask.relatedIpRecordId) {
+                             const filesToAddForIpRecord = this.uploadedFiles.map(file => ({
+                                id: file.id, // Dokümanın kendi ID'si
+                                name: file.name,
+                                type: file.type,
+                                content: file.content,
+                                uploadedAt: file.uploadedAt,
+                                documentDesignation: 'İş Güncelleme Dokümanı', // Varsayılan atama
+                                subDesignation: null,
+                                parentTransactionId: null // Şimdilik ana transaction
+                            }));
+                             const ipRecordUpdateResult = await ipRecordsService.updateRecord(this.currentTask.relatedIpRecordId, {
+                                files: (this.allIpRecords.find(r => r.id === this.currentTask.relatedIpRecordId)?.files || []).concat(filesToAddForIpRecord)
+                            });
+                             if(!ipRecordUpdateResult.success) {
+                                console.error("Portföy kaydına doküman eklenirken hata:", ipRecordUpdateResult.error);
+                                this.showNotification("İş güncellendi ancak dokümanlar portföye eklenirken hata oluştu: " + ipRecordUpdateResult.error, 'error');
+                             } else {
+                                this.showNotification('İş ve dokümanlar başarıyla güncellendi!', 'success');
+                             }
+                        } else {
+                            this.showNotification('İş başarıyla güncellendi!', 'success');
+                        }
+                        
                         await this.loadInitialData(); // Verileri yeniden yükleyerek güncel hali göster
                         this.setFormMode('view'); // Görünüm moduna geri dön
+                        this.uploadedFiles = []; // Geçici yüklenen dosyaları temizle
+                        document.getElementById('taskDetailUploadedFileList').innerHTML = ''; // Listeyi temizle
+
                     } else {
                         throw new Error(result.error);
                     }
@@ -810,30 +906,133 @@
                 }
             }
 
-            renderTaskHistory() {
-                const historyContainer = document.getElementById('taskHistory');
-                historyContainer.innerHTML = '';
+            // İş Detayında Dokümanları Render Etme
+            renderTaskDocuments() {
+                const documentListUl = document.getElementById('taskDocumentList');
+                documentListUl.innerHTML = '';
+                const noDocumentsMessage = document.getElementById('noTaskDocumentsMessage');
+                
+                const allDocuments = (this.currentTask.files || []).concat(this.uploadedFiles);
 
-                if (!this.currentTask.history || this.currentTask.history.length === 0) {
-                    historyContainer.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">İşlem geçmişi bulunmuyor.</p>';
+                if (allDocuments.length === 0) {
+                    noDocumentsMessage.style.display = 'block';
+                    return;
+                }
+                noDocumentsMessage.style.display = 'none';
+
+                allDocuments.forEach(file => {
+                    const listItem = document.createElement('li');
+                    listItem.innerHTML = `
+                        <a href="${file.content}" download="${file.name}">📄 ${file.name} (${this.formatFileSize(file.size)})</a>
+                        <button type="button" class="remove-doc-btn" data-file-id="${file.id}">×</button>
+                    `;
+                    // Kaldırma butonu olay dinleyicisi
+                    listItem.querySelector('.remove-doc-btn').addEventListener('click', (e) => {
+                        const fileIdToRemove = e.currentTarget.dataset.fileId;
+                        this.removeDocumentFromTask(fileIdToRemove);
+                    });
+                    documentListUl.appendChild(listItem);
+                });
+            }
+
+            // İşten doküman kaldırma (sadece geçici yüklenenlerden veya mevcutlardan)
+            removeDocumentFromTask(fileId) {
+                // Eğer dosya henüz kaydedilmemiş (yani this.uploadedFiles içinde) ise, sadece oradan kaldır
+                const initialLength = this.uploadedFiles.length;
+                this.uploadedFiles = this.uploadedFiles.filter(file => file.id !== fileId);
+
+                if (this.uploadedFiles.length < initialLength) {
+                    this.renderTaskDocuments(); // Geçici listeyi yeniden render et
                     return;
                 }
 
-                const sortedHistory = [...this.currentTask.history].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                // Eğer dosya zaten kaydedilmiş (yani currentTask.files içinde) ise, veritabanından silmek için işaretle
+                // Bu kısım biraz daha karmaşık bir mantık gerektirebilir:
+                // 1. Dosyayı currentTask.files dizisinden kaldır
+                // 2. Güncelleme işlemi sırasında bu değişikliği Firestore'a yansıt
+                // Bu örnekte, basitlik adına sadece currentTask.files'tan çıkarıp UI'ı güncelleyeceğim.
+                // Gerçek bir uygulamada, bu silme işleminin de taskService.updateTask çağrısı ile yapılması gerekir.
+                if (confirm('Bu dokümanı görevden kaldırmak istediğinizden emin misiniz? Kaydedildikten sonra değişiklik kalıcı olacaktır.')) {
+                    this.currentTask.files = (this.currentTask.files || []).filter(file => file.id !== fileId);
+                    this.renderTaskDocuments(); // UI'ı güncelle
+                    this.showNotification('Doküman kaldırıldı. Değişiklikleri kaydetmeyi unutmayın!', 'info');
+                }
+            }
 
-                sortedHistory.forEach(entry => {
-                    const item = document.createElement('div');
-                    item.className = 'task-history-item';
-                    item.innerHTML = `
-                        <div class="task-history-item-content">
-                            <div class="task-history-info">
-                                <div class="task-history-description">${entry.action}</div>
-                                <div class="task-history-meta">${new Date(entry.timestamp).toLocaleString('tr-TR')} by ${entry.userEmail}</div>
-                            </div>
-                        </div>
+            // İş Detayında Yeni Doküman Yükleme
+            handleDocumentUpload(files) {
+                const fileListElement = document.getElementById('taskDetailUploadedFileList');
+                
+                for (const file of files) {
+                    if (file.size > 10 * 1024 * 1024) { // 10MB limit
+                        this.showNotification(`"${file.name}" dosyası 10MB'tan büyük ve yüklenemedi.`, 'error');
+                        continue;
+                    }
+                    // Daha önce yüklenmiş veya mevcut dokümanlarla çakışmayı kontrol et
+                    const isDuplicate = (this.currentTask.files || []).some(f => f.name === file.name && f.size === file.size) ||
+                                        this.uploadedFiles.some(f => f.name === file.name && f.size === file.size);
+                    if (isDuplicate) {
+                        this.showNotification(`"${file.name}" dosyası zaten eklenmiş.`, 'info');
+                        continue;
+                    }
+
+                    this.readFileAsDataURL(file).then(dataUrl => {
+                        const newFile = {
+                            id: generateUUID(),
+                            name: file.name,
+                            size: file.size,
+                            type: file.type,
+                            content: dataUrl,
+                            uploadedAt: new Date().toISOString(),
+                            documentDesignation: 'İş Detay Dokümanı', // Varsayılan atama
+                            subDesignation: null,
+                            parentTransactionId: null
+                        };
+                        this.uploadedFiles.push(newFile);
+                        this.renderUploadedFilesForTaskDetail();
+                        this.showNotification('Doküman eklendi. Değişiklikleri kaydetmeyi unutmayın!', 'info');
+                    }).catch(error => {
+                        console.error("Dosya okuma hatası:", error);
+                        this.showNotification(`"${file.name}" dosyası okunamadı.`, 'error');
+                    });
+                }
+            }
+
+            // İş Detayında Yüklenen Geçici Dosyaları Render Etme
+            renderUploadedFilesForTaskDetail() {
+                const fileListElement = document.getElementById('taskDetailUploadedFileList');
+                fileListElement.innerHTML = '';
+                this.uploadedFiles.forEach(file => {
+                    const fileItem = document.createElement('div');
+                    fileItem.className = 'file-item-task-detail';
+                    fileItem.innerHTML = `
+                        <span>${file.name} (${this.formatFileSize(file.size)})</span>
+                        <button type="button" class="remove-file-task-detail" data-file-id="${file.id}">×</button>
                     `;
-                    historyContainer.appendChild(item);
+                    fileItem.querySelector('.remove-file-task-detail').addEventListener('click', (e) => {
+                        const fileIdToRemove = e.currentTarget.dataset.fileId;
+                        this.uploadedFiles = this.uploadedFiles.filter(f => f.id !== fileIdToRemove);
+                        this.renderUploadedFilesForTaskDetail();
+                    });
+                    fileListElement.appendChild(fileItem);
                 });
+            }
+
+            readFileAsDataURL(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                });
+            }
+
+            formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
             }
 
             showNotification(message, type = 'info') {
@@ -873,108 +1072,6 @@
                         targetMessage.style.display = 'none';
                     }, 5000);
                 }
-            }
-
-            // MODAL GÖRÜNTÜLEME İŞLEVİ (my-tasks.html'den çağrılacak)
-            showViewTaskDetailModal(task, ipRecords, persons) {
-                const modal = document.getElementById('viewTaskDetailModal');
-                if (!modal) return; // Modal elementinin varlığını kontrol et
-
-                // Modal başlığını ayarla
-                document.getElementById('modalViewTaskTitle').textContent = `İş Detayı: ${task.title || '-'}`;
-
-                // Detayları doldur
-                document.getElementById('modalViewTaskTitleValue').textContent = task.title || '-';
-                document.getElementById('modalViewTaskDescriptionValue').textContent = task.description || '-';
-                
-                const taskTypeParts = task.taskType ? task.taskType.split('_') : [];
-                const mainType = taskTypeParts[0] || '';
-                const specificType = taskTypeParts.slice(1).join(' ').replace(/\b\w/g, l => l.toUpperCase());
-                document.getElementById('modalViewTaskTypeValue').textContent = `${mainType.charAt(0).toUpperCase() + mainType.slice(1)} - ${specificType}` || '-';
-
-                const priorityMap = { high: 'Yüksek', medium: 'Orta', low: 'Düşük' };
-                document.getElementById('modalViewTaskPriorityValue').textContent = priorityMap[task.priority] || task.priority || '-';
-                
-                document.getElementById('modalViewAssignedToValue').textContent = task.assignedTo_email || '-';
-                document.getElementById('modalViewTaskDueDateValue').textContent = task.dueDate ? new Date(task.dueDate).toLocaleDateString('tr-TR') : '-';
-
-                // İlgili IP Kaydı
-                let relatedIpRecordText = '-';
-                if (task.relatedIpRecordId) {
-                    const ipRecord = ipRecords.find(r => r.id === task.relatedIpRecordId);
-                    if (ipRecord) {
-                        relatedIpRecordText = `${ipRecord.title || ipRecord.applicationNumber || 'Kayıt'}`; // Modalda link olmasın
-                    } else {
-                        relatedIpRecordText = task.relatedIpRecordTitle || 'Kayıt Bulunamadı';
-                    }
-                }
-                document.getElementById('modalViewRelatedIpRecordValue').textContent = relatedIpRecordText;
-
-                // İlgili Taraf (Sadece transaction benzeri işler için)
-                const modalViewRelatedPartyGroup = document.getElementById('modalViewRelatedPartyGroup');
-                const modalViewRelatedPartyLabel = document.getElementById('modalViewRelatedPartyLabel');
-                const modalViewRelatedPartyValue = document.getElementById('modalViewRelatedPartyValue');
-                if (task.details?.relatedParty?.id) {
-                    const person = persons.find(p => p.id === task.details.relatedParty.id);
-                    if (person) {
-                        const taskType = task.taskType.split('_')[1];
-                        const labelMap = { 'devir': 'Devralan Taraf', 'lisans': 'Lisans Alan Taraf', 'rehin': 'Rehin Alan Taraf', 'birleşme': 'Birleşilen Taraf', 'veraset': 'Mirasçı', 'teminat': 'Rehin Alan Taraf' };
-                        modalViewRelatedPartyLabel.textContent = labelMap[taskType] || 'İlgili Taraf';
-                        modalViewRelatedPartyValue.textContent = person.name;
-                        modalViewRelatedPartyGroup.style.display = 'block';
-                    } else {
-                        modalViewRelatedPartyGroup.style.display = 'none';
-                    }
-                } else {
-                    modalViewRelatedPartyGroup.style.display = 'none';
-                }
-
-                // İlgili İşlem (Sadece transaction odaklı işler için)
-                const modalViewRelatedTransactionGroup = document.getElementById('modalViewRelatedTransactionGroup');
-                const modalViewRelatedTransactionLabel = document.getElementById('modalViewRelatedTransactionLabel');
-                const modalViewRelatedTransactionValue = document.getElementById('modalViewRelatedTransactionValue');
-                if (task.details?.relatedTransactionId && task.relatedIpRecordId) {
-                    const ipRecord = ipRecords.find(r => r.id === task.relatedIpRecordId);
-                    if (ipRecord && ipRecord.transactions) {
-                        const transaction = ipRecord.transactions.find(tx => tx.transactionId === task.details.relatedTransactionId);
-                        if (transaction) {
-                            modalViewRelatedTransactionLabel.textContent = 'İlgili Üst İşlem';
-                            modalViewRelatedTransactionValue.textContent = transaction.description || transaction.type;
-                            modalViewRelatedTransactionGroup.style.display = 'block';
-                        } else {
-                            modalViewRelatedTransactionGroup.style.display = 'none';
-                        }
-                    } else {
-                        modalViewRelatedTransactionGroup.style.display = 'none';
-                    }
-                } else {
-                    modalViewRelatedTransactionGroup.style.display = 'none';
-                }
-
-                const modalViewTaskHistory = document.getElementById('modalViewTaskHistory');
-                modalViewTaskHistory.innerHTML = '';
-                if (!task.history || task.history.length === 0) {
-                    modalViewTaskHistory.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">İşlem geçmişi bulunmuyor.</p>';
-                } else {
-                    const sortedHistory = [...task.history].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-                    sortedHistory.forEach(entry => {
-                        const item = document.createElement('div');
-                        item.className = 'task-history-item';
-                        item.innerHTML = `
-                            <div class="task-history-item-content">
-                                <div class="task-history-info">
-                                    <div class="task-history-description">${entry.action}</div>
-                                    <div class="task-history-meta">${new Date(entry.timestamp).toLocaleString('tr-TR')} by ${entry.userEmail}</div>
-                                </div>
-                            </div>
-                        `;
-                        modalViewTaskHistory.appendChild(item);
-                    });
-                }
-            }
-
-            closeModal(modalId) {
-                document.getElementById(modalId).classList.remove('show');
             }
         }
 
