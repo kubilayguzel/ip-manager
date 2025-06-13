@@ -440,7 +440,7 @@
                     `;
                     // Olay dinleyicilerini ekle
                     row.querySelector('.view-btn').addEventListener('click', () => this.viewTaskDetailsModal(task.id));
-                    row.querySelector('.edit-btn').addEventListener('click', () => this.editTask(task.id));
+                    row.querySelector('.edit-btn').addEventListener('click', () => this.showEditTaskModal(task.id));
                     row.querySelector('.delete-btn').addEventListener('click', () => this.deleteTask(task.id));
 
                     tableBody.appendChild(row);
@@ -653,7 +653,6 @@
     setActiveMenu();
 });
     </script>
-
 <div class="modal" id="editTaskModal">
 <div class="modal-content-lg">
 <span class="close-modal-btn" id="closeEditTaskModal">×</span>
@@ -683,7 +682,6 @@
 </div>
 </div>
 </div>
-
 <script>
 document.addEventListener('DOMContentLoaded', () => {
   const editModal = document.getElementById('editTaskModal');
