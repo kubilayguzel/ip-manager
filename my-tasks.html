@@ -5,53 +5,179 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IP Manager - İşlerim</title>
     <style>
-        /* CSS stilleri (değişiklik yok) */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; display: flex; }
+        .sidebar { width: 260px; background: #1e3c72; color: white; display: flex; flex-direction: column; height: 100vh; position: sticky; top: 0; z-index: 1001; flex-shrink: 0; }
+        .page-wrapper { flex-grow: 1; display: flex; flex-direction: column; height: 100vh; overflow-y: auto; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); }
+        .main-container { width: 100%; padding: 30px; margin: 0; }
+        .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+        .sidebar-logo { font-size: 1.8em; font-weight: bold; color: white; text-decoration: none; }
+        .sidebar-nav { flex-grow: 1; overflow-y: auto; padding: 20px 0; }
+        .nav-category-title { padding: 10px 20px; font-size: 0.8em; font-weight: bold; color: rgba(255, 255, 255, 0.5); text-transform: uppercase; }
+        .sidebar-nav-item, .accordion-header { display: flex; align-items: center; gap: 15px; padding: 15px 20px; color: rgba(255, 255, 255, 0.8); text-decoration: none; transition: background 0.3s ease; cursor: pointer; }
+        .sidebar-nav-item:hover, .accordion-header:hover { background: rgba(255, 255, 255, 0.1); }
+        .sidebar-nav-item.active { background: #2a5298; color: white; font-weight: bold; border-left: 4px solid #4ecdc4; padding-left: 16px; }
+        .nav-icon { font-size: 1.2em; width: 20px; text-align: center; }
+        .accordion-header::after { content: '▶'; margin-left: auto; font-size: 0.8em; transition: transform 0.3s ease; }
+        .accordion-header.active::after { transform: rotate(90deg); }
+        .accordion-content { background: rgba(0, 0, 0, 0.2); max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; }
+        .accordion-content a { display: block; padding: 12px 20px 12px 55px; color: rgba(255, 255, 255, 0.7); text-decoration: none; }
+        .accordion-content a:hover { background: rgba(255, 255, 255, 0.1); color: white; }
+        .accordion-content a.active { color: white; font-weight: 500; }
+        .accordion-content a.new-task-link { color: #fff; background-color: rgba(78, 205, 196, 0.25); font-weight: 500; }
+        .top-header { background: rgba(255, 255, 255, 0.95); padding: 15px 30px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05); display: flex; justify-content: flex-end; align-items: center; position: sticky; top: 0; z-index: 99; backdrop-filter: blur(10px); }
+        .user-section { display: flex; align-items: center; gap: 15px; }
+        .user-avatar { width: 40px; height: 40px; background: linear-gradient(45deg, #1e3c72, #2a5298); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; }
+        .user-info { display: flex; flex-direction: column; }
+        .user-name { font-weight: 600; color: #333; }
+        .user-role { font-size: 0.8em; color: #666; }
+        .logout-btn { background: #ff6b6b; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 0.9em; transition: all 0.3s ease; }
+        .page-header { background: rgba(255, 255, 255, 0.95); padding: 30px; border-radius: 20px; margin-bottom: 30px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); }
+        .page-title { font-size: 2em; color: #1e3c72; margin-bottom: 10px; }
+        .page-subtitle { color: #666; font-size: 1.1em; }
+        .tasks-container { background: rgba(255, 255, 255, 0.95); border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); overflow: hidden; }
+        .tasks-header { padding: 20px 30px; border-bottom: 1px solid #e1e8ed; display: flex; justify-content: space-between; align-items: center; flex-wrap:wrap; gap:15px; }
+        .filter-group { display: flex; gap: 10px; align-items: center; flex-wrap:wrap; }
+        .filter-label { font-weight: 500; }
+        .filter-select { padding: 8px 12px; border-radius: 8px; border: 1px solid #ccc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .task-table { width: 100%; border-collapse: collapse; }
+        .task-table th, .task-table td { padding: 15px; text-align: left; border-bottom: 1px solid #f0f0f0; }
+        .task-table th:first-child, .task-table td:first-child { width: 40px; text-align: center; }
+        .action-buttons { display: flex; gap: 8px; }
+        .table-action-btn { background: #6c757d; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; transition: all 0.3s ease; text-decoration: none; }
+        .table-action-btn.view-btn { background-color: #17a2b8; }
+        .table-action-btn.edit-btn { background-color: #ffc107; color: #212529; }
+        .table-action-btn.delete-btn { background-color: #dc3545; }
+        .no-tasks-message { text-align: center; padding: 40px; color: #666; }
     </style>
 </head>
 <body>
     <aside class="sidebar">
-        </aside>
+        <div class="sidebar-header">
+            <a href="dashboard.html" class="sidebar-logo">🔥 IP Manager</a>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-category-title">Ana Menü</div>
+            <a href="dashboard.html" class="sidebar-nav-item"><span class="nav-icon">📊</span><span>Dashboard</span></a>
+            <a href="portfolio.html" class="sidebar-nav-item"><span class="nav-icon">📋</span><span>Portföy</span></a>
+            <div class="nav-category-title">Veri Girişi</div>
+            <a href="data-entry.html" class="sidebar-nav-item"><span class="nav-icon">➕</span><span>Yeni Kayıt</span></a>
+            <a href="excel-upload.html" class="sidebar-nav-item"><span class="nav-icon">📄</span><span>Excel ile Yükle</span></a>
+            <div class="nav-category-title">Yönetim</div>
+            <div class="accordion">
+                <div class="accordion-header"><span class="nav-icon">⚙️</span><span>Yönetim</span></div>
+                <div class="accordion-content">
+                    <a href="create-task.html" class="new-task-link">Yeni İş Oluştur</a>
+                    <a href="task-management.html">İş Yönetimi</a>
+                    <a href="my-tasks.html">İşlerim</a>
+                    <a href="persons.html">Kişiler Yönetimi</a>
+                    <a href="user-management.html">Kullanıcı Yönetimi</a>
+                </div>
+            </div>
+            <div class="nav-category-title">Araçlar</div>
+            <a href="indexing.html" class="sidebar-nav-item"><span class="nav-icon">📁</span><span>Belge İndeksleme</span></a>
+            <a href="#" class="sidebar-nav-item" style="opacity: 0.5; cursor: not-allowed;"><span class="nav-icon">📈</span><span>Raporlar</span></a>
+            <a href="#" class="sidebar-nav-item" style="opacity: 0.5; cursor: not-allowed;"><span class="nav-icon">🔧</span><span>Ayarlar</span></a>
+        </nav>
+    </aside>
 
     <div class="page-wrapper">
         <header class="top-header">
-            </header>
+            <div class="user-section">
+                <div class="user-avatar" id="userAvatar">?</div>
+                <div class="user-info">
+                    <div class="user-name" id="userName">Yükleniyor...</div>
+                    <div class="user-role" id="userRole">Kullanıcı</div>
+                </div>
+                <button class="logout-btn" id="logoutBtn">Çıkış</button>
+            </div>
+        </header>
 
         <main class="main-container">
-            </main>
+            <section class="page-header">
+                <h1 class="page-title">Bana Atanan İşler</h1>
+                <p class="page-subtitle">Size atanmış olan tüm görevleri buradan takip edebilirsiniz.</p>
+            </section>
+    
+            <div class="tasks-container">
+                <div class="tasks-header">
+                    <div class="filter-group">
+                        <label class="filter-label" for="statusFilter">Duruma Göre Filtrele:</label>
+                        <select id="statusFilter" class="filter-select">
+                            <option value="all">Tüm Durumlar</option>
+                            <option value="open">Açık</option>
+                            <option value="in_progress">Devam Ediyor</option>
+                            <option value="pending_review">İncelemede</option>
+                            <option value="completed">Tamamlandı</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table class="task-table">
+                        <thead>
+                            <tr>
+                                <th><input type="checkbox" id="selectAllCheckbox" disabled></th>
+                                <th>İş Başlığı</th>
+                                <th>Öncelik</th>
+                                <th>Durum</th>
+                                <th>Bitiş Tarihi</th>
+                                <th>İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tasksTableBody">
+                            </tbody>
+                    </table>
+                    <div id="noTasksMessage" class="no-tasks-message" style="display: none;">
+                        <p>Size atanmış herhangi bir görev bulunamadı.</p>
+                    </div>
+                </div>
+            </div>
+        </main>
     </div>
 
-    <div id="viewTaskDetailModal" class="modal">
-         <div class="modal-content-lg">
-            <span class="close-modal-btn">&times;</span>
-            <h3 class="modal-title">İş Detayı</h3>
-            <div class="modal-body-content" id="viewTaskDetailBody"></div>
-        </div>
-    </div>
-    <div id="editTaskModal" class="modal">
-        <div class="modal-content-lg">
-            <span class="close-modal-btn">&times;</span>
-            <h3 class="modal-title">İşi Düzenle/Güncelle</h3>
-            <div class="modal-body-content" id="editTaskDetailBody">
-                 </div>
-             <div class="modal-footer">
-                <button type="button" class="btn-secondary" id="cancelEditBtn">İptal</button>
-                <button type="button" class="btn-primary" id="saveTaskChangesBtn">Değişiklikleri Kaydet</button>
-            </div>
-        </div>
-    </div>
-    <div id="completeTaskModal" class="modal">
-        </div>
-    <div id="assignTaskModal" class="modal">
-        </div>
-    <div id="ipRecordDetailModal" class="modal">
-        </div>
-    
     <script type="module">
         import { authService, taskService, ipRecordsService, personsService, auth, generateUUID } from './firebase-config.js';
 
+        // Sayfa yüklendiğinde sol menüyü ve akordiyonları ayarlar
+        document.addEventListener('DOMContentLoaded', function() {
+            const accordions = document.querySelectorAll('.accordion-header');
+            accordions.forEach(header => {
+                header.addEventListener('click', function() {
+                    this.classList.toggle('active');
+                    const content = this.nextElementSibling;
+                    if (content.style.maxHeight) {
+                        content.style.maxHeight = null;
+                    } else {
+                        content.style.maxHeight = content.scrollHeight + "px";
+                    }
+                });
+            });
+
+            function setActiveMenu() {
+                const currentPage = window.location.pathname.split("/").pop() || 'dashboard.html';
+                const activeLink = document.querySelector(`.sidebar-nav a[href*="${currentPage}"]`);
+                if (!activeLink) return;
+
+                activeLink.classList.add('active');
+                const parentAccordionContent = activeLink.closest('.accordion-content');
+                if (parentAccordionContent) {
+                    const parentAccordionHeader = parentAccordionContent.previousElementSibling;
+                    if (parentAccordionHeader) {
+                        parentAccordionHeader.classList.add('active');
+                        parentAccordionContent.style.maxHeight = parentAccordionContent.scrollHeight + "px";
+                    }
+                }
+            }
+            setActiveMenu();
+        });
+
         class MyTasksModule {
             constructor() {
-                // ... özellikler ...
+                this.currentUser = null;
+                this.tasks = [];
+                this.currentTaskToComplete = { taskId: null, recordId: null };
+                this.allIpRecords = [];
+                this.allUsers = [];
             }
 
             async init() {
@@ -61,7 +187,7 @@
                     return;
                 }
                 this.updateUserInfo();
-                this.setupEventListeners();
+                this.setupEventListeners(); // <-- Artık güvenli
                 await this.loadInitialData();
             }
 
@@ -69,95 +195,152 @@
                 if (this.currentUser) {
                     const userName = this.currentUser.displayName || this.currentUser.email.split('@')[0] || 'Kullanıcı';
                     const userRole = this.currentUser.role === 'admin' ? 'Yönetici' : this.currentUser.role === 'superadmin' ? 'Süper Yönetici' : 'Kullanıcı';
+                    
                     const avatarEl = document.getElementById('userAvatar');
                     const nameEl = document.getElementById('userName');
                     const roleEl = document.getElementById('userRole');
 
-                    if (avatarEl && nameEl && roleEl) {
-                        avatarEl.textContent = userName.charAt(0).toUpperCase();
-                        nameEl.textContent = userName;
-                        roleEl.textContent = userRole;
-                    }
+                    if (avatarEl) avatarEl.textContent = userName.charAt(0).toUpperCase();
+                    if (nameEl) nameEl.textContent = userName;
+                    if (roleEl) roleEl.textContent = userRole;
                 }
             }
             
             async loadInitialData() {
-                // ... veri yükleme ...
+                const [tasksResult, ipRecordsResult, usersResult] = await Promise.all([
+                    taskService.getTasksForUser(this.currentUser.uid),
+                    ipRecordsService.getRecords(),
+                    taskService.getAllUsers()
+                ]);
+                
+                if (tasksResult.success) this.tasks = tasksResult.data;
+                if (ipRecordsResult.success) this.allIpRecords = ipRecordsResult.data;
+                if (usersResult.success) this.allUsers = usersResult.data;
+
+                this.renderTasks();
             }
 
-            // DÜZELTME: Tüm olay dinleyiciler ve fonksiyonlar eklendi
             setupEventListeners() {
-                document.getElementById('logoutBtn').addEventListener('click', () => authService.signOut());
-                document.getElementById('statusFilter').addEventListener('change', (e) => this.renderTasks(e.target.value));
-                document.getElementById('assignSelectedBtn').addEventListener('click', () => this.showAssignModal());
-                document.getElementById('selectAllCheckbox').addEventListener('click', (e) => this.handleSelectAll(e.target.checked));
+                const logoutBtn = document.getElementById('logoutBtn');
+                if (logoutBtn) logoutBtn.addEventListener('click', () => authService.signOut());
                 
-                document.getElementById('tasksTableBody').addEventListener('click', (e) => {
-                    if (e.target.classList.contains('task-checkbox')) {
-                        this.handleSelectionChange();
-                    }
-                });
+                const statusFilter = document.getElementById('statusFilter');
+                if (statusFilter) statusFilter.addEventListener('change', (e) => this.renderTasks(e.target.value));
                 
-                // Modals
-                document.getElementById('assignTaskModal').querySelector('.close-modal-btn').addEventListener('click', () => this.closeModal('assignTaskModal'));
-                document.getElementById('viewTaskDetailModal').querySelector('.close-modal-btn').addEventListener('click', () => this.closeModal('viewTaskDetailModal'));
-                document.getElementById('editTaskModal').querySelector('.close-modal-btn').addEventListener('click', () => this.closeModal('editTaskModal'));
-                document.getElementById('completeTaskModal').querySelector('.close-modal-btn').addEventListener('click', () => this.closeModal('completeTaskModal'));
+                const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+                if (selectAllCheckbox) selectAllCheckbox.addEventListener('click', (e) => this.handleSelectAll(e.target.checked));
+                
+                const tasksTableBody = document.getElementById('tasksTableBody');
+                if(tasksTableBody) {
+                    tasksTableBody.addEventListener('click', (e) => {
+                        const target = e.target;
+                        if (target.classList.contains('task-checkbox')) {
+                            this.handleSelectionChange();
+                        } else if (target.closest('.view-btn')) {
+                            this.viewTaskDetails(target.closest('.view-btn').dataset.id);
+                        } else if (target.closest('.edit-btn')) {
+                            this.editTask(target.closest('.edit-btn').dataset.id);
+                        } else if (target.closest('.delete-btn')) {
+                            this.deleteTask(target.closest('.delete-btn').dataset.id);
+                        }
+                    });
+                }
             }
-
+            
             renderTasks(filter = 'all') {
                 const tableBody = document.getElementById('tasksTableBody');
+                const noTasksMessage = document.getElementById('noTasksMessage');
+                if (!tableBody || !noTasksMessage) return;
+
                 tableBody.innerHTML = '';
                 const filteredTasks = this.tasks.filter(task => filter === 'all' || task.status === filter);
                 
                 if (filteredTasks.length === 0) {
-                    document.getElementById('noTasksMessage').style.display = 'block';
+                    noTasksMessage.style.display = 'block';
+                    tableBody.style.display = 'none';
                     return;
                 }
-                document.getElementById('noTasksMessage').style.display = 'none';
-                
+
+                noTasksMessage.style.display = 'none';
+                tableBody.style.display = '';
+
                 filteredTasks.forEach(task => {
-                    const row = document.createElement('tr');
-                    // ... row.innerHTML içeriği ...
-                    
-                    row.querySelector('.view-btn').addEventListener('click', () => this.viewTaskDetailsModal(task.id));
-                    row.querySelector('.edit-btn').addEventListener('click', () => this.editTask(task.id));
-                    row.querySelector('.delete-btn').addEventListener('click', () => this.deleteTask(task.id));
-                    row.querySelector('.complete-btn').addEventListener('click', () => this.showCompleteTaskModal(task.id, task.relatedIpRecordId));
+                    const row = this.createTaskRow(task);
                     tableBody.appendChild(row);
                 });
                 this.handleSelectionChange();
             }
 
-            // Diğer tüm metodlar buraya eksiksiz olarak eklendi
-            editTask(taskId) { this.showEditTaskModal(taskId); }
-            async deleteTask(taskId) { /* ... */ }
-            viewTaskDetailsModal(taskId) { /* ... */ }
-            populateModalTaskDetails(task) { /* ... */ }
-            showEditTaskModal(taskId) { /* ... */ }
-            async saveTaskChanges() { /* ... */ }
-            showCompleteTaskModal(taskId, recordId) { /* ... */ }
-            async completeTask(actionType) { /* ... */ }
-            handleSelectAll(isChecked) { /* ... */ }
-            handleSelectionChange() { /* ... */ }
-            showAssignModal() { /* ... */ }
-            async handleAssignment() { /* ... */ }
-            closeModal(modalId) { /* ... */ }
+            createTaskRow(task) {
+                const row = document.createElement('tr');
+                const priorityMap = { high: 'Yüksek', medium: 'Orta', low: 'Düşük' };
+                const statusMap = { open: 'Açık', in_progress: 'Devam Ediyor', pending_review: 'İncelemede', completed: 'Tamamlandı' };
+
+                row.innerHTML = `
+                    <td><input type="checkbox" class="task-checkbox" data-id="${task.id}" ${task.status === 'completed' ? 'disabled' : ''}></td>
+                    <td><a href="task-detail.html?taskId=${task.id}">${task.title || 'Başlık Yok'}</a></td>
+                    <td>${priorityMap[task.priority] || task.priority}</td>
+                    <td>${statusMap[task.status] || task.status}</td>
+                    <td>${task.dueDate ? new Date(task.dueDate).toLocaleDateString('tr-TR') : '-'}</td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="table-action-btn view-btn" data-id="${task.id}" title="Görüntüle">👁️</button>
+                            <a href="task-detail.html?taskId=${task.id}&mode=edit" class="table-action-btn edit-btn" title="Düzenle">✏️</a>
+                            <button class="table-action-btn delete-btn" data-id="${task.id}" title="Sil">🗑️</button>
+                        </div>
+                    </td>
+                `;
+                return row;
+            }
+
+            editTask(taskId) {
+                 window.location.href = `task-detail.html?taskId=${taskId}&mode=edit`;
+            }
+            
+            viewTaskDetails(taskId) {
+                window.location.href = `task-detail.html?taskId=${taskId}`;
+            }
+
+            async deleteTask(taskId) { 
+                if (confirm("Bu işi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.")) {
+                    const result = await taskService.deleteTask(taskId);
+                    if(result.success) {
+                        alert("İş başarıyla silindi.");
+                        await this.loadInitialData();
+                    } else {
+                        alert("Hata: " + result.error);
+                    }
+                }
+            }
+            
+            handleSelectionChange() {
+                const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+                if(!selectAllCheckbox) return;
+
+                const allCheckboxes = document.querySelectorAll('.task-checkbox:not(:disabled)');
+                const selectedCount = document.querySelectorAll('.task-checkbox:checked').length;
+                selectAllCheckbox.checked = allCheckboxes.length > 0 && selectedCount === allCheckboxes.length;
+            }
+
+            handleSelectAll(isChecked) {
+                document.querySelectorAll('.task-checkbox:not(:disabled)').forEach(checkbox => {
+                    checkbox.checked = isChecked;
+                });
+                this.handleSelectionChange();
+            }
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            let myTasksModuleInstance;
-            authService.auth.onAuthStateChanged(async (user) => {
-                if (user) {
-                    if (!myTasksModuleInstance) {
-                        myTasksModuleInstance = new MyTasksModule();
-                        await myTasksModuleInstance.init();
-                    }
-                } else {
-                    window.location.href = 'index.html';
+        // Modül başlatma
+        let myTasksModuleInstance;
+        auth.onAuthStateChanged(async (user) => {
+            if (user || authService.getCurrentUser()) {
+                if (!myTasksModuleInstance) {
+                    myTasksModuleInstance = new MyTasksModule();
+                    await myTasksModuleInstance.init();
                 }
-            });
-            // Akordiyon menü scripti
+            } else {
+                window.location.href = 'index.html';
+            }
         });
     </script>
 </body>
