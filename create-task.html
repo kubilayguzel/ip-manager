@@ -856,7 +856,7 @@
                     files: this.uploadedFiles,
                     relatedIpRecordId: this.selectedIpRecord.id,
                     relatedIpRecordTitle: this.selectedIpRecord.title,
-                    title: `${specificTaskType} İşlemi: ${this.selectedIpRecord.title}`
+                    title: specificTaskType // İş başlığı spesifik iş tipi olacak şekilde güncellendi
                 };
 
                 const transactionLikeTasks = ['Devir', 'Lisans', 'Birleşme', 'Rehin', 'Veraset ile İntikal', 'Rehin/Teminat'];
@@ -904,7 +904,7 @@
                 if(result.success) {
                     // Portföy kaydına parent transaction ekle
                     const transactionTypeToRecord = specificTaskType; 
-                    const transactionDescriptionToRecord = specificTaskType; // BURASI GÜNCELLENDİ
+                    const transactionDescriptionToRecord = specificTaskType; // Spesifik iş tipi görünen adı olarak ayarlandı
                     
                     let parentTransactionIdForChildLink = null;
                     if (taskData.details && taskData.details.relatedTransactionId) {
