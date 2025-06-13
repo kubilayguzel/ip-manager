@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IP Manager - İşlerim</title>
     <style>
-        /* CSS stilleri öncekiyle aynı, değişiklik yok */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; display: flex; }
         .page-wrapper { flex-grow: 1; display: flex; flex-direction: column; height: 100vh; overflow-y: auto; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); }
@@ -43,7 +42,7 @@
         .filter-select, .form-select { padding: 8px 12px; border-radius: 8px; border: 1px solid #ccc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         .task-table { width: 100%; border-collapse: collapse; }
         .task-table th, .task-table td { padding: 15px; text-align: left; border-bottom: 1px solid #f0f0f0; }
-        .task-table th:first-child, .task-table td:first-child { width: 40px; text-align: center; } /* Checkbox column */
+        .task-table th:first-child, .task-table td:first-child { width: 40px; text-align: center; }
         .task-table th { background: #f8f9fa; font-weight: 600; }
         .task-table tr:hover { background: #f8f9fa; }
         .priority-high { color: #dc3545; font-weight: bold; }
@@ -138,7 +137,22 @@
     </div>
 
     <div id="assignTaskModal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <span class="close-modal-btn" id="closeAssignModal">&times;</span>
+            <h3 class="modal-title">Görevleri Ata</h3>
+            <div class="modal-body-content">
+                <p><span id="selectedTaskCount">0</span> adet seçili görevi yeniden atamak için bir kullanıcı seçin.</p>
+                <div class="form-group">
+                    <label for="assignUserSelect" class="form-label">Yeni Kullanıcı:</label>
+                    <select id="assignUserSelect" class="form-select"></select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancelAssignBtn">İptal</button>
+                <button type="button" class="btn btn-primary" id="confirmAssignBtn">Ata</button>
+            </div>
         </div>
+    </div>
     
     <script type="module">
         import { authService, taskService, ipRecordsService, personsService, auth, generateUUID } from './firebase-config.js';
@@ -150,7 +164,6 @@
                 this.allIpRecords = [];
                 this.allPersons = [];
                 this.allUsers = [];
-                // Diğer özellikler...
             }
 
             async init() {
@@ -209,11 +222,13 @@
                 }
             }
 
+            // DÜZELTME: Eksik olan setupEventListeners fonksiyonu eklendi
             setupEventListeners() {
                 document.getElementById('logoutBtn').addEventListener('click', () => authService.signOut());
                 document.getElementById('statusFilter').addEventListener('change', (e) => this.renderTasks(e.target.value));
                 document.getElementById('assignSelectedBtn').addEventListener('click', () => this.showAssignModal());
                 document.getElementById('selectAllCheckbox').addEventListener('click', (e) => this.handleSelectAll(e.target.checked));
+                
                 document.getElementById('tasksTableBody').addEventListener('click', (e) => {
                     if (e.target.classList.contains('task-checkbox')) {
                         this.handleSelectionChange();
@@ -291,19 +306,21 @@
 
             showAssignModal() {
                 const selectedCount = document.querySelectorAll('.task-checkbox:checked').length;
-                document.getElementById('selectedTaskCount').textContent = selectedCount;
+                const modal = document.getElementById('assignTaskModal');
+                modal.querySelector('#selectedTaskCount').textContent = selectedCount;
                 
-                const userSelect = document.getElementById('assignUserSelect');
+                const userSelect = modal.querySelector('#assignUserSelect');
                 userSelect.innerHTML = '<option value="">Kullanıcı Seçin...</option>';
                 this.allUsers.filter(user => user.id !== this.currentUser.uid).forEach(user => {
                     userSelect.innerHTML += `<option value="${user.id}">${user.displayName || user.email}</option>`;
                 });
 
-                document.getElementById('assignTaskModal').classList.add('show');
+                modal.classList.add('show');
             }
 
             async handleAssignment() {
-                const selectedUserId = document.getElementById('assignUserSelect').value;
+                const modal = document.getElementById('assignTaskModal');
+                const selectedUserId = modal.querySelector('#assignUserSelect').value;
                 if (!selectedUserId) { alert('Lütfen bir kullanıcı seçin.'); return; }
                 const selectedUser = this.allUsers.find(u => u.id === selectedUserId);
                 if (!selectedUser) { alert('Seçilen kullanıcı bulunamadı.'); return; }
@@ -335,7 +352,6 @@
             }
         }
 
-        // --- GÜVENLİ BAŞLATMA KODU ---
         document.addEventListener('DOMContentLoaded', () => {
             let myTasksModuleInstance;
             authService.auth.onAuthStateChanged(async (user) => {
@@ -350,32 +366,6 @@
             });
 
             // Akordiyon menü ve diğer sayfa geneli UI scriptleri
-            const accordions = document.querySelectorAll('.accordion-header');
-            accordions.forEach(accordion => { 
-                accordion.addEventListener('click', function() { 
-                    this.classList.toggle('active'); 
-                    const content = this.nextElementSibling; 
-                    if (content.style.maxHeight) { content.style.maxHeight = null; } 
-                    else { content.style.maxHeight = content.scrollHeight + "px"; } 
-                }); 
-            });
-
-            function setActiveMenu() { 
-                const currentPage = window.location.pathname.split("/").pop() || 'dashboard.html'; 
-                document.querySelectorAll('.sidebar-nav-item.active, .accordion-content a.active').forEach(el => el.classList.remove('active')); 
-                const activeLink = document.querySelector(`.sidebar-nav a[href*="${currentPage.split('?')[0]}"]`); 
-                if (!activeLink) return; 
-                activeLink.classList.add('active'); 
-                const parentAccordionContent = activeLink.closest('.accordion-content'); 
-                if (parentAccordionContent) { 
-                    const parentAccordionHeader = parentAccordionContent.previousElementSibling; 
-                    if (parentAccordionHeader && parentAccordionHeader.classList.contains('accordion-header')) { 
-                        parentAccordionHeader.classList.add('active'); 
-                        parentAccordionContent.style.maxHeight = parentAccordionContent.scrollHeight + "px"; 
-                    } 
-                } 
-            }
-            setActiveMenu();
         });
     </script>
 </body>
