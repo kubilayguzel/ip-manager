@@ -1,7 +1,7 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
 import {
     getAuth,
-    signInWithEmailAndPassword, 
+    signInWithEmailAndPassword,
     createUserWithEmailAndPassword,
     signOut,
     onAuthStateChanged,
@@ -14,15 +14,14 @@ import {
     getDocs,
     doc,
     updateDoc,
-    deleteDoc, 
+    deleteDoc, // deleteDoc eklendi
     query,
     orderBy,
     where,
     getDoc, 
     setDoc,
     arrayUnion, 
-    arrayRemove,
-    writeBatch
+    arrayRemove 
 } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
 // --- Firebase App Initialization ---
@@ -241,6 +240,7 @@ export const ipRecordsService = {
         localStorage.setItem('ipRecords', JSON.stringify(records));
         return { success: true, id: newRecord.id };
     },
+    // YENİ METOT: Bir kayda transaction eklemek için (güncellendi)
     async addTransactionToRecord(recordId, transactionData) {
         const user = authService.getCurrentUser();
         if(!user) return {success: false, error: "Not logged in"};
@@ -294,6 +294,10 @@ export const ipRecordsService = {
             const currentData = currentDoc.data();
             let newTransactions = [...(currentData.transactions || [])]; 
 
+            // Dokümanları güncelleme mantığı: Mevcut dokümanları koru ve yenilerini ekle.
+            // Eğer updates.files varsa, bu, formdan gelen güncellenmiş dosya listesidir.
+            // Bu liste, hem eski dokümanları hem de yeni yüklenenleri içerebilir.
+            // Sadece gerçekten yeni olan dokümanlar için transaction oluştur.
             const existingFileIds = new Set((currentData.files || []).map(f => f.id));
             (updates.files || []).forEach(newFile => {
                 if (!existingFileIds.has(newFile.id)) { 
@@ -316,11 +320,14 @@ export const ipRecordsService = {
                 }
             });
             
+            // `updates` objesindeki `files` anahtarını, formdan gelen tüm güncel dosyalar listesiyle değiştir.
+            // Bu, hem eski hem de yeni dosyaları içermelidir.
             const updatedFiles = updates.files !== undefined ? updates.files : currentData.files;
+
 
             await updateDoc(recordRef, { 
                 ...updates, 
-                files: updatedFiles,
+                files: updatedFiles, // Güncellenmiş dosya listesini ata
                 updatedAt: timestamp, 
                 transactions: newTransactions 
             });
@@ -382,6 +389,7 @@ export const taskService = {
                 createdBy_email: user.email,
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
+                // transactionIdForDeletion alanı artık create-task.html tarafından eklenecek
                 history: [{
                     timestamp: new Date().toISOString(),
                     userId: user.uid,
@@ -396,17 +404,20 @@ export const taskService = {
         }
     },
     
+    // updateTask metodunu task-detail.html'den gelen güncellemeleri işleyebilmesi için genişletiyoruz.
     async updateTask(taskId, updates) {
         if (!isFirebaseAvailable) return { success: false, error: "Firebase not connected." };
         try {
             const taskRef = doc(db, "tasks", taskId);
             const user = authService.getCurrentUser();
             
+            // Eğer bir status güncellemesi varsa özel aksiyon mesajı oluştur
             let actionMessage = `İş güncellendi.`;
             if (updates.status) {
                 actionMessage = `İş durumu "${updates.status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}" olarak güncellendi.`;
             } else {
-                const changedFields = Object.keys(updates).filter(key => key !== 'updatedAt' && key !== 'history' && key !== 'files');
+                // Diğer güncellemeler için daha spesifik bir mesaj oluşturabiliriz (isteğe bağlı)
+                const changedFields = Object.keys(updates).filter(key => key !== 'updatedAt' && key !== 'history' && key !== 'files'); // files filtresi eklendi
                 if (changedFields.length > 0) {
                     actionMessage = `İş güncellendi. Değişen alanlar: ${changedFields.join(', ')}.`;
                 }
@@ -419,18 +430,20 @@ export const taskService = {
                 action: actionMessage
             };
             
+            // Mevcut task dokümanını al
             const currentTaskDoc = await getDoc(taskRef);
             const currentTaskData = currentTaskDoc.data();
 
+            // Dosya güncellemelerini yönet: Mevcut dosyalara yeni dosyaları ekle
             let updatedFilesArray = currentTaskData.files || [];
-            if (updates.files) {
-                updatedFilesArray = updates.files;
-                delete updates.files;
+            if (updates.files) { // Eğer updates objesinde files varsa, bu, yeni yüklenenler ve mevcutlardan filtrelenmiş halidir.
+                updatedFilesArray = updates.files; // task-detail'den gelen tam liste
+                delete updates.files; // updates objesinden files'ı kaldır, Firestore'a manuel olarak ekleyeceğiz
             }
 
             await updateDoc(taskRef, {
                 ...updates,
-                files: updatedFilesArray,
+                files: updatedFilesArray, // Güncellenmiş dosya listesini ata
                 updatedAt: new Date().toISOString(),
                 history: arrayUnion(updateAction)
             });
@@ -467,6 +480,7 @@ export const taskService = {
         }
     },
 
+    // Belirli bir işi ID'sine göre getir
     async getTaskById(taskId) {
         if (!isFirebaseAvailable) {
             const allTasks = JSON.parse(localStorage.getItem('tasks') || '[]');
@@ -486,6 +500,7 @@ export const taskService = {
         }
     },
 
+    // Görev silme ve ilişkili transaction'ı silme
     async deleteTask(taskId) {
         if (!isFirebaseAvailable) {
             let tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
@@ -509,41 +524,6 @@ export const taskService = {
             return { success: true };
         } catch (error) {
             console.error("Error deleting task:", error);
-            return { success: false, error: error.message };
-        }
-    },
-    
-    async reassignTasks(taskIds, newUserId, newUserEmail) {
-        if (!isFirebaseAvailable) return { success: false, error: "Firebase not connected." };
-        
-        const user = authService.getCurrentUser();
-        if (!user) return { success: false, error: "Not logged in" };
-
-        const batch = writeBatch(db);
-
-        const actionMessage = `İş, ${user.email} tarafından ${newUserEmail} kullanıcısına atandı.`;
-        const updateAction = {
-            timestamp: new Date().toISOString(),
-            userId: user.uid,
-            userEmail: user.email,
-            action: actionMessage
-        };
-
-        taskIds.forEach(taskId => {
-            const taskRef = doc(db, "tasks", taskId);
-            batch.update(taskRef, {
-                assignedTo_uid: newUserId,
-                assignedTo_email: newUserEmail,
-                updatedAt: new Date().toISOString(),
-                history: arrayUnion(updateAction)
-            });
-        });
-
-        try {
-            await batch.commit();
-            return { success: true };
-        } catch (error) {
-            console.error("Error reassigning tasks in batch:", error);
             return { success: false, error: error.message };
         }
     },
@@ -572,6 +552,7 @@ export async function createDemoData() {
     }
 
     try {
+        // 1. Örnek bir kişi oluştur
         const demoPerson = {
             name: 'Demo Hak Sahibi',
             type: 'individual',
@@ -586,6 +567,7 @@ export async function createDemoData() {
         }
         const demoOwner = { id: personResult.data.id, name: personResult.data.name, type: personResult.data.type };
 
+        // 2. Örnek IP kayıtlarını tanımla
         const demoRecords = [
             {
                 type: 'patent',
@@ -614,6 +596,7 @@ export async function createDemoData() {
             }
         ];
 
+        // 3. Kayıtları veritabanına ekle
         for (const record of demoRecords) {
             await ipRecordsService.addRecord(record);
         }
